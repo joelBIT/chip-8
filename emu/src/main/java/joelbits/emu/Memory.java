@@ -1,7 +1,7 @@
 package joelbits.emu;
 
 public interface Memory {
-	short readFromMemory(int location);
-	void writeToMemory(short data, int location);
+	int readFromMemory(int location);
+	void writeToMemory(int data, int location);
 	void clearMemory();
 }
