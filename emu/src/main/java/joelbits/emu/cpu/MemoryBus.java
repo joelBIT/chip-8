@@ -1,7 +1,7 @@
 package joelbits.emu.cpu;
 
-import joelbits.emu.Memory;
-import joelbits.emu.RAM;
+import joelbits.emu.memory.Memory;
+import joelbits.emu.memory.RAM;
 
 /**
  * Used by the CPU to access the main memory.

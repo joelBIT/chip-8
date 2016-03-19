@@ -3,6 +3,8 @@ package joelbits.emu.cpu;
 import java.util.Random;
 import java.util.Stack;
 
+import joelbits.emu.memory.Memory;
+
 /**
  * There are 16 data registers named from V0 to VF. The carry flag (VF) is set to 1 if any screen pixels are flipped from set 
  * to unset when a sprite is drawn and set to 0 otherwise. Last 8 bits of each register are used to represent an unsigned byte.
@@ -21,37 +23,26 @@ public class CPU {
 	private int programCounter;
 	private int delayTimer;
 	private int soundTimer;
+	private boolean drawFlag;
 	
-	public void setProgramCounter(int address) {
-		this.programCounter = address;
+	public void initialize(int programCounter, int instructionRegister, int indexRegister, int delayTimer, int soundTimer, int[] fontset) {
+		this.programCounter = programCounter;
+		this.instructionRegister = instructionRegister;
+		this.indexRegister = indexRegister;
+		this.delayTimer = delayTimer;
+		this.soundTimer = soundTimer;
+		expansionBus.getDisplay().clearDisplayBuffer();
+		Memory memory = memoryBus.getPrimaryMemory();
+		memory.clearMemory();
+		for (int i = 0; i < 80; i++) {
+			memory.writeToMemory(fontset[i], i);
+		}
 	}
 	
-	public int getProgramCounter() {
-		return programCounter;
-	}
-	
-	public void setInstructionRegister(int instruction) {
-		instructionRegister = instruction;
-	}
-	
-	public void setIndexRegister(int address) {
-		this.indexRegister = address;
-	}
-	
-	public void setDelayTimer(int delayTime) {
-		this.delayTimer = delayTime;
-	}
-	
-	public void setSoundTimer(int soundTime) {
-		this.soundTimer = soundTime;
-	}
-	
-	public MemoryBus getMemoryBus() {
-		return memoryBus;
-	}
-	
-	public ExpansionBus getExpansionBus() {
-		return expansionBus;
+	public void loadROM(byte[] ROM, int startLocation) {
+		for (int i = 0, location = startLocation; i < ROM.length; i++, location++) {
+			memoryBus.getPrimaryMemory().writeToMemory(Byte.toUnsignedInt(ROM[i]), location);
+		}
 	}
 
 	public void nextInstructionCycle() {
@@ -61,7 +52,7 @@ public class CPU {
 		switch(Integer.toHexString(instructionRegister & 0xF000)) {
 			case "0":
 				if ((instructionRegister & 0x000F) == 0) {
-					getExpansionBus().getDisplay().clearDisplayBuffer();
+					expansionBus.getDisplay().clearDisplayBuffer();
 				} else {
 					programCounter = stack.pop();
 				}
@@ -143,13 +134,24 @@ public class CPU {
 				registers[(instructionRegister & 0x0F00) >> 8] = (new Random().nextInt(256)) & (instructionRegister & 0x00FF);
 				break;
 			case "d000":
-				System.out.println("displaySprite");
+				registers[0xF] = 0;
+				for (int row = 0; row < registers[(instructionRegister & 0x000F)]; row++) {
+					int coordinateY = registers[(instructionRegister & 0x00F0) >> 4] + row;
+					for (int column = 0; column < 8; column++) {
+						int coordinateX = registers[(instructionRegister & 0x0F00) >> 8] + column;
+						if ((memoryBus.getPrimaryMemory().readFromMemory((indexRegister + row)) & (0x80 >> column)) != 0) {
+							registers[0xF] = expansionBus.getDisplay().readFromDisplayBuffer(coordinateX + (coordinateY)*64) == 1 ? 1 : registers[0xF];
+							expansionBus.getDisplay().writeToDisplayBuffer((registers[0xF] ^= 1), (coordinateX + (coordinateY)*64));
+						}
+					}
+					drawFlag = true;
+				}
 				break;
 			case "e000":
 				if ((instructionRegister & 0x000F) == 1) {
-					programCounter += getExpansionBus().getKeyboard().getCurrentlyPressedKey() != getExpansionBus().getKeyboard().getKey(registers[(instructionRegister & 0x0F00) >> 8]) ? 2 : 0;
+					programCounter += expansionBus.getKeyboard().getCurrentlyPressedKey() != expansionBus.getKeyboard().getKey(registers[(instructionRegister & 0x0F00) >> 8]) ? 2 : 0;
 				} else {
-					programCounter += getExpansionBus().getKeyboard().getCurrentlyPressedKey() == getExpansionBus().getKeyboard().getKey(registers[(instructionRegister & 0x0F00) >> 8]) ? 2 : 0;
+					programCounter += expansionBus.getKeyboard().getCurrentlyPressedKey() == expansionBus.getKeyboard().getKey(registers[(instructionRegister & 0x0F00) >> 8]) ? 2 : 0;
 				}
 				break;
 			case "f000":
@@ -164,21 +166,29 @@ public class CPU {
 						registers[(instructionRegister & 0x0F00) >> 8] = delayTimer;
 						break;
 					case "a":
-						while (getExpansionBus().getKeyboard().getCurrentlyPressedKey() == 0) {
+						while (expansionBus.getKeyboard().getCurrentlyPressedKey() == 0) {
 							;
 						}
-						registers[(instructionRegister & 0x0F00) >> 8] = getExpansionBus().getKeyboard().getCurrentlyPressedKey();
+						registers[(instructionRegister & 0x0F00) >> 8] = expansionBus.getKeyboard().getCurrentlyPressedKey();
 						break;
 					case "1e":
 						indexRegister += registers[(instructionRegister & 0x0F00) >> 8];
 						break;
+					case "29": 
+				 		indexRegister = registers[(instructionRegister & 0x0F00) >> 8] * 5;
+						break;
+					case "33":
+				 		memoryBus.getPrimaryMemory().writeToMemory(registers[(instructionRegister & 0x0F00) >> 8] / 100, indexRegister);
+				 		memoryBus.getPrimaryMemory().writeToMemory((registers[(instructionRegister & 0x0F00) >> 8] / 10) % 10, indexRegister + 1);
+				 		memoryBus.getPrimaryMemory().writeToMemory((registers[(instructionRegister & 0x0F00) >> 8] % 100) % 10, indexRegister + 2);
+						break;
 					case "55":
 						for (int i = 0; i <= ((instructionRegister & 0x0F00) >> 8); i++, indexRegister++) {
-							getMemoryBus().getPrimaryMemory().writeToMemory(registers[i], indexRegister);
+							memoryBus.getPrimaryMemory().writeToMemory(registers[i], indexRegister);
 						}
 					case "65":
 						for (int i = 0; i <= ((instructionRegister & 0x0F00) >> 8); i++, indexRegister++) {
-							registers[i] = getMemoryBus().getPrimaryMemory().readFromMemory(indexRegister);
+							registers[i] = memoryBus.getPrimaryMemory().readFromMemory(indexRegister);
 						}
 					default:
 						System.out.println("unknown opcode");

@@ -1,4 +1,4 @@
-package joelbits.emu;
+package joelbits.emu.memory;
 
 /**
  * A very small main memory where the array represents the 4096 memory locations (0x000 - 0xFFF) that is used, where the CHIP-8 interpreter

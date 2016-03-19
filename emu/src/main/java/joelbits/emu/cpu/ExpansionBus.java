@@ -1,7 +1,7 @@
 package joelbits.emu.cpu;
 
-import joelbits.emu.Display;
-import joelbits.emu.Keyboard;
+import joelbits.emu.input.Keyboard;
+import joelbits.emu.output.Display;
 
 /**
  * Used by the CPU for I/O operations.

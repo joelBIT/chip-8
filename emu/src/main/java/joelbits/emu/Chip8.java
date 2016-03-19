@@ -9,33 +9,43 @@ import joelbits.emu.cpu.CPU;
 /**
  * Chip-8 emulator.
  * 
- * Last 8 or 16 bits of each int are used to represent an unsigned byte or an unsigned short respectively.
+ * Last 8 or 16 bits of each int are used to represent an unsigned byte or an unsigned short respectively. A ROM is written to memory starting
+ * at memory location 0x200.
  * 
  * @author rollnyj
  * 
  */
 public class Chip8 {
 	private final CPU cpu = new CPU();
+	private static int fontset[] =
+		{ 
+		  0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+		  0x20, 0x60, 0x20, 0x20, 0x70, // 1
+		  0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+		  0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+		  0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+		  0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+		  0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+		  0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+		  0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+		  0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+		  0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+		  0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+		  0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+		  0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+		  0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+		  0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+		};
 	
 	public static void main(String[] args) {
 		Chip8 chip8 = new Chip8();
 		
-		chip8.initialize();
+		chip8.getCPU().initialize(0x200, 0x0, 0x0, 0x0, 0x0, fontset);
 		chip8.loadGame("pong");
 		
 		for (;;) {
 			chip8.getCPU().nextInstructionCycle();
 		}
-	}
-	
-	public void initialize() {
-		getCPU().setProgramCounter(0x200);
-		getCPU().setInstructionRegister(0x0);
-		getCPU().setIndexRegister(0x0);
-		getCPU().setDelayTimer(0x0);
-		getCPU().setSoundTimer(0x0);
-		getCPU().getExpansionBus().getDisplay().clearDisplayBuffer();
-		getCPU().getMemoryBus().getPrimaryMemory().clearMemory();
 	}
 	
 	private CPU getCPU() {
@@ -44,10 +54,8 @@ public class Chip8 {
 	
 	private void loadGame(String game) {
 		try {
-			byte[] bytes = Files.readAllBytes(Paths.get(game));
-			for (int i = 0, location = getCPU().getProgramCounter(); i < bytes.length; i++, location++) {
-				getCPU().getMemoryBus().getPrimaryMemory().writeToMemory(Byte.toUnsignedInt(bytes[i]), location);
-			}
+			byte[] ROM = Files.readAllBytes(Paths.get(game));
+			getCPU().loadROM(ROM, 0x200);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

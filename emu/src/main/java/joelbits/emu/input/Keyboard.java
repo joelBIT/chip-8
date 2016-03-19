@@ -1,4 +1,4 @@
-package joelbits.emu;
+package joelbits.emu.input;
 
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;

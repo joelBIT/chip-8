@@ -1,4 +1,4 @@
-package joelbits.emu;
+package joelbits.emu.memory;
 
 public interface Memory {
 	int readFromMemory(int location);
