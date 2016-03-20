@@ -4,6 +4,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.scene.Group;
+import javafx.scene.Scene;
+import javafx.scene.canvas.Canvas;
+import javafx.stage.Stage;
 import joelbits.emu.cpu.CPU;
 
 /**
@@ -15,7 +21,7 @@ import joelbits.emu.cpu.CPU;
  * @author rollnyj
  * 
  */
-public class Chip8 {
+public class Chip8 extends Application {
 	private final CPU cpu = new CPU();
 	private static int fontset[] =
 		{ 
@@ -43,6 +49,8 @@ public class Chip8 {
 		chip8.getCPU().initialize(0x200, 0x0, 0x0, 0x0, 0x0, fontset);
 		chip8.loadGame("pong");
 		
+		launch(args);
+		
 		for (;;) {
 			chip8.getCPU().nextInstructionCycle();
 		}
@@ -61,4 +69,26 @@ public class Chip8 {
 		}
 	}
 
+	@Override
+	public void start(Stage primaryStage) throws Exception {
+		primaryStage.setTitle("Chip-8 emulator");
+		
+		Group root = new Group();
+		Scene scene = new Scene(root);
+		primaryStage.setScene(scene);
+		primaryStage.setResizable(false);
+		
+		primaryStage.setOnCloseRequest(event -> {
+		    Platform.exit();
+		    System.exit(0);
+		});
+		
+		scene.setOnKeyPressed(event -> getCPU().getKeyboard().keyPressed(event.getCode()));
+		scene.setOnKeyReleased(event -> getCPU().getKeyboard().keyReleased());
+		
+		Canvas canvas = new Canvas(600, 400);
+		root.getChildren().add(canvas);
+	    
+		primaryStage.show();
+	}
 }

@@ -3,6 +3,7 @@ package joelbits.emu.cpu;
 import java.util.Random;
 import java.util.Stack;
 
+import joelbits.emu.input.Keyboard;
 import joelbits.emu.memory.Memory;
 
 /**
@@ -24,6 +25,10 @@ public class CPU {
 	private int delayTimer;
 	private int soundTimer;
 	private boolean drawFlag;
+	
+	public Keyboard getKeyboard() {
+		return expansionBus.getKeyboard();
+	}
 	
 	public void initialize(int programCounter, int instructionRegister, int indexRegister, int delayTimer, int soundTimer, int[] fontset) {
 		this.programCounter = programCounter;
@@ -117,7 +122,7 @@ public class CPU {
 						registers[(instructionRegister & 0x0F00) >> 8] <<= 1;
 						break;
 					default:
-						System.out.println("unknown opcode");
+						System.out.println("Unknown instruction " + Integer.toHexString(instructionRegister & 0xFFFF));
 						break;
 				}
 				break;
@@ -191,13 +196,21 @@ public class CPU {
 							registers[i] = memoryBus.getPrimaryMemory().readFromMemory(indexRegister);
 						}
 					default:
-						System.out.println("unknown opcode");
+						System.out.println("Unknown instruction " + Integer.toHexString(instructionRegister & 0xFFFF));
 						break;
 				}
 				break;
 			default:
-				System.out.println("unknown opcode");
+				System.out.println("Unknown instruction " + Integer.toHexString(instructionRegister & 0xFFFF));
 				break;
+		}
+
+		if (delayTimer > 0) {
+			delayTimer -= 1;
+		}
+		
+		if (soundTimer > 0) {
+			soundTimer -= 1;
 		}
 	}
 }

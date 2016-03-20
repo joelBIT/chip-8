@@ -1,7 +1,6 @@
 package joelbits.emu.input;
 
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
+import javafx.scene.input.KeyCode;
 
 /**
  * CHIP-8 is able to detect input from a sixteen key keypad, with each key corresponding to a single unique hexadecimal
@@ -10,48 +9,29 @@ import java.awt.event.KeyEvent;
  * @author rollnyj
  *
  */
-public class Keyboard extends KeyAdapter {
-	private int currentlyPressedKey = 0;
-	
-	private final int[] keyPad = {
-			KeyEvent.VK_8, // Key 1
-			KeyEvent.VK_4, // Key 2
-			KeyEvent.VK_6, // Key 3
-			KeyEvent.VK_2, // Key 4
-			KeyEvent.VK_Q, // Key 5
-			KeyEvent.VK_W, // Key 6
-			KeyEvent.VK_E, // Key 7
-			KeyEvent.VK_R, // Key 8
-			KeyEvent.VK_T, // Key 9
-			KeyEvent.VK_Y, // Key A
-			KeyEvent.VK_A, // Key B
-			KeyEvent.VK_S, // Key C
-			KeyEvent.VK_D, // Key D
-			KeyEvent.VK_Z, // Key E
-			KeyEvent.VK_X, // Key F
-		};
+public class Keyboard {
+	private int currentlyPressedKey;
+	private final char[] keyPad = {'8', '4', '6', '2', 'Q', 'W', 'E', 'R', 'T', 'Y', 'A', 'S', 'D', 'Z', 'X'};
 	
 	public int getCurrentlyPressedKey() {
 		return currentlyPressedKey;
 	}
 
-    @Override
-    public void keyPressed(KeyEvent e) {
-    	currentlyPressedKey = mapKeyCodeToChip8Key(e.getKeyCode());
+    public void keyPressed(KeyCode keyCode) {
+    	currentlyPressedKey = mapKeyCodeToChip8Key(keyCode);
     }
 
-    @Override
-    public void keyReleased(KeyEvent e) {
+    public void keyReleased() {
     	currentlyPressedKey = 0;
     }
     
-    public int getKey(int key) {
+    public char getKey(int key) {
     	return keyPad[key-1];
     }
     
-    private int mapKeyCodeToChip8Key(int keyCode) {
+    private int mapKeyCodeToChip8Key(KeyCode keyCode) {
 		for (int i = 0; i < keyPad.length; i++) {
-			if (keyPad[i] == keyCode) {
+			if (keyPad[i] == keyCode.getName().charAt(0)) {
 				return i + 1;
 			}
 		}
