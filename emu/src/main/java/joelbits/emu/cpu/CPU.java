@@ -5,6 +5,7 @@ import java.util.Stack;
 
 import joelbits.emu.input.Keyboard;
 import joelbits.emu.memory.Memory;
+import joelbits.emu.output.Display;
 
 /**
  * There are 16 data registers named from V0 to VF. The carry flag (VF) is set to 1 if any screen pixels are flipped from set 
@@ -25,9 +26,30 @@ public class CPU {
 	private int delayTimer;
 	private int soundTimer;
 	private boolean drawFlag;
+	private int registerLocationX;
+	private int registerLocationY;
+	private int nibble;
+	private int address;
+	private int lowestByte;
 	
 	public Keyboard getKeyboard() {
 		return expansionBus.getKeyboard();
+	}
+	
+	public Display getDisplay() {
+		return expansionBus.getDisplay();
+	}
+	
+	public Memory getMemory() {
+		return memoryBus.getPrimaryMemory();
+	}
+	
+	public boolean isDrawFlag() {
+		return drawFlag;
+	}
+	
+	public void toggleDrawFlag() {
+		drawFlag = !drawFlag;
 	}
 	
 	public void initialize(int programCounter, int instructionRegister, int indexRegister, int delayTimer, int soundTimer, int[] fontset) {
@@ -36,174 +58,185 @@ public class CPU {
 		this.indexRegister = indexRegister;
 		this.delayTimer = delayTimer;
 		this.soundTimer = soundTimer;
-		expansionBus.getDisplay().clearDisplayBuffer();
-		Memory memory = memoryBus.getPrimaryMemory();
-		memory.clearMemory();
-		for (int i = 0; i < 80; i++) {
-			memory.writeToMemory(fontset[i], i);
+		getDisplay().clearDisplayBuffer();
+		getMemory().clearMemory();
+		for (int i = 0; i < fontset.length; i++) {
+			getMemory().writeToMemory(fontset[i], i);
 		}
 	}
 	
 	public void loadROM(byte[] ROM, int startLocation) {
 		for (int i = 0, location = startLocation; i < ROM.length; i++, location++) {
-			memoryBus.getPrimaryMemory().writeToMemory(Byte.toUnsignedInt(ROM[i]), location);
+			getMemory().writeToMemory(Byte.toUnsignedInt(ROM[i]), location);
 		}
 	}
 
 	public void nextInstructionCycle() {
-		instructionRegister = memoryBus.getPrimaryMemory().readFromMemory(programCounter) << 8 | memoryBus.getPrimaryMemory().readFromMemory(programCounter+1);
+		instructionRegister = getMemory().readFromMemory(programCounter) << 8 | getMemory().readFromMemory(programCounter+1);
 		programCounter += 2;
+		
+		registerLocationX = (instructionRegister & 0x0F00) >> 8;
+		registerLocationY = (instructionRegister & 0x00F0) >> 4;
+		nibble = instructionRegister & 0x000F;
+		address = instructionRegister & 0x0FFF;
+		lowestByte = instructionRegister & 0x00FF;
 		
 		switch(Integer.toHexString(instructionRegister & 0xF000)) {
 			case "0":
-				if ((instructionRegister & 0x000F) == 0) {
-					expansionBus.getDisplay().clearDisplayBuffer();
-				} else {
+				if (Integer.toHexString(instructionRegister & 0xFFFF) == "00E0") {
+					getDisplay().clearDisplayBuffer();
+					drawFlag = true;
+				} else if (Integer.toHexString(instructionRegister & 0xFFFF) == "00EE") {
 					programCounter = stack.pop();
 				}
 				break;
 			case "1000":
-				programCounter = instructionRegister & 0x0FFF;
+				programCounter = address;
 				break;
 			case "2000":
 				stack.push(programCounter);
-				programCounter = instructionRegister & 0x0FFF;
+				programCounter = address;
 				break;
 			case "3000":
-				programCounter += (registers[(instructionRegister & 0x0F00) >> 8] == (instructionRegister & 0x00FF)) ? 2 : 0;
+				programCounter += (registers[registerLocationX] == lowestByte) ? 2 : 0;
 				break;
 			case "4000":
-				programCounter += (registers[(instructionRegister & 0x0F00) >> 8] != (instructionRegister & 0x00FF)) ? 2 : 0;
+				programCounter += (registers[registerLocationX] != lowestByte) ? 2 : 0;
 				break;
 			case "5000":
-				programCounter += (registers[(instructionRegister & 0x0F00) >> 8] == registers[(instructionRegister & 0x00F0) >> 4]) ? 2 : 0;
+				programCounter += (registers[registerLocationX] == registers[registerLocationY]) ? 2 : 0;
 				break;
 			case "6000":
-				registers[(instructionRegister & 0x0F00) >> 8] = instructionRegister & 0x00FF;
+				registers[registerLocationX] = lowestByte;
 				break;
 			case "7000":
-				registers[(instructionRegister & 0x0F00) >> 8] += instructionRegister & 0x00FF;
+				registers[registerLocationX] += lowestByte;
 				break;
 			case "8000":
-				switch(Integer.toHexString(instructionRegister & 0x000F)) {
+				switch(Integer.toHexString(nibble)) {
 					case "0":
-						registers[(instructionRegister & 0x0F00) >> 8] = registers[(instructionRegister & 0x00F0) >> 4];
+						registers[registerLocationX] = registers[registerLocationY];
 						break;
 					case "1":
-						registers[(instructionRegister & 0x0F00) >> 8] |= registers[(instructionRegister & 0x00F0) >> 4];
+						registers[registerLocationX] |= registers[registerLocationY];
 						break;
 					case "2":
-						registers[(instructionRegister & 0x0F00) >> 8] &= registers[(instructionRegister & 0x00F0) >> 4];
+						registers[registerLocationX] &= registers[registerLocationY];
 						break;
 					case "3":
-						registers[(instructionRegister & 0x0F00) >> 8] ^= registers[(instructionRegister & 0x00F0) >> 4];
+						registers[registerLocationX] ^= registers[registerLocationY];
 						break;
 					case "4":
-						registers[(instructionRegister & 0x0F00) >> 8] += registers[(instructionRegister & 0x00F0) >> 4];
-						registers[15] = (registers[(instructionRegister & 0x0F00) >> 8] > 255) ? 1 : 0;
-						if (registers[15] == 1) {
-							registers[(instructionRegister & 0x0F00) >> 8] &= 0xFF;
-						}
+						int sum = registers[registerLocationX] + registers[registerLocationY];
+						registers[0xF] = (sum > 0xFF) ? 1 : 0;
+						registers[registerLocationX] = sum & lowestByte;
 						break;
 					case "5":
-						registers[15] = (registers[(instructionRegister & 0x0F00) >> 8] > registers[(instructionRegister & 0x00F0) >> 4]) ? 1 : 0;
-						registers[(instructionRegister & 0x0F00) >> 8] -= registers[(instructionRegister & 0x00F0) >> 4];
+						registers[0xF] = (registers[registerLocationX] > registers[registerLocationY]) ? 1 : 0;
+						registers[registerLocationX] -= registers[registerLocationY];
 						break;
 					case "6":
-						registers[15] = (registers[(instructionRegister & 0x0F00) >> 8] & 0x1) == 1 ? 1 : 0;
-						registers[(instructionRegister & 0x0F00) >> 8] >>= 1;
+						registers[0xF] = registers[registerLocationX] & 0x1;
+						registers[registerLocationX] >>= 1;
 						break;
 					case "7":
-						registers[15] = (registers[(instructionRegister & 0x0F00) >> 8] < registers[(instructionRegister & 0x00F0) >> 4]) ? 1 : 0;
-						registers[(instructionRegister & 0x00F0) >> 4] -= registers[(instructionRegister & 0x0F00) >> 8];
+						registers[0xF] = (registers[registerLocationX] > registers[registerLocationY]) ? 0 : 1;
+						registers[registerLocationX] = registers[registerLocationY] - registers[registerLocationX];
 						break;
 					case "e":
-						registers[15] = (registers[(instructionRegister & 0x0F00) >> 8] & 0x80) == 1 ? 1 : 0;
-						registers[(instructionRegister & 0x0F00) >> 8] <<= 1;
+						registers[0xF] = (registers[registerLocationX] >> 7) & 0x1;
+						registers[registerLocationX] <<= 1;
 						break;
 					default:
-						System.out.println("Unknown instruction " + Integer.toHexString(instructionRegister & 0xFFFF));
+						System.out.println("Unknown instruction " + Integer.toHexString(instructionRegister & 0xFFFF) + " at (8) location " + programCounter);
 						break;
 				}
 				break;
 			case "9000":
-				programCounter += (registers[(instructionRegister & 0x0F00) >> 8] != registers[(instructionRegister & 0x00F0) >> 4]) ? 2 : 0;
+				programCounter += (registers[registerLocationX] != registers[registerLocationY]) ? 2 : 0;
 				break;
 			case "a000":
-				indexRegister = instructionRegister & 0x0FFF;
+				indexRegister = address;
 				break;
 			case "b000":
-				programCounter = registers[0] + (instructionRegister & 0x0FFF);
+				programCounter = registers[0] + address;
 				break;
 			case "c000":
-				registers[(instructionRegister & 0x0F00) >> 8] = (new Random().nextInt(256)) & (instructionRegister & 0x00FF);
+				registers[registerLocationX] = (new Random().nextInt(0xFF + 1)) & lowestByte;
 				break;
 			case "d000":
 				registers[0xF] = 0;
-				for (int row = 0; row < registers[(instructionRegister & 0x000F)]; row++) {
-					int coordinateY = registers[(instructionRegister & 0x00F0) >> 4] + row;
+				for (int row = 0; row < nibble; row++) {
+					int memoryByte = getMemory().readFromMemory(indexRegister + row);
+					int coordinateY = registers[registerLocationY] + row;
 					for (int column = 0; column < 8; column++) {
-						int coordinateX = registers[(instructionRegister & 0x0F00) >> 8] + column;
-						if ((memoryBus.getPrimaryMemory().readFromMemory((indexRegister + row)) & (0x80 >> column)) != 0) {
-							registers[0xF] = expansionBus.getDisplay().readFromDisplayBuffer(coordinateX + (coordinateY)*64) == 1 ? 1 : registers[0xF];
-							expansionBus.getDisplay().writeToDisplayBuffer((registers[0xF] ^= 1), (coordinateX + (coordinateY)*64));
+						int coordinateX = registers[registerLocationX] + column;
+						if ((memoryByte & (0x80 >> column)) != 0) {
+							if (getDisplay().readFromDisplayBuffer(coordinateX, coordinateY) != 0) {
+								registers[0xF] = 1;
+							}
+							getDisplay().togglePixel(coordinateX, coordinateY);
 						}
 					}
-					drawFlag = true;
 				}
+				drawFlag = true;
 				break;
 			case "e000":
-				if ((instructionRegister & 0x000F) == 1) {
-					programCounter += expansionBus.getKeyboard().getCurrentlyPressedKey() != expansionBus.getKeyboard().getKey(registers[(instructionRegister & 0x0F00) >> 8]) ? 2 : 0;
+				if (nibble == 1) {
+					programCounter += getKeyboard().getCurrentlyPressedKey() != getKeyboard().getKey(registers[registerLocationX]) ? 2 : 0;
 				} else {
-					programCounter += expansionBus.getKeyboard().getCurrentlyPressedKey() == expansionBus.getKeyboard().getKey(registers[(instructionRegister & 0x0F00) >> 8]) ? 2 : 0;
+					programCounter += getKeyboard().getCurrentlyPressedKey() == getKeyboard().getKey(registers[registerLocationX]) ? 2 : 0;
 				}
 				break;
 			case "f000":
-				switch(Integer.toHexString(instructionRegister & 0x00FF)) {
+				switch(Integer.toHexString(lowestByte)) {
 					case "15":
-						delayTimer = registers[(instructionRegister & 0x0F00) >> 8];
+						delayTimer = registers[registerLocationX];
 						break;
 					case "18":
-						soundTimer = registers[(instructionRegister & 0x0F00) >> 8];
+						soundTimer = registers[registerLocationX];
 						break;
 					case "7":
-						registers[(instructionRegister & 0x0F00) >> 8] = delayTimer;
+						registers[registerLocationX] = delayTimer;
 						break;
 					case "a":
-						while (expansionBus.getKeyboard().getCurrentlyPressedKey() == 0) {
+						while (getKeyboard().getCurrentlyPressedKey() == 0) {
 							;
 						}
-						registers[(instructionRegister & 0x0F00) >> 8] = expansionBus.getKeyboard().getCurrentlyPressedKey();
+						registers[registerLocationX] = getKeyboard().getCurrentlyPressedKey();
 						break;
 					case "1e":
-						indexRegister += registers[(instructionRegister & 0x0F00) >> 8];
+						indexRegister = (indexRegister + registers[registerLocationX]) & 0xFFF;
 						break;
-					case "29": 
-				 		indexRegister = registers[(instructionRegister & 0x0F00) >> 8] * 5;
+					case "29":
+				 		indexRegister = registers[registerLocationX] * 5;
 						break;
 					case "33":
-				 		memoryBus.getPrimaryMemory().writeToMemory(registers[(instructionRegister & 0x0F00) >> 8] / 100, indexRegister);
-				 		memoryBus.getPrimaryMemory().writeToMemory((registers[(instructionRegister & 0x0F00) >> 8] / 10) % 10, indexRegister + 1);
-				 		memoryBus.getPrimaryMemory().writeToMemory((registers[(instructionRegister & 0x0F00) >> 8] % 100) % 10, indexRegister + 2);
+				 		getMemory().writeToMemory(registers[registerLocationX] / 100, indexRegister);
+				 		getMemory().writeToMemory((registers[registerLocationX] % 100) / 10, indexRegister + 1);
+				 		getMemory().writeToMemory(registers[registerLocationX] % 10, indexRegister + 2);
 						break;
 					case "55":
-						for (int i = 0; i <= ((instructionRegister & 0x0F00) >> 8); i++, indexRegister++) {
-							memoryBus.getPrimaryMemory().writeToMemory(registers[i], indexRegister);
+						for (int i = 0; i <= registerLocationX; i++) {
+							getMemory().writeToMemory(registers[i], indexRegister + i);
 						}
+						break;
 					case "65":
-						for (int i = 0; i <= ((instructionRegister & 0x0F00) >> 8); i++, indexRegister++) {
-							registers[i] = memoryBus.getPrimaryMemory().readFromMemory(indexRegister);
+						for (int i = 0; i <= registerLocationX; i++) {
+							registers[i] = getMemory().readFromMemory(indexRegister + i);
 						}
+						break;
 					default:
-						System.out.println("Unknown instruction " + Integer.toHexString(instructionRegister & 0xFFFF));
+						System.out.println("Unknown instruction " + Integer.toHexString(instructionRegister & 0xFFFF) + " at (f) location " + programCounter);
 						break;
 				}
 				break;
 			default:
-				System.out.println("Unknown instruction " + Integer.toHexString(instructionRegister & 0xFFFF));
+				System.out.println("Unknown instruction " + Integer.toHexString(instructionRegister & 0xFFFF) + " at (all) location " + programCounter);
 				break;
 		}
+		
+		programCounter &= 0xFFF;
 
 		if (delayTimer > 0) {
 			delayTimer -= 1;
