@@ -28,7 +28,7 @@ public class Chip8 extends Application {
 	private Canvas canvas;
 	private GraphicsContext graphicsContext;
 	private final int PIXEL_SIZE = 14;
-	private final static int fontset[] =
+	protected final static int fontset[] =
 		{ 
 		  0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
 		  0x20, 0x60, 0x20, 0x20, 0x70, // 1
@@ -75,8 +75,8 @@ public class Chip8 extends Application {
 		
 		primaryStage.show();
 		
-		getCPU().initialize(0x200, 0x0, 0x0, 0x0, 0x0, fontset);
-		loadGame("PONG");
+		getCPU().initialize(0x200, 0x0, 0x0, 0x0, 0x0, new int[16], fontset);
+		loadGame("TETRIS");
 		
 		for (int i = 0; i < 1000; i++) {
 			getCPU().nextInstructionCycle();
@@ -85,6 +85,10 @@ public class Chip8 extends Application {
 				getCPU().toggleDrawFlag();
 			}
 		}
+	}
+	
+	protected CPU getCPU() {
+		return cpu;
 	}
 	
 	private void drawSprites() {
@@ -96,10 +100,6 @@ public class Chip8 extends Application {
 				graphicsContext.fillRect(coordinateX*PIXEL_SIZE, coordinateY*PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
 			}
 		}
-	}
-	
-	private CPU getCPU() {
-		return cpu;
 	}
 	
 	private void loadGame(String game) {
