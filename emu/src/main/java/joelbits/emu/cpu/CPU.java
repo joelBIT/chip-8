@@ -6,6 +6,7 @@ import java.util.Stack;
 import joelbits.emu.input.Keyboard;
 import joelbits.emu.memory.Memory;
 import joelbits.emu.output.Display;
+import joelbits.emu.output.Sound;
 
 /**
  * There are 16 data registers named from V0 to VF. The carry flag (VF) is set to 1 if any screen pixels are flipped from set 
@@ -26,6 +27,7 @@ public class CPU {
 	private int delayTimer;
 	private int soundTimer;
 	private boolean drawFlag;
+	private boolean clearFlag;
 	private int registerLocationX;
 	private int registerLocationY;
 	private int nibble;
@@ -43,6 +45,10 @@ public class CPU {
 		return expansionBus.getDisplay();
 	}
 	
+	public Sound getSound() {
+		return expansionBus.getSound();
+	}
+	
 	public Memory getMemory() {
 		return memoryBus.getPrimaryMemory();
 	}
@@ -53,6 +59,30 @@ public class CPU {
 	
 	public void toggleDrawFlag() {
 		drawFlag = !drawFlag;
+	}
+	
+	public boolean isClearFlag() {
+		return clearFlag;
+	}
+	
+	public void toggleClearFlag() {
+		clearFlag = !clearFlag;
+	}
+	
+	public void decrementDelayTimer() {
+		if (delayTimer > 0) {
+			delayTimer--;
+		}
+	}
+	
+	public void decrementSoundTimer() {
+		if (soundTimer > 1) {
+			soundTimer--;
+		} else {
+			soundTimer = 0;
+			getSound().setEnabled(false);
+			getSound().stopSound();
+		}
 	}
 	
 	public void initialize(int programCounter, int instructionRegister, int indexRegister, int delayTimer, int soundTimer, int[] dataRegisters, int[] fontset) {
@@ -92,10 +122,14 @@ public class CPU {
 				switch(Integer.toHexString(address).toUpperCase()) {
 					case "E0":
 						getDisplay().clearDisplayBuffer();
-						drawFlag = true;
+						getDisplay().initializeDirtyBuffer();
+						clearFlag = true;
 						break;
 					case "EE":
 						programCounter = stack.pop();
+						break;
+					default:
+						System.out.println("Unknown instruction " + Integer.toHexString(instructionRegister & FIT_16BIT_REGISTER) + " at (0) location " + (programCounter-2));
 						break;
 				}
 				break;
@@ -186,6 +220,7 @@ public class CPU {
 								dataRegisters[0xF] = 0x1;
 							}
 							getDisplay().togglePixel(coordinateX, coordinateY);
+							getDisplay().addDirtyRegion(coordinateX, coordinateY);
 						}
 					}
 				}
@@ -198,6 +233,9 @@ public class CPU {
 						break;
 					case "A1":
 						programCounter += getKeyboard().getCurrentlyPressedKey() != dataRegisters[registerLocationX] ? 2 : 0;
+						break;
+					default:
+						System.out.println("Unknown instruction " + Integer.toHexString(instructionRegister & FIT_16BIT_REGISTER) + " at (E) location " + (programCounter-2));
 						break;
 				}
 				break;
@@ -217,6 +255,7 @@ public class CPU {
 						break;
 					case "18":
 						soundTimer = dataRegisters[registerLocationX];
+						getSound().setEnabled(true);
 						break;
 					case "1E":
 						indexRegister = (indexRegister + dataRegisters[registerLocationX]) & FIT_16BIT_REGISTER;

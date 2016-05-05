@@ -15,7 +15,7 @@ import joelbits.emu.output.Display;
 public class TestCPU {
 	private CPU target;
 	private Memory memory;
-	private int[] registers = {43, 176, 40, 206, 33, 148, 33, 136, 77, 29, 48, 81, 30, 8, 34, 0};
+	private int[] dataRegisters = {43, 176, 40, 206, 33, 148, 33, 136, 77, 29, 48, 81, 30, 8, 34, 0};
 	private int[] fontset = new int[80];
 	private int programCounter = 0x200;
 	private int instructionRegister = 0x0;
@@ -28,7 +28,7 @@ public class TestCPU {
 	@Before
 	public void setUp() {
 		target = new CPU();
-		target.initialize(programCounter, instructionRegister, indexRegister, delayTimer, soundTimer, registers, fontset);
+		target.initialize(programCounter, instructionRegister, indexRegister, delayTimer, soundTimer, dataRegisters, fontset);
 		memory = target.getMemory();
 	}
 	
@@ -46,7 +46,7 @@ public class TestCPU {
 		for (int i = 0; i < Display.SCREEN_HEIGHT * Display.SCREEN_WIDTH; i++) {
 			assertEquals(0x0, target.getDisplay().readFromDisplayBuffer(i));
 		}
-		assertTrue(target.isDrawFlag());
+		assertTrue(target.isClearFlag());
 	}
 	
 	/**
@@ -191,7 +191,7 @@ public class TestCPU {
 	public void addsLowestByteToDataRegister() {
 		executeOpCode(0x7398);
 		
-		assertEquals((registers[0x3] + 0x98) & FIT_8BIT_REGISTER, target.readDataRegister(0x3));
+		assertEquals((dataRegisters[0x3] + 0x98) & FIT_8BIT_REGISTER, target.readDataRegister(0x3));
 	}
 	
 	/**
@@ -203,7 +203,7 @@ public class TestCPU {
 	public void storeDataRegisterValueInAnotherDataRegister() {
 		executeOpCode(0x8DC0);
 		
-		assertEquals(registers[0xC], target.readDataRegister(0xD));
+		assertEquals(dataRegisters[0xC], target.readDataRegister(0xD));
 	}
 	
 	/**
@@ -213,7 +213,7 @@ public class TestCPU {
 	 */
 	@Test
 	public void storeBitwiseORedDataRegisterValuesInDataRegister() {
-		int result = registers[0x3] | registers[0x4];
+		int result = dataRegisters[0x3] | dataRegisters[0x4];
 		executeOpCode(0x8341);
 		
 		assertEquals(result, target.readDataRegister(0x3));
@@ -226,7 +226,7 @@ public class TestCPU {
 	 */
 	@Test
 	public void storeBitwiseANDedDataRegisterValuesInDataRegister() {
-		int result = registers[0x3] & registers[0x4];
+		int result = dataRegisters[0x3] & dataRegisters[0x4];
 		executeOpCode(0x8342);
 		
 		assertEquals(result, target.readDataRegister(0x3));
@@ -239,7 +239,7 @@ public class TestCPU {
 	 */
 	@Test
 	public void storeBitwiseXORedDataRegisterValuesInDataRegister() {
-		int result = registers[0xD] ^ registers[0x5];
+		int result = dataRegisters[0xD] ^ dataRegisters[0x5];
 		executeOpCode(0x85D3);
 		
 		assertEquals(result, target.readDataRegister(0x5));
@@ -256,7 +256,7 @@ public class TestCPU {
 		executeOpCode(0x8134);
 		
 		assertEquals(1, target.readDataRegister(0xF));
-		assertEquals(((registers[0x1] + registers[0x3]) & 0x34) & FIT_8BIT_REGISTER, target.readDataRegister(0x1));
+		assertEquals(((dataRegisters[0x1] + dataRegisters[0x3]) & 0x34) & FIT_8BIT_REGISTER, target.readDataRegister(0x1));
 	}
 	
 	/**
@@ -270,7 +270,7 @@ public class TestCPU {
 		executeOpCode(0x8424);
 		
 		assertEquals(0, target.readDataRegister(0xF));
-		assertEquals(((registers[0x4] + registers[0x2]) & 0x24) & FIT_8BIT_REGISTER, target.readDataRegister(0x4));
+		assertEquals(((dataRegisters[0x4] + dataRegisters[0x2]) & 0x24) & FIT_8BIT_REGISTER, target.readDataRegister(0x4));
 	}
 	
 	/**
@@ -284,7 +284,7 @@ public class TestCPU {
 		executeOpCode(0x8235);
 		
 		assertEquals(0, target.readDataRegister(0xF));
-		assertEquals((convertToUnsignedInt(registers[0x2] - registers[0x3]) & FIT_8BIT_REGISTER), target.readDataRegister(0x2));
+		assertEquals((convertToUnsignedInt(dataRegisters[0x2] - dataRegisters[0x3]) & FIT_8BIT_REGISTER), target.readDataRegister(0x2));
 	}
 	
 	/**
@@ -298,7 +298,7 @@ public class TestCPU {
 		executeOpCode(0x8325);
 		
 		assertEquals(1, target.readDataRegister(0xF));
-		assertEquals((registers[0x3] - registers[0x2]) & FIT_8BIT_REGISTER, target.readDataRegister(0x3));
+		assertEquals((dataRegisters[0x3] - dataRegisters[0x2]) & FIT_8BIT_REGISTER, target.readDataRegister(0x3));
 	}
 	
 	/**
@@ -311,7 +311,7 @@ public class TestCPU {
 		executeOpCode(0x8456);
 		
 		assertEquals(1, target.readDataRegister(0xF));
-		assertEquals(registers[0x4] >> 1, target.readDataRegister(0x4));
+		assertEquals(dataRegisters[0x4] >> 1, target.readDataRegister(0x4));
 	}
 	
 	/**
@@ -324,7 +324,7 @@ public class TestCPU {
 		executeOpCode(0x8AB6);
 		
 		assertEquals(0, target.readDataRegister(0xF));
-		assertEquals(registers[0xA] >> 1, target.readDataRegister(0xA));
+		assertEquals(dataRegisters[0xA] >> 1, target.readDataRegister(0xA));
 	}
 	
 	/**
@@ -338,7 +338,7 @@ public class TestCPU {
 		executeOpCode(0x8017);
 		
 		assertEquals(1, target.readDataRegister(0xF));
-		assertEquals(convertToUnsignedInt(registers[0x1] - registers[0x0]) & FIT_8BIT_REGISTER, target.readDataRegister(0x0));
+		assertEquals(convertToUnsignedInt(dataRegisters[0x1] - dataRegisters[0x0]) & FIT_8BIT_REGISTER, target.readDataRegister(0x0));
 	}
 	
 	/**
@@ -352,7 +352,7 @@ public class TestCPU {
 		executeOpCode(0x8107);
 		
 		assertEquals(0, target.readDataRegister(0xF));
-		assertEquals(convertToUnsignedInt(registers[0x0] - registers[0x1]) & FIT_8BIT_REGISTER, target.readDataRegister(0x1));
+		assertEquals(convertToUnsignedInt(dataRegisters[0x0] - dataRegisters[0x1]) & FIT_8BIT_REGISTER, target.readDataRegister(0x1));
 	}
 	
 	/**
@@ -365,7 +365,7 @@ public class TestCPU {
 		executeOpCode(0x8ABE);
 		
 		assertEquals(0, target.readDataRegister(0xF));
-		assertEquals((registers[0xa] << 1) & FIT_8BIT_REGISTER, target.readDataRegister(0xa));
+		assertEquals((dataRegisters[0xA] << 1) & FIT_8BIT_REGISTER, target.readDataRegister(0xA));
 	}
 	
 	/**
@@ -378,7 +378,7 @@ public class TestCPU {
 		executeOpCode(0x835E);
 		
 		assertEquals(1, target.readDataRegister(0xF));
-		assertEquals((registers[0x3] << 1) & FIT_8BIT_REGISTER, target.readDataRegister(0x3));
+		assertEquals((dataRegisters[0x3] << 1) & FIT_8BIT_REGISTER, target.readDataRegister(0x3));
 	}
 	
 	/**
@@ -426,7 +426,7 @@ public class TestCPU {
 	public void setProgramCounterToAddressPlusDataRegisterValue() {
 		executeOpCode(0xB348);
 
-		assertEquals(0x348 + registers[0], target.readProgramCounter());
+		assertEquals(0x348 + dataRegisters[0], target.readProgramCounter());
 	}
 	
 	/**
@@ -461,12 +461,14 @@ public class TestCPU {
 		executeOpCode(0xD475);
 		
 		for (int row = 0; row < 0x5; row++) {
-			int coordinateY = registers[0x7] + row;
+			int coordinateY = dataRegisters[0x7] + row;
 			int memoryByte = target.getMemory().readFromMemory(indexRegister + row);
 			for (int column = 0; column < 8; column++) {
-				int coordinateX = registers[0x4] + column;
+				int coordinateX = dataRegisters[0x4] + column;
 				if ((memoryByte & (0x80 >> column)) != 0) {
 					assertTrue(target.getDisplay().readFromDisplayBuffer(coordinateX, coordinateY) != 0);
+				} else {
+					assertTrue(target.getDisplay().readFromDisplayBuffer(coordinateX, coordinateY) == 0);
 				}
 			}
 		}
@@ -569,7 +571,7 @@ public class TestCPU {
 	public void setDelayTimerEqualToDataRegisterValue() {
 		executeOpCode(0xF615);
 		
-		assertEquals(registers[0x6], target.readDelayTimer());
+		assertEquals(dataRegisters[0x6], target.readDelayTimer());
 	}
 	
 	/**
@@ -581,7 +583,7 @@ public class TestCPU {
 	public void setSoundTimerEqualToDataRegisterValue() {
 		executeOpCode(0xF518);
 		
-		assertEquals(registers[0x5], target.readSoundTimer());
+		assertEquals(dataRegisters[0x5], target.readSoundTimer());
 	}
 	
 	/**
@@ -593,7 +595,7 @@ public class TestCPU {
 	public void storeIndexRegisterPlusDataRegisterValueInIndexRegister() {
 		executeOpCode(0xFD1E);
 		
-		assertEquals((indexRegister + registers[0xD]) & FIT_16BIT_REGISTER, target.readIndexRegister());
+		assertEquals((indexRegister + dataRegisters[0xD]) & FIT_16BIT_REGISTER, target.readIndexRegister());
 	}
 	
 	/**
@@ -606,7 +608,7 @@ public class TestCPU {
 	public void storeSpriteLocationInIndexRegister() {
 		executeOpCode(0xFD29);
 		
-		assertEquals(registers[0xD]*5 & FIT_16BIT_REGISTER, target.readIndexRegister());
+		assertEquals(dataRegisters[0xD]*5 & FIT_16BIT_REGISTER, target.readIndexRegister());
 	}
 	
 	/**

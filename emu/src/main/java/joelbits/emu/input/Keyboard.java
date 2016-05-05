@@ -11,7 +11,7 @@ import javafx.scene.input.KeyCode;
  */
 public class Keyboard {
 	private int currentlyPressedKey;
-	private final char[] keyPad = {'8', '4', '6', '2', 'Q', 'W', 'E', 'R', 'T', 'Y', 'A', 'S', 'D', 'Z', 'X'};
+	private final char[] keyPad = {'8', '4', '6', '2', 'Q', 'W', 'E', 'R', 'T', 'Y', 'A', 'S', 'D', 'Z', 'X', 'C'};
 	
 	public int getCurrentlyPressedKey() {
 		return currentlyPressedKey;
