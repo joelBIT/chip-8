@@ -13,14 +13,14 @@ import javax.sound.sampled.SourceDataLine;
  */
 public class Sound {
 	private boolean isEnabled;
-    private boolean isPlaying;
-    private AudioFormat audioFormat;
-    private SourceDataLine sourceDataLine;
-    private final int SOUND_BUFFER_SIZE = 256;
-    private byte[] soundBuffer = new byte[SOUND_BUFFER_SIZE];
-	    
-    public Sound() {
-    	audioFormat = new AudioFormat(8000f, 8, 1, false, false);
+	private boolean isPlaying;
+	private AudioFormat audioFormat;
+	private SourceDataLine sourceDataLine;
+	private final int SOUND_BUFFER_SIZE = 256;
+	private byte[] soundBuffer = new byte[SOUND_BUFFER_SIZE];
+	
+	public Sound() {
+		audioFormat = new AudioFormat(8000f, 8, 1, false, false);
     	try {
     		sourceDataLine = AudioSystem.getSourceDataLine(audioFormat);
 			sourceDataLine.open(audioFormat);
@@ -38,7 +38,7 @@ public class Sound {
         	return;
         }
     	isPlaying = true;
-    	new Thread(new SoundThread()).start();
+    	new Thread(new Tone()).start();
     }
 	    
     public void stopSound() {
@@ -53,7 +53,7 @@ public class Sound {
     	return isEnabled;
     }
 
-    class SoundThread implements Runnable {
+    class Tone implements Runnable {
 
     	@Override
     	public void run() {

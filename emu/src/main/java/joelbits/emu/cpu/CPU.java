@@ -92,6 +92,7 @@ public class CPU {
 		this.delayTimer = delayTimer;
 		this.soundTimer = soundTimer;
 		getDisplay().clearDisplayBuffer();
+		getDisplay().clearDirtyBuffer();
 		getMemory().clearMemory();
 		for (int i = 0; i < this.dataRegisters.length; i++) {
 			this.dataRegisters[i] = dataRegisters[i];
@@ -122,7 +123,7 @@ public class CPU {
 				switch(Integer.toHexString(address).toUpperCase()) {
 					case "E0":
 						getDisplay().clearDisplayBuffer();
-						getDisplay().initializeDirtyBuffer();
+						getDisplay().clearDirtyBuffer();
 						clearFlag = true;
 						break;
 					case "EE":
@@ -220,7 +221,7 @@ public class CPU {
 								dataRegisters[0xF] = 0x1;
 							}
 							getDisplay().togglePixel(coordinateX, coordinateY);
-							getDisplay().addDirtyRegion(coordinateX, coordinateY);
+							getDisplay().addDirtyLocation(coordinateX, coordinateY);
 						}
 					}
 				}

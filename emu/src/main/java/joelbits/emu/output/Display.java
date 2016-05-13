@@ -41,17 +41,17 @@ public class Display {
 		}
 	}
 	
-	public void initializeDirtyBuffer() {
+	public void clearDirtyBuffer() {
 		for (int index = 0; index < displayBuffer.length; index++) {
 			dirtyBuffer.add(index);
 		}
 	}
 	
-	public void addDirtyRegion(int coordinateX, int coordinateY) {
+	public void addDirtyLocation(int coordinateX, int coordinateY) {
 		dirtyBuffer.add(convertToIndex(wrapCoordinateX(coordinateX), wrapCoordinateY(coordinateY)));
 	}
 	
-	public int removeDirtyRegion() {
+	public int removeDirtyLocation() {
 		return dirtyBuffer.size() > 0 ? dirtyBuffer.remove(0) : -1;
 	}
 	

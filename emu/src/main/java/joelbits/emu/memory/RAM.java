@@ -15,13 +15,13 @@ public class RAM implements Memory {
 	private int[] memory = new int[MEMORY_LOCATIONS];
 
 	@Override
-	public int readFromMemory(int location) {
-		return memory[location];
+	public int readFromMemory(int index) {
+		return memory[index];
 	}
 
 	@Override
-	public void writeToMemory(int data, int location) {
-		memory[location] = data;
+	public void writeToMemory(int data, int index) {
+		memory[index] = data;
 	}
 	
 	@Override
