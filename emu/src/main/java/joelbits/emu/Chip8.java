@@ -1,6 +1,8 @@
 package joelbits.emu;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.concurrent.Executors;
@@ -15,8 +17,13 @@ import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import joelbits.emu.cpu.CPU;
 import joelbits.emu.output.Display;
@@ -33,6 +40,8 @@ import joelbits.emu.output.Display;
 public class Chip8 extends Application {
 	private final CPU cpu = new CPU();
 	private GraphicsContext graphicsContext;
+	private FileChooser fileChooser = new FileChooser();
+	private Stage primaryStage;
 	private BorderPane root;
 	private final int PIXEL_SIZE = 14;
 	private boolean running;
@@ -63,6 +72,7 @@ public class Chip8 extends Application {
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
+		this.primaryStage = primaryStage;
 		primaryStage.setTitle("Chip-8 interpreter");
 		
 		root = new BorderPane();
@@ -72,12 +82,13 @@ public class Chip8 extends Application {
 		primaryStage.setResizable(false);
 		
 		primaryStage.setOnCloseRequest(event -> {
-		    Platform.exit();
-		    System.exit(0);
+			terminateApplication();
 		});
 		
 		scene.setOnKeyPressed(event -> getCPU().getKeyboard().keyPressed(event.getCode()));
 		scene.setOnKeyReleased(event -> getCPU().getKeyboard().keyReleased());
+		
+		fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("rom", "*.rom"), new FileChooser.ExtensionFilter("ch8", "*.ch8"));
 		
 		Canvas canvas = new Canvas(896, 448);
 
@@ -88,7 +99,11 @@ public class Chip8 extends Application {
 		root.setBottom(canvas);
 		
 		primaryStage.show();
-		getCPU().initialize(0x200, 0x0, 0x0, 0x0, 0x0, new int[16], fontset);
+	}
+	
+	private void terminateApplication() {
+	    Platform.exit();
+	    System.exit(0);
 	}
 	
 	protected CPU getCPU() {
@@ -96,42 +111,38 @@ public class Chip8 extends Application {
 	}
 	
 	private MenuBar createMenuBar() {
-		Menu menu = new Menu("Emulator");
-		Menu romMenu = new Menu("ROMs");
+		Menu emulator = new Menu("Interpreter");
+		MenuItem open = new MenuItem("Open");
+		open.setAccelerator(new KeyCodeCombination(KeyCode.O, KeyCombination.CONTROL_DOWN));
+		open.setOnAction(event -> {
+			File file = fileChooser.showOpenDialog(primaryStage);
+			if (file != null) {
+				startGame(file.toURI());
+			}
+		});
 		
-		MenuItem brix = new MenuItem("Brix");
-		brix.setOnAction(event -> startGame("/joelbits/emu/roms/Brix.ch8"));
-		MenuItem hidden = new MenuItem("Hidden");
-		hidden.setOnAction(event -> startGame("/joelbits/emu/roms/Hidden.ch8"));
-		MenuItem pong = new MenuItem("Pong");
-		pong.setOnAction(event -> startGame("/joelbits/emu/roms/Pong.ch8"));
-		MenuItem pong2 = new MenuItem("Pong 2");
-		pong2.setOnAction(event -> startGame("/joelbits/emu/roms/pong2.rom"));
-		MenuItem spaceFlight = new MenuItem("Space Flight");
-		spaceFlight.setOnAction(event -> startGame("/joelbits/emu/roms/SpaceFlight.ch8"));
-		MenuItem spaceInvaders = new MenuItem("Space Invaders");
-		spaceInvaders.setOnAction(event -> startGame("/joelbits/emu/roms/SpaceInvaders.ch8"));
-		MenuItem tetris = new MenuItem("Tetris");
-		tetris.setOnAction(event -> startGame("/joelbits/emu/roms/Tetris.ch8"));
+		MenuItem exit = new MenuItem("Exit");
+		exit.setAccelerator(new KeyCodeCombination(KeyCode.Q, KeyCombination.CONTROL_DOWN));
+		exit.setOnAction(event -> {
+			terminateApplication();
+		});
+		SeparatorMenuItem separatorMenuItem = new SeparatorMenuItem();
+		emulator.getItems().addAll(open, separatorMenuItem, exit);
 		
-		romMenu.getItems().add(brix);
-		romMenu.getItems().add(hidden);
-		romMenu.getItems().add(pong);
-		romMenu.getItems().add(pong2);
-		romMenu.getItems().add(spaceFlight);
-		romMenu.getItems().add(spaceInvaders);
-		romMenu.getItems().add(tetris);
-		menu.getItems().addAll(romMenu);
+		Menu options = new Menu("Options");
+		MenuItem muteSound = new CheckMenuItem("Mute Sound");
+		muteSound.setAccelerator(new KeyCodeCombination(KeyCode.F4));
+		MenuItem frequency = new CheckMenuItem("Change Frequency");
+		frequency.setAccelerator(new KeyCodeCombination(KeyCode.F5));
+		MenuItem palettes = new CheckMenuItem("Palettes");
+		palettes.setAccelerator(new KeyCodeCombination(KeyCode.F6));
 		
 		Menu speedMenu = new Menu("Speed");
 		MenuItem speed60 = new CheckMenuItem("60 Hz");
 		speed60.setOnAction(event -> gameSpeed = 17);
 		MenuItem speed100 = new CheckMenuItem("100 Hz");
 		speed100.setOnAction(event -> gameSpeed = 12);
-		
-		speedMenu.getItems().add(speed60);
-		speedMenu.getItems().add(speed100);
-		menu.getItems().addAll(speedMenu);
+		speedMenu.getItems().addAll(speed60, speed100);
 		
 		Menu themeMenu = new Menu("Theme");
 		MenuItem classic = new CheckMenuItem("Classic");
@@ -144,24 +155,32 @@ public class Chip8 extends Application {
 			root.setStyle("-fx-background: yellow;");
 			graphicsContext.setFill(Color.GRAY);
 		});
+		themeMenu.getItems().addAll(classic, ugly);
+		separatorMenuItem = new SeparatorMenuItem();
+		options.getItems().addAll(muteSound, separatorMenuItem, frequency, palettes, speedMenu, themeMenu);
 		
-		themeMenu.getItems().add(classic);
-		themeMenu.getItems().add(ugly);
-		menu.getItems().addAll(themeMenu);
+		Menu game = new Menu("Game");
+		MenuItem pause = new MenuItem("Pause");
+		pause.setAccelerator(new KeyCodeCombination(KeyCode.F2));
+		MenuItem reset = new MenuItem("Reset");
+		reset.setAccelerator(new KeyCodeCombination(KeyCode.F3));
+		game.getItems().addAll(pause, reset);
 		
-		MenuItem exit = new MenuItem("Exit");
-		exit.setOnAction(event -> {
-			Platform.exit();
-			System.exit(0);
+		Menu help = new Menu("Help");
+		MenuItem showHelp = new MenuItem("Show help");
+		showHelp.setAccelerator(new KeyCodeCombination(KeyCode.F1));
+		MenuItem about = new MenuItem("About");
+		about.setOnAction(event -> {
+			
 		});
-		menu.getItems().add(exit);
+		help.getItems().addAll(showHelp, about);
 		
 		MenuBar menuBar = new MenuBar();
-		menuBar.getMenus().add(menu);
+		menuBar.getMenus().addAll(emulator, options, game, help);
 		return menuBar;
 	}
 	
-	private void startGame(String gamePath) {
+	private void startGame(URI gamePath) {
 		getCPU().initialize(0x200, 0x0, 0x0, 0x0, 0x0, new int[16], fontset);
 		loadGame(gamePath);
 		if (!running) {
@@ -170,9 +189,9 @@ public class Chip8 extends Application {
 		}
 	}
 	
-	private void loadGame(String game) {
+	private void loadGame(URI gamePath) {
 		try {
-			byte[] ROM = Files.readAllBytes(Paths.get(getClass().getResource(game).toString().substring(8)));
+			byte[] ROM = Files.readAllBytes(Paths.get(gamePath));
 			getCPU().loadROM(ROM, 0x200);
 		} catch (IOException e) {
 			e.printStackTrace();

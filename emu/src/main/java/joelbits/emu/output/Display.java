@@ -18,13 +18,29 @@ public class Display {
 	private final List<Integer> dirtyBuffer = new ArrayList<>();
 	public static final int SCREEN_WIDTH = 64;
 	public static final int SCREEN_HEIGHT = 32;
-	
+
 	public int readFromDisplayBuffer(int coordinateX, int coordinateY) {
 		return displayBuffer[convertToIndex(wrapCoordinateX(coordinateX), wrapCoordinateY(coordinateY))];
 	}
 	
+	private int convertToIndex(int coordinateX, int coordinateY) {
+		return coordinateX + (coordinateY * SCREEN_WIDTH);
+	}
+	
+	private int wrapCoordinateX(int coordinateX) {
+		return coordinateX >= SCREEN_WIDTH ? coordinateX % SCREEN_WIDTH : coordinateX;
+	}
+	
+	private int wrapCoordinateY(int coordinateY) {
+		return coordinateY >= SCREEN_HEIGHT ? coordinateY % SCREEN_HEIGHT : coordinateY;
+	}
+	
 	public int readFromDisplayBuffer(int index) {
 		return displayBuffer[wrapIndex(index)];
+	}
+	
+	private int wrapIndex(int index) {
+		return index >= displayBuffer.length ? index % displayBuffer.length : index;
 	}
 	
 	public void togglePixel(int coordinateX, int coordinateY) {
@@ -61,21 +77,5 @@ public class Display {
 	
 	public int dirtyBufferSize() {
 		return dirtyBuffer.size();
-	}
-	
-	private int wrapCoordinateX(int coordinateX) {
-		return coordinateX >= SCREEN_WIDTH ? coordinateX % SCREEN_WIDTH : coordinateX;
-	}
-	
-	private int wrapCoordinateY(int coordinateY) {
-		return coordinateY >= SCREEN_HEIGHT ? coordinateY % SCREEN_HEIGHT : coordinateY;
-	}
-	
-	private int wrapIndex(int index) {
-		return index >= displayBuffer.length ? index % displayBuffer.length : index;
-	}
-	
-	private int convertToIndex(int coordinateX, int coordinateY) {
-		return coordinateX + (coordinateY * SCREEN_WIDTH);
 	}
 }

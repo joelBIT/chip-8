@@ -69,17 +69,15 @@ public class CPU {
 		clearFlag = !clearFlag;
 	}
 	
-	public void decrementDelayTimer() {
+	public synchronized void decrementDelayTimer() {
 		if (delayTimer > 0) {
 			delayTimer--;
 		}
 	}
 	
-	public void decrementSoundTimer() {
-		if (soundTimer > 1) {
-			soundTimer--;
-		} else {
-			soundTimer = 0;
+	public synchronized void decrementSoundTimer() {
+		soundTimer--;
+		if (soundTimer == 0) {
 			getSound().stopSound();
 		}
 	}
@@ -272,9 +270,8 @@ public class CPU {
 						programCounter += 2;
 						break;
 					case "18":
-						soundTimer = dataRegisters[registerLocationX];
+						soundTimer = dataRegisters[registerLocationX] == 1 ? 2 : dataRegisters[registerLocationX];
 						programCounter += 2;
-						System.out.println("sound");
 						break;
 					case "1E":
 						int sum = (indexRegister + dataRegisters[registerLocationX]) & FIT_16BIT_REGISTER;
