@@ -1,6 +1,7 @@
 package joelbits.emu.cpu;
 
 import joelbits.emu.input.Keyboard;
+import joelbits.emu.output.Beep;
 import joelbits.emu.output.Display;
 import joelbits.emu.output.Sound;
 
@@ -13,7 +14,7 @@ import joelbits.emu.output.Sound;
 public class ExpansionBus {
 	private final Display display = new Display();
 	private final Keyboard keyboard = new Keyboard();
-	private final Sound sound = new Sound();
+	private final Sound sound = new Beep();
 	
 	public Display getDisplay() {
 		return display;

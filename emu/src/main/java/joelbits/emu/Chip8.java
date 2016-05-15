@@ -33,8 +33,9 @@ import joelbits.emu.output.Display;
 public class Chip8 extends Application {
 	private final CPU cpu = new CPU();
 	private GraphicsContext graphicsContext;
+	private BorderPane root;
 	private final int PIXEL_SIZE = 14;
-	private boolean running = false;
+	private boolean running;
 	private int gameSpeed = 17;
 	protected final static int fontset[] =
 		{ 
@@ -54,7 +55,7 @@ public class Chip8 extends Application {
 		  0xE0, 0x90, 0x90, 0x90, 0xE0, // D
 		  0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
 		  0xF0, 0x80, 0xF0, 0x80, 0x80  // F
-		};
+	};
 	
 	public static void main(String[] args) {
 		launch(args);
@@ -62,9 +63,9 @@ public class Chip8 extends Application {
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
-		primaryStage.setTitle("Chip-8 emulator");
+		primaryStage.setTitle("Chip-8 interpreter");
 		
-		BorderPane root = new BorderPane();
+		root = new BorderPane();
 		root.setStyle("-fx-background: black;");
 		Scene scene = new Scene(root);
 		primaryStage.setScene(scene);
@@ -98,17 +99,23 @@ public class Chip8 extends Application {
 		Menu menu = new Menu("Emulator");
 		Menu romMenu = new Menu("ROMs");
 		
-		CheckMenuItem pong = new CheckMenuItem("Pong");
+		MenuItem brix = new MenuItem("Brix");
+		brix.setOnAction(event -> startGame("/joelbits/emu/roms/Brix.ch8"));
+		MenuItem hidden = new MenuItem("Hidden");
+		hidden.setOnAction(event -> startGame("/joelbits/emu/roms/Hidden.ch8"));
+		MenuItem pong = new MenuItem("Pong");
 		pong.setOnAction(event -> startGame("/joelbits/emu/roms/Pong.ch8"));
-		MenuItem pong2 = new CheckMenuItem("Pong 2");
-		pong2.setOnAction(event -> startGame("/joelbits/emu/roms/PONG2.ch8"));
-		MenuItem spaceFlight = new CheckMenuItem("Space Flight");
+		MenuItem pong2 = new MenuItem("Pong 2");
+		pong2.setOnAction(event -> startGame("/joelbits/emu/roms/pong2.rom"));
+		MenuItem spaceFlight = new MenuItem("Space Flight");
 		spaceFlight.setOnAction(event -> startGame("/joelbits/emu/roms/SpaceFlight.ch8"));
-		MenuItem spaceInvaders = new CheckMenuItem("Space Invaders");
+		MenuItem spaceInvaders = new MenuItem("Space Invaders");
 		spaceInvaders.setOnAction(event -> startGame("/joelbits/emu/roms/SpaceInvaders.ch8"));
-		MenuItem tetris = new CheckMenuItem("Tetris");
+		MenuItem tetris = new MenuItem("Tetris");
 		tetris.setOnAction(event -> startGame("/joelbits/emu/roms/Tetris.ch8"));
 		
+		romMenu.getItems().add(brix);
+		romMenu.getItems().add(hidden);
 		romMenu.getItems().add(pong);
 		romMenu.getItems().add(pong2);
 		romMenu.getItems().add(spaceFlight);
@@ -125,6 +132,22 @@ public class Chip8 extends Application {
 		speedMenu.getItems().add(speed60);
 		speedMenu.getItems().add(speed100);
 		menu.getItems().addAll(speedMenu);
+		
+		Menu themeMenu = new Menu("Theme");
+		MenuItem classic = new CheckMenuItem("Classic");
+		classic.setOnAction(event -> {
+			root.setStyle("-fx-background: black;");
+			graphicsContext.setFill(Color.WHITE);
+		});
+		MenuItem ugly = new CheckMenuItem("Ugly");
+		ugly.setOnAction(event -> {
+			root.setStyle("-fx-background: yellow;");
+			graphicsContext.setFill(Color.GRAY);
+		});
+		
+		themeMenu.getItems().add(classic);
+		themeMenu.getItems().add(ugly);
+		menu.getItems().addAll(themeMenu);
 		
 		MenuItem exit = new MenuItem("Exit");
 		exit.setOnAction(event -> {

@@ -80,7 +80,6 @@ public class CPU {
 			soundTimer--;
 		} else {
 			soundTimer = 0;
-			getSound().setEnabled(false);
 			getSound().stopSound();
 		}
 	}
@@ -91,8 +90,8 @@ public class CPU {
 		this.indexRegister = indexRegister;
 		this.delayTimer = delayTimer;
 		this.soundTimer = soundTimer;
-		getDisplay().clearDisplayBuffer();
 		getDisplay().clearDirtyBuffer();
+		getDisplay().clearDisplayBuffer();
 		getMemory().clearMemory();
 		for (int i = 0; i < this.dataRegisters.length; i++) {
 			this.dataRegisters[i] = dataRegisters[i];
@@ -107,10 +106,9 @@ public class CPU {
 			getMemory().writeToMemory(Byte.toUnsignedInt(ROM[i]), location);
 		}
 	}
-
+	
 	public void nextInstructionCycle() {
 		instructionRegister = getMemory().readFromMemory(programCounter) << 8 | getMemory().readFromMemory(programCounter+1);
-		programCounter += 2;
 		
 		registerLocationX = (instructionRegister & 0x0F00) >> 8;
 		registerLocationY = (instructionRegister & 0x00F0) >> 4;
@@ -125,12 +123,14 @@ public class CPU {
 						getDisplay().clearDisplayBuffer();
 						getDisplay().clearDirtyBuffer();
 						clearFlag = true;
+						programCounter += 2;
 						break;
 					case "EE":
 						programCounter = stack.pop();
+						programCounter += 2;
 						break;
 					default:
-						System.out.println("Unknown instruction " + Integer.toHexString(instructionRegister & FIT_16BIT_REGISTER) + " at (0) location " + (programCounter-2));
+						System.out.println("Unknown instruction " + Integer.toHexString(instructionRegister & FIT_16BIT_REGISTER) + " at (0) location " + programCounter);
 						break;
 				}
 				break;
@@ -142,65 +142,77 @@ public class CPU {
 				programCounter = address;
 				break;
 			case "3000":
-				programCounter += (dataRegisters[registerLocationX] == lowestByte) ? 2 : 0;
+				programCounter += (dataRegisters[registerLocationX] == lowestByte) ? 4 : 2;
 				break;
 			case "4000":
-				programCounter += (dataRegisters[registerLocationX] != lowestByte) ? 2 : 0;
+				programCounter += (dataRegisters[registerLocationX] != lowestByte) ? 4 : 2;
 				break;
 			case "5000":
-				programCounter += (dataRegisters[registerLocationX] == dataRegisters[registerLocationY]) ? 2 : 0;
+				programCounter += (dataRegisters[registerLocationX] == dataRegisters[registerLocationY]) ? 4 : 2;
 				break;
 			case "6000":
 				dataRegisters[registerLocationX] = lowestByte;
+				programCounter += 2;
 				break;
 			case "7000":
 				dataRegisters[registerLocationX] = (dataRegisters[registerLocationX] + lowestByte) & FIT_8BIT_REGISTER;
+				programCounter += 2;
 				break;
 			case "8000":
 				switch(Integer.toHexString(nibble).toUpperCase()) {
 					case "0":
 						dataRegisters[registerLocationX] = dataRegisters[registerLocationY];
+						programCounter += 2;
 						break;
 					case "1":
 						dataRegisters[registerLocationX] |= dataRegisters[registerLocationY];
+						programCounter += 2;
 						break;
 					case "2":
 						dataRegisters[registerLocationX] &= dataRegisters[registerLocationY];
+						programCounter += 2;
 						break;
 					case "3":
 						dataRegisters[registerLocationX] ^= dataRegisters[registerLocationY];
+						programCounter += 2;
 						break;
 					case "4":
 						int sum = dataRegisters[registerLocationX] + dataRegisters[registerLocationY];
 						dataRegisters[0xF] = (sum > FIT_8BIT_REGISTER) ? 1 : 0;
-						dataRegisters[registerLocationX] = (sum & lowestByte) & FIT_8BIT_REGISTER;
+						dataRegisters[registerLocationX] = sum & FIT_8BIT_REGISTER;
+						programCounter += 2;
 						break;
 					case "5":
 						dataRegisters[0xF] = (dataRegisters[registerLocationX] > dataRegisters[registerLocationY]) ? 1 : 0;
 						dataRegisters[registerLocationX] = convertToUnsignedInt(dataRegisters[registerLocationX] - dataRegisters[registerLocationY]) & FIT_8BIT_REGISTER;
+						programCounter += 2;
 						break;
 					case "6":
 						dataRegisters[0xF] = dataRegisters[registerLocationX] & 0x1;
-						dataRegisters[registerLocationX] >>= 1;
+						dataRegisters[registerLocationX] = (dataRegisters[registerLocationX] >> 1) & FIT_8BIT_REGISTER;
+						programCounter += 2;
 						break;
 					case "7":
 						dataRegisters[0xF] = (dataRegisters[registerLocationX] > dataRegisters[registerLocationY]) ? 0 : 1;
 						dataRegisters[registerLocationX] = convertToUnsignedInt(dataRegisters[registerLocationY] - dataRegisters[registerLocationX]) & FIT_8BIT_REGISTER;
+						programCounter += 2;
 						break;
 					case "E":
 						dataRegisters[0xF] = (dataRegisters[registerLocationX] >> 7) & 0x1;
 						dataRegisters[registerLocationX] = (dataRegisters[registerLocationX] << 1) & FIT_8BIT_REGISTER;
+						programCounter += 2;
 						break;
 					default:
-						System.out.println("Unknown instruction " + Integer.toHexString(instructionRegister & FIT_16BIT_REGISTER) + " at (8) location " + (programCounter-2));
+						System.out.println("Unknown instruction " + Integer.toHexString(instructionRegister & FIT_16BIT_REGISTER) + " at (8) location " + programCounter);
 						break;
 				}
 				break;
 			case "9000":
-				programCounter += (dataRegisters[registerLocationX] != dataRegisters[registerLocationY]) ? 2 : 0;
+				programCounter += (dataRegisters[registerLocationX] != dataRegisters[registerLocationY]) ? 4 : 2;
 				break;
 			case "A000":
 				indexRegister = address;
+				programCounter += 2;
 				break;
 			case "B000":
 				programCounter = dataRegisters[0] + address;
@@ -208,6 +220,7 @@ public class CPU {
 			case "C000":
 				randomNumber = new Random().nextInt(FIT_8BIT_REGISTER);
 				dataRegisters[registerLocationX] = randomNumber & lowestByte;
+				programCounter += 2;
 				break;
 			case "D000":
 				dataRegisters[0xF] = 0x0;
@@ -215,8 +228,8 @@ public class CPU {
 					int memoryByte = getMemory().readFromMemory(indexRegister + row);
 					int coordinateY = dataRegisters[registerLocationY] + row;
 					for (int column = 0; column < 8; column++) {
-						int coordinateX = dataRegisters[registerLocationX] + column;
 						if ((memoryByte & (0x80 >> column)) != 0) {
+							int coordinateX = dataRegisters[registerLocationX] + column;
 							if (getDisplay().readFromDisplayBuffer(coordinateX, coordinateY) != 0) {
 								dataRegisters[0xF] = 0x1;
 							}
@@ -226,17 +239,18 @@ public class CPU {
 					}
 				}
 				drawFlag = true;
+				programCounter += 2;
 				break;
 			case "E000":
 				switch(Integer.toHexString(lowestByte).toUpperCase()) {
 					case "9E":
-						programCounter += getKeyboard().getCurrentlyPressedKey() == dataRegisters[registerLocationX] ? 2 : 0;
+						programCounter += getKeyboard().getCurrentlyPressedKey() == dataRegisters[registerLocationX] ? 4 : 2;
 						break;
 					case "A1":
-						programCounter += getKeyboard().getCurrentlyPressedKey() != dataRegisters[registerLocationX] ? 2 : 0;
+						programCounter += getKeyboard().getCurrentlyPressedKey() != dataRegisters[registerLocationX] ? 4 : 2;
 						break;
 					default:
-						System.out.println("Unknown instruction " + Integer.toHexString(instructionRegister & FIT_16BIT_REGISTER) + " at (E) location " + (programCounter-2));
+						System.out.println("Unknown instruction " + Integer.toHexString(instructionRegister & FIT_16BIT_REGISTER) + " at (E) location " + programCounter);
 						break;
 				}
 				break;
@@ -244,51 +258,61 @@ public class CPU {
 				switch(Integer.toHexString(lowestByte).toUpperCase()) {
 					case "7":
 						dataRegisters[registerLocationX] = delayTimer;
+						programCounter += 2;
 						break;
 					case "A":
 						while (getKeyboard().getCurrentlyPressedKey() == 0) {
 							;
 						}
 						dataRegisters[registerLocationX] = getKeyboard().getCurrentlyPressedKey();
+						programCounter += 2;
 						break;
 					case "15":
 						delayTimer = dataRegisters[registerLocationX];
+						programCounter += 2;
 						break;
 					case "18":
 						soundTimer = dataRegisters[registerLocationX];
-						getSound().setEnabled(true);
+						programCounter += 2;
+						System.out.println("sound");
 						break;
 					case "1E":
-						indexRegister = (indexRegister + dataRegisters[registerLocationX]) & FIT_16BIT_REGISTER;
+						int sum = (indexRegister + dataRegisters[registerLocationX]) & FIT_16BIT_REGISTER;
+						dataRegisters[0xF] = sum > 0xFFF ? 1 : 0;
+						indexRegister = sum;
+						programCounter += 2;
 						break;
 					case "29":
 				 		indexRegister = (dataRegisters[registerLocationX] * 5) & FIT_16BIT_REGISTER;
+				 		programCounter += 2;
 						break;
 					case "33":
 				 		getMemory().writeToMemory(dataRegisters[registerLocationX] / 100, indexRegister);
 				 		getMemory().writeToMemory((dataRegisters[registerLocationX] % 100) / 10, indexRegister + 1);
 				 		getMemory().writeToMemory(dataRegisters[registerLocationX] % 10, indexRegister + 2);
+				 		programCounter += 2;
 						break;
 					case "55":
 						for (int i = 0; i <= registerLocationX; i++) {
 							getMemory().writeToMemory(dataRegisters[i], indexRegister + i);
 						}
+						programCounter += 2;
 						break;
 					case "65":
 						for (int i = 0; i <= registerLocationX; i++) {
 							dataRegisters[i] = getMemory().readFromMemory(indexRegister + i);
 						}
+						programCounter += 2;
 						break;
 					default:
-						System.out.println("Unknown instruction " + Integer.toHexString(instructionRegister & FIT_16BIT_REGISTER) + " at (f) location " + (programCounter-2));
+						System.out.println("Unknown instruction " + Integer.toHexString(instructionRegister & FIT_16BIT_REGISTER) + " at (f) location " + programCounter);
 						break;
 				}
 				break;
 			default:
-				System.out.println("Unknown instruction " + Integer.toHexString(instructionRegister & FIT_16BIT_REGISTER) + " at (all) location " + (programCounter-2));
+				System.out.println("Unknown instruction " + Integer.toHexString(instructionRegister & FIT_16BIT_REGISTER) + " at (all) location " + programCounter);
 				break;
 		}
-		
 		programCounter &= FIT_16BIT_REGISTER;
 	}
 	
