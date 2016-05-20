@@ -10,8 +10,8 @@ import joelbits.emu.memory.RAM;
  *
  */
 public class MemoryBus {
-	private final Memory primaryMemory = new RAM();
-	
+	private Memory primaryMemory = new RAM();
+
 	public Memory getPrimaryMemory() {
 		return primaryMemory;
 	}

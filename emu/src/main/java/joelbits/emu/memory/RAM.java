@@ -15,17 +15,17 @@ public class RAM implements Memory {
 	private int[] memory = new int[MEMORY_LOCATIONS];
 
 	@Override
-	public int readFromMemory(int index) {
+	public int read(int index) {
 		return memory[index];
 	}
 
 	@Override
-	public void writeToMemory(int data, int index) {
+	public void write(int data, int index) {
 		memory[index] = data;
 	}
 	
 	@Override
-	public void clearMemory() {
+	public void clear() {
 		for (int i = 0; i < memory.length; i++) {
 			memory[i] = 0x0;
 		}

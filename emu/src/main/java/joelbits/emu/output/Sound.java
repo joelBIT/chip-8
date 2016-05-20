@@ -1,8 +1,8 @@
 package joelbits.emu.output;
 
 public interface Sound {
-	public void startSound();
-	public void stopSound();
-	public void muteSound();
-	public void unmuteSound();
+	public void start();
+	public void stop();
+	public void mute();
+	public void unmute();
 }

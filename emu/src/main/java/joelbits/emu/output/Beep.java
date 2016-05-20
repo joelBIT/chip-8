@@ -31,6 +31,10 @@ public class Beep implements Sound {
     private boolean muted;
 
     public Beep() {
+    	openAudioInputStream();
+    }
+    
+    private void openAudioInputStream() {
     	for (int i = 0; i < SAMPLE_RATE / SAMPLE_SIZE_IN_BITS; i++) {
     		soundBytes[i] = (byte) ((double)SOUND_VOLUME * Math.sin(6.283185307179586 * (double)SOUND_FREQUENCY * (i / (double)SAMPLE_RATE)));
     	}
@@ -39,50 +43,51 @@ public class Beep implements Sound {
     	audioInputStream = new AudioInputStream(byteArrayInputStream, audioFormat, SAMPLE_RATE / SAMPLE_SIZE_IN_BITS);
     	dataLineInfo = new DataLine.Info(Clip.class, audioFormat);
     	try {
-        	beepSound = (Clip) AudioSystem.getLine(dataLineInfo);
-            beepSound.open(audioInputStream);
+    		beepSound = (Clip) AudioSystem.getLine(dataLineInfo);
+        	beepSound.open(audioInputStream);
         } catch (LineUnavailableException | IOException e) {
         	e.printStackTrace();
+        	beepSound.close();
         }
     }
 
     @Override
-    public synchronized void startSound() {
+    public synchronized void start() {
     	if (!isBeeping() && !isMuted()) {
-        	beepSound.loop(-1);
+    		beepSound.loop(-1);
         }
-        beeping = true;
+    	beeping = true;
     }
     
     private boolean isBeeping() {
-        return beeping;
+    	return beeping;
     }
     
     private boolean isMuted() {
-        return muted;
+    	return muted;
     }
 
     @Override
-    public synchronized void stopSound() {
-        if (isBeeping() && !isMuted()) {
-            beepSound.stop();
-        }
-        beeping = false;
+    public synchronized void stop() {
+    	if (isBeeping() && !isMuted()) {
+    		beepSound.stop();
+    	}
+    	beeping = false;
     }
 
     @Override
-    public synchronized void muteSound() {
-        if (isBeeping()) {
-            beepSound.stop();
-        }
-        muted = true;
+    public synchronized void mute() {
+    	if (isBeeping()) {
+    		beepSound.stop();
+    	}
+    	muted = true;
     }
 
     @Override
-    public synchronized void unmuteSound() {
-        if (isBeeping() && isMuted()) {
+    public synchronized void unmute() {
+    	if (isBeeping() && isMuted()) {
         	beepSound.loop(-1);
-        }
-        muted = false;
+    	}
+    	muted = false;
     }
 }

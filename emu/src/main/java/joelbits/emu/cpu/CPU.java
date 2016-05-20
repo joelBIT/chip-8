@@ -3,9 +3,11 @@ package joelbits.emu.cpu;
 import java.util.Random;
 import java.util.Stack;
 
+import joelbits.emu.Screen;
 import joelbits.emu.input.Keyboard;
 import joelbits.emu.memory.Memory;
-import joelbits.emu.output.Display;
+import joelbits.emu.output.Buffer;
+import joelbits.emu.output.BufferFactory;
 import joelbits.emu.output.Sound;
 
 /**
@@ -17,8 +19,10 @@ import joelbits.emu.output.Sound;
  *
  */
 public class CPU {
-	private final MemoryBus memoryBus = new MemoryBus();
+	private MemoryBus memoryBus = new MemoryBus();
 	private final ExpansionBus expansionBus = new ExpansionBus();
+	private final Buffer displayBuffer = BufferFactory.getDisplayBuffer(getScreen().width(), getScreen().height());
+	private final Buffer dirtyBuffer = BufferFactory.getDirtyBuffer();
 	private final Stack<Integer> stack = new Stack<Integer>();
 	private final int[] dataRegisters = new int[16];
 	private int instructionRegister;
@@ -41,12 +45,20 @@ public class CPU {
 		return expansionBus.getKeyboard();
 	}
 	
-	public Display getDisplay() {
-		return expansionBus.getDisplay();
+	public Buffer getDisplayBuffer() {
+		return displayBuffer;
+	}
+	
+	public Buffer getDirtyBuffer() {
+		return dirtyBuffer;
 	}
 	
 	public Sound getSound() {
 		return expansionBus.getSound();
+	}
+	
+	public Screen<Integer> getScreen() {
+		return expansionBus.getScreen();
 	}
 	
 	public Memory getMemory() {
@@ -78,7 +90,7 @@ public class CPU {
 	public synchronized void decrementSoundTimer() {
 		soundTimer--;
 		if (soundTimer == 0) {
-			getSound().stopSound();
+			getSound().stop();
 		}
 	}
 	
@@ -88,25 +100,26 @@ public class CPU {
 		this.indexRegister = indexRegister;
 		this.delayTimer = delayTimer;
 		this.soundTimer = soundTimer;
-		getDisplay().clearDirtyBuffer();
-		getDisplay().clearDisplayBuffer();
-		getMemory().clearMemory();
+		getMemory().clear();
+		dirtyBuffer.clear();
+		displayBuffer.clear();
+		getMemory().clear();
 		for (int i = 0; i < this.dataRegisters.length; i++) {
 			this.dataRegisters[i] = dataRegisters[i];
 		}
 		for (int i = 0; i < fontset.length; i++) {
-			getMemory().writeToMemory(fontset[i], i);
+			getMemory().write(fontset[i], i);
 		}
 	}
 	
 	public void loadROM(byte[] ROM, int startLocation) {
 		for (int i = 0, location = startLocation; i < ROM.length; i++, location++) {
-			getMemory().writeToMemory(Byte.toUnsignedInt(ROM[i]), location);
+			getMemory().write(Byte.toUnsignedInt(ROM[i]), location);
 		}
 	}
 	
 	public void nextInstructionCycle() {
-		instructionRegister = getMemory().readFromMemory(programCounter) << 8 | getMemory().readFromMemory(programCounter+1);
+		instructionRegister = getMemory().read(programCounter) << 8 | getMemory().read(programCounter+1);
 		
 		registerLocationX = (instructionRegister & 0x0F00) >> 8;
 		registerLocationY = (instructionRegister & 0x00F0) >> 4;
@@ -118,8 +131,8 @@ public class CPU {
 			case "0":
 				switch(Integer.toHexString(address).toUpperCase()) {
 					case "E0":
-						getDisplay().clearDisplayBuffer();
-						getDisplay().clearDirtyBuffer();
+						displayBuffer.clear();
+						dirtyBuffer.clear();
 						clearFlag = true;
 						programCounter += 2;
 						break;
@@ -223,16 +236,17 @@ public class CPU {
 			case "D000":
 				dataRegisters[0xF] = 0x0;
 				for (int row = 0; row < nibble; row++) {
-					int memoryByte = getMemory().readFromMemory(indexRegister + row);
+					int memoryByte = getMemory().read(indexRegister + row);
 					int coordinateY = dataRegisters[registerLocationY] + row;
 					for (int column = 0; column < 8; column++) {
 						if ((memoryByte & (0x80 >> column)) != 0) {
 							int coordinateX = dataRegisters[registerLocationX] + column;
-							if (getDisplay().readFromDisplayBuffer(coordinateX, coordinateY) != 0) {
+							int data = displayBuffer.read(convertToIndex(coordinateX, coordinateY));
+							if (data != 0) {
 								dataRegisters[0xF] = 0x1;
-							}
-							getDisplay().togglePixel(coordinateX, coordinateY);
-							getDisplay().addDirtyLocation(coordinateX, coordinateY);
+							} 
+							displayBuffer.write(data^1, convertToIndex(coordinateX, coordinateY));
+							dirtyBuffer.write(data^1, convertToIndex(coordinateX, coordinateY));
 						}
 					}
 				}
@@ -284,20 +298,20 @@ public class CPU {
 				 		programCounter += 2;
 						break;
 					case "33":
-				 		getMemory().writeToMemory(dataRegisters[registerLocationX] / 100, indexRegister);
-				 		getMemory().writeToMemory((dataRegisters[registerLocationX] % 100) / 10, indexRegister + 1);
-				 		getMemory().writeToMemory(dataRegisters[registerLocationX] % 10, indexRegister + 2);
+				 		getMemory().write(dataRegisters[registerLocationX] / 100, indexRegister);
+				 		getMemory().write((dataRegisters[registerLocationX] % 100) / 10, indexRegister + 1);
+				 		getMemory().write(dataRegisters[registerLocationX] % 10, indexRegister + 2);
 				 		programCounter += 2;
 						break;
 					case "55":
 						for (int i = 0; i <= registerLocationX; i++) {
-							getMemory().writeToMemory(dataRegisters[i], indexRegister + i);
+							getMemory().write(dataRegisters[i], indexRegister + i);
 						}
 						programCounter += 2;
 						break;
 					case "65":
 						for (int i = 0; i <= registerLocationX; i++) {
-							dataRegisters[i] = getMemory().readFromMemory(indexRegister + i);
+							dataRegisters[i] = getMemory().read(indexRegister + i);
 						}
 						programCounter += 2;
 						break;
@@ -311,6 +325,14 @@ public class CPU {
 				break;
 		}
 		programCounter &= FIT_16BIT_REGISTER;
+	}
+	
+	private int convertToUnsignedInt(int value) {
+		return value < 0 ? value + 65536 : value;
+	}
+	
+	private int convertToIndex(int coordinateX, int coordinateY) {
+		return (coordinateX % getScreen().width()) + ((coordinateY % getScreen().width()) * getScreen().width());
 	}
 	
 	public int readDataRegister(int registerLocation) {
@@ -339,9 +361,5 @@ public class CPU {
 	
 	public int readStackTopValue() {
 		return stack.isEmpty() ? -1 : stack.peek();
-	}
-	
-	private int convertToUnsignedInt(int value) {
-		return value < 0 ? value + 65536 : value;
 	}
 }

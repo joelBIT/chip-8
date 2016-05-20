@@ -10,12 +10,11 @@ import org.junit.Test;
 import javafx.scene.input.KeyCode;
 import joelbits.emu.cpu.CPU;
 import joelbits.emu.memory.Memory;
-import joelbits.emu.output.Display;
 
 public class TestCPU {
 	private CPU target;
 	private Memory memory;
-	private int[] dataRegisters = {43, 176, 40, 206, 33, 148, 33, 136, 77, 29, 48, 81, 30, 8, 34, 0};
+	private int[] dataRegisters = {43, 176, 40, 206, 33, 148, 33, 136, 77, 29, 48, 81, 30, 8, 1, 0};
 	private int[] fontset = new int[80];
 	private int programCounter = 0x200;
 	private int instructionRegister = 0x0;
@@ -24,6 +23,8 @@ public class TestCPU {
 	private int soundTimer = 0x0;
 	private final int FIT_8BIT_REGISTER = 0xFF;
 	private final int FIT_16BIT_REGISTER = 0xFFFF;
+	private int SCREEN_WIDTH = 64;
+	private int SCREEN_HEIGHT = 32;
 	
 	@Before
 	public void setUp() {
@@ -39,14 +40,29 @@ public class TestCPU {
 	 */
 	@Test
 	public void setDisplayBufferValuesToZero() {
-		target.getDisplay().writeToDisplayBuffer(0x59, 0x345);
-		target.getDisplay().writeToDisplayBuffer(0x53, 0x298);
+		target.getDisplayBuffer().write(0x59, 0x345);
+		target.getDisplayBuffer().write(0x53, 0x298);
 		executeOpCode(0x00E0);
 		
-		for (int i = 0; i < Display.SCREEN_HEIGHT * Display.SCREEN_WIDTH; i++) {
-			assertEquals(0x0, target.getDisplay().readFromDisplayBuffer(i));
+		for (int i = 0; i < SCREEN_HEIGHT * SCREEN_WIDTH; i++) {
+			assertEquals(0x0, target.getDisplayBuffer().read(i));
 		}
 		assertTrue(target.isClearFlag());
+	}
+	
+	private void executeOpCode(int opcode) {
+		writeToMemory((opcode >> 8) & FIT_8BIT_REGISTER, programCounter);
+		writeToMemory(opcode & FIT_8BIT_REGISTER, programCounter+1);
+		
+		target.nextInstructionCycle();
+	}
+	
+	private void writeToMemory(int data, int location) {
+		memory.write(data, location);
+	}
+	
+	private int convertToUnsignedInt(int value) {
+		return value < 0 ? value + 65536 : value;
 	}
 	
 	/**
@@ -58,7 +74,7 @@ public class TestCPU {
 	@Test
 	public void popTopOfStackAddressIntoProgramCounter() {
 		executeOpCode(0x2567);
-		assertEquals(programCounter+2, target.readStackTopValue());
+		assertEquals(programCounter, target.readStackTopValue());
 		
 		writeToMemory(0x0, 0x567);
 		writeToMemory(0xEE, 0x568);
@@ -90,7 +106,7 @@ public class TestCPU {
 	public void pushProgramCounterValueOntoStack() {
 		executeOpCode(0x2567);
 		
-		assertEquals(programCounter+2, target.readStackTopValue());
+		assertEquals(programCounter, target.readStackTopValue());
 		assertEquals(0x567, target.readProgramCounter());
 	}
 	
@@ -256,7 +272,7 @@ public class TestCPU {
 		executeOpCode(0x8134);
 		
 		assertEquals(1, target.readDataRegister(0xF));
-		assertEquals(((dataRegisters[0x1] + dataRegisters[0x3]) & 0x34) & FIT_8BIT_REGISTER, target.readDataRegister(0x1));
+		assertEquals((dataRegisters[0x1] + dataRegisters[0x3]) & FIT_8BIT_REGISTER, target.readDataRegister(0x1));
 	}
 	
 	/**
@@ -270,7 +286,7 @@ public class TestCPU {
 		executeOpCode(0x8424);
 		
 		assertEquals(0, target.readDataRegister(0xF));
-		assertEquals(((dataRegisters[0x4] + dataRegisters[0x2]) & 0x24) & FIT_8BIT_REGISTER, target.readDataRegister(0x4));
+		assertEquals((dataRegisters[0x4] + dataRegisters[0x2]) & FIT_8BIT_REGISTER, target.readDataRegister(0x4));
 	}
 	
 	/**
@@ -462,18 +478,22 @@ public class TestCPU {
 		
 		for (int row = 0; row < 0x5; row++) {
 			int coordinateY = dataRegisters[0x7] + row;
-			int memoryByte = target.getMemory().readFromMemory(indexRegister + row);
+			int memoryByte = target.getMemory().read(indexRegister + row);
 			for (int column = 0; column < 8; column++) {
 				int coordinateX = dataRegisters[0x4] + column;
 				if ((memoryByte & (0x80 >> column)) != 0) {
-					assertTrue(target.getDisplay().readFromDisplayBuffer(coordinateX, coordinateY) != 0);
+					assertTrue(target.getDisplayBuffer().read(convertToIndex(coordinateX, coordinateY)) != 0);
 				} else {
-					assertTrue(target.getDisplay().readFromDisplayBuffer(coordinateX, coordinateY) == 0);
+					assertTrue(target.getDisplayBuffer().read(convertToIndex(coordinateX, coordinateY)) == 0);
 				}
 			}
 		}
 		assertEquals(0, target.readDataRegister(0xF));
 		assertTrue(target.isDrawFlag());
+	}
+	
+	private int convertToIndex(int coordinateX, int coordinateY) {
+		return (coordinateX % target.getScreen().width()) + ((coordinateY % target.getScreen().width()) * target.getScreen().width());
 	}
 	
 	/**
@@ -484,7 +504,7 @@ public class TestCPU {
 	 */
 	@Test
 	public void doNotSkipNextInstructionBecauseKeyEqualToDataRegisterValueIsNotPressed() {
-		target.getKeyboard().keyPressed(KeyCode.R);
+		target.getKeyboard().pressKey(KeyCode.R);
 		executeOpCode(0xEA9E);
 		
 		assertFalse(target.getKeyboard().getCurrentlyPressedKey() == target.readDataRegister(0xA));
@@ -495,11 +515,11 @@ public class TestCPU {
 	 * Ex9E - SKP Vx
 	 * 
 	 * Skip next instruction if key with the value of Vx is pressed. Checks the keyboard, and if the key corresponding to the
-	 * value of Vx is currently in the down position, the program counter is increased by 2.
+	 * value of Vx is currently in the down position, the program counter is increased by 4.
 	 */
 	@Test
 	public void skipNextInstructionBecauseKeyEqualToDataRegisterValueIsPressed() {
-		target.getKeyboard().keyPressed(KeyCode.R);
+		target.getKeyboard().pressKey(KeyCode.R);
 		executeOpCode(0xED9E);
 		
 		assertEquals(target.getKeyboard().getCurrentlyPressedKey(), target.readDataRegister(0xD));
@@ -510,11 +530,11 @@ public class TestCPU {
 	 * ExA1 - SKNP Vx
 	 * 
 	 * Skip next instruction if key with the value of Vx is not pressed. Checks the keyboard, and if the key corresponding to 
-	 * the value of Vx is currently in the up position, the program counter is increased by 2.
+	 * the value of Vx is currently in the up position, the program counter is increased by 4.
 	 */
 	@Test
 	public void skipNextInstructionBecauseKeyEqualToDataRegisterValueIsNotPressed() {
-		target.getKeyboard().keyPressed(KeyCode.R);
+		target.getKeyboard().pressKey(KeyCode.R);
 		executeOpCode(0xEAA1);
 		
 		assertFalse(target.getKeyboard().getCurrentlyPressedKey() == target.readDataRegister(0xA));
@@ -529,7 +549,7 @@ public class TestCPU {
 	 */
 	@Test
 	public void doNotSkipNextInstructionBecauseKeyEqualToDataRegisterValueIsPressed() {
-		target.getKeyboard().keyPressed(KeyCode.R);
+		target.getKeyboard().pressKey(KeyCode.R);
 		executeOpCode(0xEDA1);
 		
 		assertEquals(target.getKeyboard().getCurrentlyPressedKey(), target.readDataRegister(0xD));
@@ -556,7 +576,7 @@ public class TestCPU {
 	 */
 	@Test
 	public void valueOfPressedKeyStoredInDataRegister() {
-		target.getKeyboard().keyPressed(KeyCode.A);
+		target.getKeyboard().pressKey(KeyCode.A);
 		executeOpCode(0xF70A);
 		
 		assertEquals(target.getKeyboard().getCurrentlyPressedKey(), target.readDataRegister(0x7));
@@ -577,7 +597,8 @@ public class TestCPU {
 	/**
 	 * Fx18 - LD ST, Vx
 	 * 
-	 * Set sound timer = Vx. Sound timer is set equal to the value of Vx.
+	 * Set sound timer = Vx. Sound timer is set equal to the value of Vx, unless the value of Vx is 1. Then the sound
+	 * timer is set to 2 (to make the sound last longer).
 	 */
 	@Test
 	public void setSoundTimerEqualToDataRegisterValue() {
@@ -587,14 +608,46 @@ public class TestCPU {
 	}
 	
 	/**
-	 * Fx1E - ADD I, Vx
+	 * Fx18 - LD ST, Vx
 	 * 
-	 * Set I = I + Vx. The values of I and Vx are added, and the results are stored in I.
+	 * Set sound timer = Vx. Sound timer is set equal to the value of Vx, unless the value of Vx is 1. Then the sound
+	 * timer is set to 2 (to make the sound last longer).
 	 */
 	@Test
-	public void storeIndexRegisterPlusDataRegisterValueInIndexRegister() {
+	public void setSoundTimerEqualToTwoSinceDataRegisterValueIsOne() {
+		executeOpCode(0xFE18);
+		
+		assertEquals(1, target.readDataRegister(0xE));
+		assertEquals(2, target.readSoundTimer());
+	}
+	
+	/**
+	 * Fx1E - ADD I, Vx
+	 * 
+	 * Set I = I + Vx. The values of I and Vx are added, and the result is stored in I. If the result is larger
+	 * than 0xFFF, then data register Vf should be set to 1;
+	 */
+	@Test
+	public void storeIndexRegisterPlusDataRegisterValueInIndexRegisterAndSetDataRegisterToZero() {
 		executeOpCode(0xFD1E);
 		
+		assertEquals(0, target.readDataRegister(0xF));
+		assertEquals((indexRegister + dataRegisters[0xD]) & FIT_16BIT_REGISTER, target.readIndexRegister());
+	}
+	
+	/**
+	 * Fx1E - ADD I, Vx
+	 * 
+	 * Set I = I + Vx. The values of I and Vx are added, and the result is stored in I. If the result is larger
+	 * than 0xFFF, then data register Vf should be set to 1;
+	 */
+	@Test
+	public void storeIndexRegisterPlusDataRegisterValueInIndexRegisterAndSetDataRegisterToOne() {
+		indexRegister = 0xFFF;
+		target.initialize(programCounter, instructionRegister, indexRegister, delayTimer, soundTimer, dataRegisters, fontset);
+		executeOpCode(0xFD1E);
+		
+		assertEquals(1, target.readDataRegister(0xF));
 		assertEquals((indexRegister + dataRegisters[0xD]) & FIT_16BIT_REGISTER, target.readIndexRegister());
 	}
 	
@@ -622,9 +675,9 @@ public class TestCPU {
 	public void storeBinaryCodedDecimalRepresentationOfDataRegisterValue() {
 		executeOpCode(0xF733);
 
-		assertEquals(1, memory.readFromMemory(indexRegister));
-		assertEquals(3, memory.readFromMemory(indexRegister+1));
-		assertEquals(6, memory.readFromMemory(indexRegister+2));
+		assertEquals(1, memory.read(indexRegister));
+		assertEquals(3, memory.read(indexRegister+1));
+		assertEquals(6, memory.read(indexRegister+2));
 	}
 	
 	/**
@@ -638,7 +691,7 @@ public class TestCPU {
 		executeOpCode(0xF755);
 
 		for (int i = 0; i < 8; i++) {
-			assertEquals(target.readDataRegister(i), memory.readFromMemory(indexRegister+i));
+			assertEquals(target.readDataRegister(i), memory.read(indexRegister+i));
 		}
 	}
 	
@@ -653,22 +706,7 @@ public class TestCPU {
 		executeOpCode(0xF465);
 		
 		for (int i = 0; i < 5; i++) {
-			assertEquals(memory.readFromMemory(indexRegister+i), target.readDataRegister(i));
+			assertEquals(memory.read(indexRegister+i), target.readDataRegister(i));
 		}
-	}
-	
-	private void executeOpCode(int opcode) {
-		writeToMemory((opcode >> 8) & FIT_8BIT_REGISTER, programCounter);
-		writeToMemory(opcode & FIT_8BIT_REGISTER, programCounter+1);
-		
-		target.nextInstructionCycle();
-	}
-	
-	private void writeToMemory(int data, int location) {
-		memory.writeToMemory(data, location);
-	}
-	
-	private int convertToUnsignedInt(int value) {
-		return value < 0 ? value + 65536 : value;
 	}
 }

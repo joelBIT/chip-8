@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
@@ -18,6 +19,7 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
@@ -26,7 +28,6 @@ import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import joelbits.emu.cpu.CPU;
-import joelbits.emu.output.Display;
 
 /**
  * Chip-8 emulator.
@@ -38,14 +39,15 @@ import joelbits.emu.output.Display;
  * 
  */
 public class Chip8 extends Application {
-	private final CPU cpu = new CPU();
-	private GraphicsContext graphicsContext;
+	private CPU cpu = new CPU();
 	private FileChooser fileChooser = new FileChooser();
-	private Stage primaryStage;
+	private GraphicsContext graphicsContext;
+	private Stage stage;
 	private BorderPane root;
-	private final int PIXEL_SIZE = 14;
+	private int GAME_VELOCITY = 10;
+	private URI gamePath;
 	private boolean running;
-	private int gameSpeed = 17;
+	private boolean paused;
 	protected final static int fontset[] =
 		{ 
 		  0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -71,22 +73,19 @@ public class Chip8 extends Application {
 	}
 
 	@Override
-	public void start(Stage primaryStage) throws Exception {
-		this.primaryStage = primaryStage;
-		primaryStage.setTitle("Chip-8 interpreter");
+	public void start(Stage stage) throws Exception {
+		this.stage = stage;
+		stage.setTitle("Chip-8 interpreter");
 		
 		root = new BorderPane();
 		root.setStyle("-fx-background: black;");
 		Scene scene = new Scene(root);
-		primaryStage.setScene(scene);
-		primaryStage.setResizable(false);
+		stage.setScene(scene);
+		stage.setResizable(false);
+		stage.setOnCloseRequest(event -> terminateApplication());
 		
-		primaryStage.setOnCloseRequest(event -> {
-			terminateApplication();
-		});
-		
-		scene.setOnKeyPressed(event -> getCPU().getKeyboard().keyPressed(event.getCode()));
-		scene.setOnKeyReleased(event -> getCPU().getKeyboard().keyReleased());
+		scene.setOnKeyPressed(event -> getCPU().getKeyboard().pressKey(event.getCode()));
+		scene.setOnKeyReleased(event -> getCPU().getKeyboard().releasePressedKey());
 		
 		fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("rom", "*.rom"), new FileChooser.ExtensionFilter("ch8", "*.ch8"));
 		
@@ -98,7 +97,7 @@ public class Chip8 extends Application {
 		root.setTop(createMenuBar());
 		root.setBottom(canvas);
 		
-		primaryStage.show();
+		stage.show();
 	}
 	
 	private void terminateApplication() {
@@ -112,79 +111,89 @@ public class Chip8 extends Application {
 	
 	private MenuBar createMenuBar() {
 		Menu emulator = new Menu("Interpreter");
+		emulator.setOnShowing(event -> paused = true);
+		emulator.setOnHidden(event -> paused = false);
 		MenuItem open = new MenuItem("Open");
 		open.setAccelerator(new KeyCodeCombination(KeyCode.O, KeyCombination.CONTROL_DOWN));
 		open.setOnAction(event -> {
-			File file = fileChooser.showOpenDialog(primaryStage);
+			paused = true;
+			File file = fileChooser.showOpenDialog(stage);
 			if (file != null) {
-				startGame(file.toURI());
+				gamePath = file.toURI();
+				startGame(gamePath);
 			}
+			paused = false;
 		});
 		
 		MenuItem exit = new MenuItem("Exit");
 		exit.setAccelerator(new KeyCodeCombination(KeyCode.Q, KeyCombination.CONTROL_DOWN));
-		exit.setOnAction(event -> {
-			terminateApplication();
-		});
+		exit.setOnAction(event -> terminateApplication());
 		SeparatorMenuItem separatorMenuItem = new SeparatorMenuItem();
 		emulator.getItems().addAll(open, separatorMenuItem, exit);
 		
 		Menu options = new Menu("Options");
-		MenuItem muteSound = new CheckMenuItem("Mute Sound");
+		options.setOnShowing(event -> paused = true);
+		options.setOnHidden(event -> paused = false);
+		CheckMenuItem muteSound = new CheckMenuItem("Mute Sound");
 		muteSound.setAccelerator(new KeyCodeCombination(KeyCode.F4));
-		MenuItem frequency = new CheckMenuItem("Change Frequency");
-		frequency.setAccelerator(new KeyCodeCombination(KeyCode.F5));
-		MenuItem palettes = new CheckMenuItem("Palettes");
-		palettes.setAccelerator(new KeyCodeCombination(KeyCode.F6));
-		
-		Menu speedMenu = new Menu("Speed");
-		MenuItem speed60 = new CheckMenuItem("60 Hz");
-		speed60.setOnAction(event -> gameSpeed = 17);
-		MenuItem speed100 = new CheckMenuItem("100 Hz");
-		speed100.setOnAction(event -> gameSpeed = 12);
-		speedMenu.getItems().addAll(speed60, speed100);
-		
-		Menu themeMenu = new Menu("Theme");
-		MenuItem classic = new CheckMenuItem("Classic");
-		classic.setOnAction(event -> {
-			root.setStyle("-fx-background: black;");
-			graphicsContext.setFill(Color.WHITE);
+		muteSound.setOnAction(event -> {
+			if (muteSound.isSelected()) {
+				getCPU().getSound().mute();
+			} else {
+				getCPU().getSound().unmute();
+			}
 		});
-		MenuItem ugly = new CheckMenuItem("Ugly");
-		ugly.setOnAction(event -> {
-			root.setStyle("-fx-background: yellow;");
-			graphicsContext.setFill(Color.GRAY);
+		MenuItem velocity = new MenuItem("Change velocity");
+		velocity.setAccelerator(new KeyCodeCombination(KeyCode.F5));
+		velocity.setOnAction(event -> {
+			paused = true;
+			TextInputDialog dialog = new TextInputDialog(String.valueOf(GAME_VELOCITY));
+			dialog.setTitle("Change game velocity");
+			dialog.setHeaderText("Game velocity");
+			dialog.setContentText("Set game velocity (default 10):");
+
+			Optional<String> result = dialog.showAndWait();
+			if (result.isPresent()) {
+				GAME_VELOCITY = Integer.parseInt(result.get());
+			}
+			paused = false;
 		});
-		themeMenu.getItems().addAll(classic, ugly);
 		separatorMenuItem = new SeparatorMenuItem();
-		options.getItems().addAll(muteSound, separatorMenuItem, frequency, palettes, speedMenu, themeMenu);
+		options.getItems().addAll(muteSound, separatorMenuItem, velocity);
 		
 		Menu game = new Menu("Game");
-		MenuItem pause = new MenuItem("Pause");
+		game.setOnShowing(event -> paused = true);
+		game.setOnHidden(event -> paused = false);
+		CheckMenuItem pause = new CheckMenuItem("Pause");
 		pause.setAccelerator(new KeyCodeCombination(KeyCode.F2));
+		pause.setOnAction(event -> paused = pause.isSelected() == true ? true : false);
 		MenuItem reset = new MenuItem("Reset");
 		reset.setAccelerator(new KeyCodeCombination(KeyCode.F3));
+		reset.setOnAction(event -> {
+			clearDisplay();
+			startGame(gamePath);
+		});
 		game.getItems().addAll(pause, reset);
 		
-		Menu help = new Menu("Help");
-		MenuItem showHelp = new MenuItem("Show help");
-		showHelp.setAccelerator(new KeyCodeCombination(KeyCode.F1));
-		MenuItem about = new MenuItem("About");
-		about.setOnAction(event -> {
-			
-		});
-		help.getItems().addAll(showHelp, about);
-		
 		MenuBar menuBar = new MenuBar();
-		menuBar.getMenus().addAll(emulator, options, game, help);
+		menuBar.getMenus().addAll(emulator, options, game);
 		return menuBar;
+	}
+	
+	private void clearDisplay() {
+		int displayBufferSize = getCPU().getDisplayBuffer().size();
+		for (int i = 0; i < displayBufferSize; i++) {
+			int coordinateX = i % getCPU().getScreen().width();
+			int coordinateY = i / getCPU().getScreen().width();
+			graphicsContext.clearRect(coordinateX*getCPU().getScreen().pixelSize(), coordinateY*getCPU().getScreen().pixelSize(), getCPU().getScreen().pixelSize(), getCPU().getScreen().pixelSize());
+		}
 	}
 	
 	private void startGame(URI gamePath) {
 		getCPU().initialize(0x200, 0x0, 0x0, 0x0, 0x0, new int[16], fontset);
 		loadGame(gamePath);
 		if (!running) {
-			Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new InstructionCycle(), 0, gameSpeed, TimeUnit.MILLISECONDS);
+			Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new InstructionCycle(), 0, 17, TimeUnit.MILLISECONDS);
 			running = true;
 		}
 	}
@@ -202,49 +211,43 @@ public class Chip8 extends Application {
 
 		@Override
 		public void run() {
- 			if (getCPU().readDelayTimer() > 0) {
- 				getCPU().decrementDelayTimer();
- 			}
- 			
- 			if (getCPU().readSoundTimer() > 0) {
- 				getCPU().getSound().startSound();
- 				getCPU().decrementSoundTimer();
- 			}
- 			
- 			if (getCPU().isClearFlag()) {
- 				clearDisplay();
- 				getCPU().toggleClearFlag();
- 			}
- 			
- 			if (getCPU().isDrawFlag()) {
- 				drawSprites();
- 				getCPU().toggleDrawFlag();
- 			}
-			
-			getCPU().nextInstructionCycle();
- 			
+			if (!paused) {
+	 			if (getCPU().readDelayTimer() > 0) {
+	 				getCPU().decrementDelayTimer();
+	 			}
+	 			
+	 			if (getCPU().readSoundTimer() > 0) {
+	 				getCPU().getSound().start();
+	 				getCPU().decrementSoundTimer();
+	 			}
+	 			
+	 			for (int i = 0; i < GAME_VELOCITY; i++) {
+	 				if (getCPU().isClearFlag()) {
+	 	 				clearDisplay();
+	 	 				getCPU().toggleClearFlag();
+	 	 			}
+	 	 			
+	 	 			if (getCPU().isDrawFlag()) {
+	 	 				drawSprites();
+	 	 				getCPU().toggleDrawFlag();
+	 	 			}
+	 				
+	 				getCPU().nextInstructionCycle();
+	 			}
+			}
 			return;
 		}
 		
-		private void clearDisplay() {
-			int displayBufferSize = Display.SCREEN_WIDTH * Display.SCREEN_HEIGHT;
-			for (int i = 0; i < displayBufferSize; i++) {
-				int coordinateX = i % Display.SCREEN_WIDTH;
-				int coordinateY = i / Display.SCREEN_WIDTH;
-				graphicsContext.clearRect(coordinateX*PIXEL_SIZE, coordinateY*PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
-			}
-		}
-		
-		private void drawSprites() {
-			int dirtyBufferSize = getCPU().getDisplay().dirtyBufferSize();
+		private synchronized void drawSprites() {
+			int dirtyBufferSize = getCPU().getDirtyBuffer().size();
 			for (int i = 0; i < dirtyBufferSize; i++) {
-				int dirtyLocation = getCPU().getDisplay().removeDirtyLocation();
-				int coordinateX = dirtyLocation % Display.SCREEN_WIDTH;
-				int coordinateY = dirtyLocation / Display.SCREEN_WIDTH;
-				if (getCPU().getDisplay().readFromDisplayBuffer(coordinateX, coordinateY) != 0) {
-					graphicsContext.fillRect(coordinateX*PIXEL_SIZE, coordinateY*PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
+				int dirtyLocation = getCPU().getDirtyBuffer().read(i);
+				int coordinateX = dirtyLocation % getCPU().getScreen().width();
+				int coordinateY = dirtyLocation / getCPU().getScreen().width();
+				if (getCPU().getDisplayBuffer().read(dirtyLocation) != 0) {
+					graphicsContext.fillRect(coordinateX*getCPU().getScreen().pixelSize(), coordinateY*getCPU().getScreen().pixelSize(), getCPU().getScreen().pixelSize(), getCPU().getScreen().pixelSize());
 				} else {
-					graphicsContext.clearRect(coordinateX*PIXEL_SIZE, coordinateY*PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
+					graphicsContext.clearRect(coordinateX*getCPU().getScreen().pixelSize(), coordinateY*getCPU().getScreen().pixelSize(), getCPU().getScreen().pixelSize(), getCPU().getScreen().pixelSize());
 				}
 			}
 		}

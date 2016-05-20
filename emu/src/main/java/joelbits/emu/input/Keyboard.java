@@ -17,16 +17,8 @@ public class Keyboard {
 		return currentlyPressedKey;
 	}
 
-    public void keyPressed(KeyCode keyCode) {
+    public void pressKey(KeyCode keyCode) {
     	currentlyPressedKey = mapKeyCodeToChip8Key(keyCode);
-    }
-
-    public void keyReleased() {
-    	currentlyPressedKey = 0;
-    }
-    
-    public char getKey(int key) {
-    	return keyPad[key-1];
     }
     
     private int mapKeyCodeToChip8Key(KeyCode keyCode) {
@@ -37,4 +29,8 @@ public class Keyboard {
 		}
 		return 0;
 	}
+
+    public void releasePressedKey() {
+    	currentlyPressedKey = 0;
+    }
 }
