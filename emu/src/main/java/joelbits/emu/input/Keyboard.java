@@ -5,8 +5,6 @@ import javafx.scene.input.KeyCode;
 /**
  * CHIP-8 is able to detect input from a sixteen key keypad, with each key corresponding to a single unique hexadecimal
  * digit. The key presses of a standard keyboard is mapped to the key presses of a hex keypad.
- * 
- * @author rollnyj
  *
  */
 public class Keyboard {

@@ -1,12 +1,5 @@
 package joelbits.emu;
 
-/**
- * The screen for the chip-8 interpreter.
- * 
- * @author rollnyj
- *
- * @param <T>
- */
 public class Screen<T> {
 	private T width;
 	private T height;

@@ -10,12 +10,6 @@ import javax.sound.sampled.Clip;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.LineUnavailableException;
 
-/**
- * Generate a pulse-code modulation encoded sound that uses a (default system) mixer as its output source.
- * 
- * @author rollnyj
- *
- */
 public class Beep implements Sound {
     private final int SAMPLE_RATE = 8000;
     private final int SAMPLE_SIZE_IN_BITS = 8;

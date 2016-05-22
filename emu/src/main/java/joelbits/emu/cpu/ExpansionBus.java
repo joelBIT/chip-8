@@ -5,12 +5,6 @@ import joelbits.emu.input.Keyboard;
 import joelbits.emu.output.Beep;
 import joelbits.emu.output.Sound;
 
-/**
- * Used by the CPU for I/O operations.
- * 
- * @author rollnyj
- *
- */
 public class ExpansionBus {
 	private Keyboard keyboard = new Keyboard();
 	private Sound sound = new Beep();

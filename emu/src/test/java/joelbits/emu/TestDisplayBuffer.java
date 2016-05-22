@@ -24,14 +24,14 @@ public class TestDisplayBuffer {
 	
 	@Test
 	public void writtenDataReturnedWhenLocationRead() {
-		target.write(0x55, 0x200);
+		target.write(0x200, 0x55);
 		
 		assertEquals(0x55, target.read(0x200));
 	}
 	
 	@Test
 	public void allBufferLocationsAreZeroAfterBufferCleared() {
-		target.write(0x55,  0x200);
+		target.write(0x200, 0x55);
 		target.clear();
 		
 		for (int i = 0; i < SCREEN_WIDTH*SCREEN_HEIGHT; i++) {

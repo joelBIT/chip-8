@@ -23,14 +23,14 @@ private Memory target;
 	
 	@Test
 	public void returnNewValueFromMemoryLocation() {
-		target.write(0xA, 88);
+		target.write(88, 0xA);
 		
 		assertEquals(0xA, target.read(88));
 	}
 	
 	@Test
 	public void returnZeroBecauseMemoryHasBeenCleared() {
-		target.write(0xA, 88);
+		target.write(88, 0xA);
 		target.clear();
 		
 		assertEquals(0, target.read(88));

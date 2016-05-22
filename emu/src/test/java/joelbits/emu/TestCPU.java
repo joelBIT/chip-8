@@ -29,7 +29,7 @@ public class TestCPU {
 	@Before
 	public void setUp() {
 		target = new CPU();
-		target.initialize(programCounter, instructionRegister, indexRegister, delayTimer, soundTimer, dataRegisters, fontset);
+		target.initialize(programCounter, instructionRegister, indexRegister, delayTimer, soundTimer, fontset);
 		memory = target.getMemory();
 	}
 	
@@ -40,8 +40,8 @@ public class TestCPU {
 	 */
 	@Test
 	public void setDisplayBufferValuesToZero() {
-		target.getDisplayBuffer().write(0x59, 0x345);
-		target.getDisplayBuffer().write(0x53, 0x298);
+		target.getDisplayBuffer().write(0x345, 0x59);
+		target.getDisplayBuffer().write(0x298, 0x53);
 		executeOpCode(0x00E0);
 		
 		for (int i = 0; i < SCREEN_HEIGHT * SCREEN_WIDTH; i++) {
@@ -51,14 +51,14 @@ public class TestCPU {
 	}
 	
 	private void executeOpCode(int opcode) {
-		writeToMemory((opcode >> 8) & FIT_8BIT_REGISTER, programCounter);
-		writeToMemory(opcode & FIT_8BIT_REGISTER, programCounter+1);
+		writeToMemory(programCounter, (opcode >> 8) & FIT_8BIT_REGISTER);
+		writeToMemory(programCounter + 1, opcode & FIT_8BIT_REGISTER);
 		
 		target.nextInstructionCycle();
 	}
 	
-	private void writeToMemory(int data, int location) {
-		memory.write(data, location);
+	private void writeToMemory(int location, int data) {
+		memory.write(location, data);
 	}
 	
 	private int convertToUnsignedInt(int value) {
@@ -76,8 +76,8 @@ public class TestCPU {
 		executeOpCode(0x2567);
 		assertEquals(programCounter, target.readStackTopValue());
 		
-		writeToMemory(0x0, 0x567);
-		writeToMemory(0xEE, 0x568);
+		writeToMemory(0x567, 0x0);
+		writeToMemory(0x568, 0xEE);
 		executeOpCode(0x00EE);
 		
 		assertEquals(-1, target.readStackTopValue());
@@ -469,11 +469,11 @@ public class TestCPU {
 	 */
 	@Test
 	public void storeSpriteStartingAtIndexRegisterLocationIntoDataRegistersWithoutCollisions() {
-		writeToMemory(0xF0, indexRegister);
-		writeToMemory(0x10, indexRegister+1);
-		writeToMemory(0xF0, indexRegister+2);
-		writeToMemory(0x80, indexRegister+3);
-		writeToMemory(0xF0, indexRegister+4);
+		writeToMemory(indexRegister, 0xF0);
+		writeToMemory(indexRegister+1, 0x10);
+		writeToMemory(indexRegister+2, 0xF0);
+		writeToMemory(indexRegister+3, 0x80);
+		writeToMemory(indexRegister+4, 0xF0);
 		executeOpCode(0xD475);
 		
 		for (int row = 0; row < 0x5; row++) {
@@ -598,7 +598,7 @@ public class TestCPU {
 	 * Fx18 - LD ST, Vx
 	 * 
 	 * Set sound timer = Vx. Sound timer is set equal to the value of Vx, unless the value of Vx is 1. Then the sound
-	 * timer is set to 2 (to make the sound last longer).
+	 * timer is set to 2 (to make the beep last longer).
 	 */
 	@Test
 	public void setSoundTimerEqualToDataRegisterValue() {
@@ -644,7 +644,7 @@ public class TestCPU {
 	@Test
 	public void storeIndexRegisterPlusDataRegisterValueInIndexRegisterAndSetDataRegisterToOne() {
 		indexRegister = 0xFFF;
-		target.initialize(programCounter, instructionRegister, indexRegister, delayTimer, soundTimer, dataRegisters, fontset);
+		target.initialize(programCounter, instructionRegister, indexRegister, delayTimer, soundTimer, fontset);
 		executeOpCode(0xFD1E);
 		
 		assertEquals(1, target.readDataRegister(0xF));

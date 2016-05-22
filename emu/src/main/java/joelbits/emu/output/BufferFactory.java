@@ -1,16 +1,11 @@
 package joelbits.emu.output;
 
-/**
- * 
- * @author rollnyj
- *
- */
 public class BufferFactory {
-	public static Buffer getDisplayBuffer(int width, int height) {
+	public static Buffer createDisplayBuffer(int width, int height) {
 		return new DisplayBuffer(width, height);
 	}
 	
-	public static Buffer getDirtyBuffer() {
+	public static Buffer createDirtyBuffer() {
 		return new DirtyBuffer();
 	}
 }

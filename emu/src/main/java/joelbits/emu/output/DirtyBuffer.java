@@ -6,8 +6,6 @@ import java.util.List;
 /**
  *  A dirty buffer is used to keep track of which pixel locations that has been changed. That way only the affected
  *  pixels are re-rendered.
- * 
- * @author rollnyj
  *
  */
 public class DirtyBuffer implements Buffer {
@@ -25,7 +23,7 @@ public class DirtyBuffer implements Buffer {
 	 * No data is written to buffer, only memory index of affected pixels are of interest.
 	 */
 	@Override
-	public void write(int data, int index) {
+	public void write(int index, int data) {
 		dirtyBuffer.add(index);
 	}
 

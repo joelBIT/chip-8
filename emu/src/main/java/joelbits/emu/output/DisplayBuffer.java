@@ -3,8 +3,6 @@ package joelbits.emu.output;
 /**
  *  A display that is basically just an array of pixels that are either in state 0 or 1. The current screen state is
  *  stored in the display buffer.
- * 
- * @author rollnyj
  *
  */
 public class DisplayBuffer implements Buffer {
@@ -24,7 +22,7 @@ public class DisplayBuffer implements Buffer {
 	}
 
 	@Override
-	public void write(int data, int index) {
+	public void write(int index, int data) {
 		displayBuffer[wrapIndex(index)] = data;
 	}
 

@@ -30,12 +30,8 @@ import javafx.stage.Stage;
 import joelbits.emu.cpu.CPU;
 
 /**
- * Chip-8 emulator.
- * 
  * Last 8 or 16 bits of each int are used to represent an unsigned byte or an unsigned short respectively. A ROM is written to memory starting
  * at memory location 0x200.
- * 
- * @author rollnyj
  * 
  */
 public class Chip8 extends Application {
@@ -190,7 +186,7 @@ public class Chip8 extends Application {
 	}
 	
 	private void startGame(URI gamePath) {
-		getCPU().initialize(0x200, 0x0, 0x0, 0x0, 0x0, new int[16], fontset);
+		getCPU().initialize(0x200, 0x0, 0x0, 0x0, 0x0, fontset);
 		loadGame(gamePath);
 		if (!running) {
 			Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new InstructionCycle(), 0, 17, TimeUnit.MILLISECONDS);
