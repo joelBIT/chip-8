@@ -1,4 +1,4 @@
-package joelbits.emu.cpu;
+package joelbits.emu.timers;
 
 public interface Timer<T> {
 	public void setValue(T value);

@@ -1,4 +1,4 @@
-package joelbits.emu;
+package joelbits.emu.output;
 
 public class Screen<T> {
 	private T width;

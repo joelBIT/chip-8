@@ -30,19 +30,19 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import joelbits.emu.cpu.ALU;
 import joelbits.emu.cpu.CPU;
-import joelbits.emu.cpu.ClearFlag;
-import joelbits.emu.cpu.DelayTimer;
-import joelbits.emu.cpu.DrawFlag;
-import joelbits.emu.cpu.Flag;
-import joelbits.emu.cpu.RandomNumberGenerator;
-import joelbits.emu.cpu.SoundTimer;
-import joelbits.emu.cpu.Timer;
 import joelbits.emu.cpu.registers.DataRegister;
 import joelbits.emu.cpu.registers.IndexRegister;
 import joelbits.emu.cpu.registers.InstructionRegister;
 import joelbits.emu.cpu.registers.ProgramCounter;
 import joelbits.emu.cpu.registers.Register;
+import joelbits.emu.flags.ClearFlag;
+import joelbits.emu.flags.DrawFlag;
+import joelbits.emu.flags.Flag;
+import joelbits.emu.timers.DelayTimer;
+import joelbits.emu.timers.SoundTimer;
+import joelbits.emu.timers.Timer;
 
 /**
  * Last 8 or 16 bits of each int are used to represent an unsigned byte or an unsigned short respectively. A ROM is written to memory starting
@@ -133,7 +133,7 @@ public class Chip8 extends Application {
 		clearFlag = new ClearFlag();
 		drawFlag = new DrawFlag();
 		
-		cpu = new CPU(dataRegisters, instructionRegister, programCounter, indexRegister, Arrays.asList(delayTimer, soundTimer), Arrays.asList(drawFlag, clearFlag), new RandomNumberGenerator());
+		cpu = new CPU(dataRegisters, instructionRegister, programCounter, indexRegister, Arrays.asList(delayTimer, soundTimer), Arrays.asList(drawFlag, clearFlag), new ALU(programCounter, dataRegisters.get(0xF), new RandomNumberGenerator()));
 	}
 	
 	private void terminateApplication() {
@@ -246,7 +246,7 @@ public class Chip8 extends Application {
 	class InstructionCycle implements Runnable {
 
 		@Override
-		public void run() {
+		public synchronized void run() {
 			if (!paused) {
 	 			if (delayTimer.currentValue() > 0) {
 	 				decrementDelayTimer();

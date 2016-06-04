@@ -3,15 +3,17 @@ package joelbits.emu.cpu;
 import java.util.List;
 import java.util.Stack;
 
-import joelbits.emu.Screen;
 import joelbits.emu.cpu.registers.IndexRegister;
 import joelbits.emu.cpu.registers.InstructionRegister;
 import joelbits.emu.cpu.registers.ProgramCounter;
 import joelbits.emu.cpu.registers.Register;
+import joelbits.emu.flags.Flag;
 import joelbits.emu.input.Keyboard;
 import joelbits.emu.memory.BufferFactory;
 import joelbits.emu.memory.Memory;
+import joelbits.emu.output.Screen;
 import joelbits.emu.output.Sound;
+import joelbits.emu.timers.Timer;
 
 /**
  * There are 16 data registers named from V0 to VF. The carry flag (VF) is set to 1 if any screen pixels are flipped from set 
@@ -29,7 +31,7 @@ public class CPU {
 	private final InstructionRegister<Integer> instructionRegister;
 	private final ProgramCounter<Integer> programCounter;
 	private final IndexRegister<Integer> indexRegister;
-	private final RandomNumberGenerator randomNumberGenerator;
+	private final ALU alu;
 	private Timer<Integer> delayTimer;
 	private Timer<Integer> soundTimer;
 	private Flag drawFlag;
@@ -43,12 +45,12 @@ public class CPU {
 	private int address;
 	private int lowestByte;
 	
-	public CPU(List<Register<Integer>> dataRegisters, InstructionRegister<Integer> instructionRegister, ProgramCounter<Integer> programCounter, IndexRegister<Integer> indexRegister, List<Timer<Integer>> timers, List<Flag> flags, RandomNumberGenerator randomNumberGenerator) {
+	public CPU(List<Register<Integer>> dataRegisters, InstructionRegister<Integer> instructionRegister, ProgramCounter<Integer> programCounter, IndexRegister<Integer> indexRegister, List<Timer<Integer>> timers, List<Flag> flags, ALU alu) {
 		this.dataRegisters = dataRegisters;
 		this.instructionRegister = instructionRegister;
 		this.programCounter = programCounter;
 		this.indexRegister = indexRegister;
-		this.randomNumberGenerator = randomNumberGenerator;
+		this.alu = alu;
 		assignTimers(timers);
 		assignFlags(flags);
 	}
@@ -57,9 +59,9 @@ public class CPU {
 		String className;
 		for (Timer<Integer> timer : timers) {
 			className = timer.getClass().getName();
-			if (className.equals("joelbits.emu.cpu.SoundTimer")) {
+			if (className.equals("joelbits.emu.timers.SoundTimer")) {
 				soundTimer = timer;
-			} else if (className.equals("joelbits.emu.cpu.DelayTimer")) {
+			} else if (className.equals("joelbits.emu.timers.DelayTimer")) {
 				delayTimer = timer;
 			}
 		}
@@ -69,9 +71,9 @@ public class CPU {
 		String className;
 		for (Flag flag : flags) {
 			className = flag.getClass().getName();
-			if (className.equals("joelbits.emu.cpu.ClearFlag")) {
+			if (className.equals("joelbits.emu.flags.ClearFlag")) {
 				clearFlag = flag;
-			} else if (className.equals("joelbits.emu.cpu.DrawFlag")) {
+			} else if (className.equals("joelbits.emu.flags.DrawFlag")) {
 				drawFlag = flag;
 			}
 		}
@@ -166,65 +168,48 @@ public class CPU {
 				programCounter.write(address);
 				break;
 			case "3000":
-				programCounter.write(programCounter.read() + ((dataRegisters.get(registerLocationX).read().equals(lowestByte)) ? 4 : 2));
+				alu.skipNextIfEqual(dataRegisters.get(registerLocationX), lowestByte);
 				break;
 			case "4000":
-				programCounter.write(programCounter.read() + ((dataRegisters.get(registerLocationX).read() != lowestByte) ? 4 : 2));
+				alu.skipNextIfNotEqual(dataRegisters.get(registerLocationX), lowestByte);
 				break;
 			case "5000":
-				programCounter.write(programCounter.read() + ((dataRegisters.get(registerLocationX).read().equals(dataRegisters.get(registerLocationY).read()) ? 4 : 2)));
+				alu.skipNextIfEqual(dataRegisters.get(registerLocationX), dataRegisters.get(registerLocationY).read());
 				break;
 			case "6000":
-				dataRegisters.get(registerLocationX).write(lowestByte);
-				programCounter.write(programCounter.read() + 2);
+				alu.load(dataRegisters.get(registerLocationX), lowestByte);
 				break;
 			case "7000":
-				dataRegisters.get(registerLocationX).write((dataRegisters.get(registerLocationX).read() + lowestByte) & FIT_8BIT_REGISTER);
-				programCounter.write(programCounter.read() + 2);
+				alu.add(dataRegisters.get(registerLocationX), lowestByte);
 				break;
 			case "8000":
 				switch(Integer.toHexString(nibble).toUpperCase()) {
 					case "0":
-						dataRegisters.get(registerLocationX).write(dataRegisters.get(registerLocationY).read());
-						programCounter.write(programCounter.read() + 2);
+						alu.load(dataRegisters.get(registerLocationX), dataRegisters.get(registerLocationY).read());
 						break;
 					case "1":
-						dataRegisters.get(registerLocationX).write((dataRegisters.get(registerLocationX).read() | dataRegisters.get(registerLocationY).read()));
-						programCounter.write(programCounter.read() + 2);
+						alu.bitwiseOR(dataRegisters.get(registerLocationX), dataRegisters.get(registerLocationY).read());
 						break;
 					case "2":
-						dataRegisters.get(registerLocationX).write((dataRegisters.get(registerLocationX).read() & dataRegisters.get(registerLocationY).read()));
-						programCounter.write(programCounter.read() + 2);
+						alu.bitwiseAND(dataRegisters.get(registerLocationX), dataRegisters.get(registerLocationY).read());
 						break;
 					case "3":
-						dataRegisters.get(registerLocationX).write((dataRegisters.get(registerLocationX).read() ^ dataRegisters.get(registerLocationY).read()));
-						programCounter.write(programCounter.read() + 2);
+						alu.bitwiseXOR(dataRegisters.get(registerLocationX), dataRegisters.get(registerLocationY).read());
 						break;
 					case "4":
-						int sum = dataRegisters.get(registerLocationX).read() + dataRegisters.get(registerLocationY).read();
-						dataRegisters.get(0xF).write(((sum > FIT_8BIT_REGISTER) ? 1 : 0));
-						dataRegisters.get(registerLocationX).write(sum & FIT_8BIT_REGISTER);
-						programCounter.write(programCounter.read() + 2);
+						alu.addWithCarry(dataRegisters.get(registerLocationX), dataRegisters.get(registerLocationY).read(), FIT_8BIT_REGISTER);
 						break;
 					case "5":
-						dataRegisters.get(0xF).write((dataRegisters.get(registerLocationX).read() > dataRegisters.get(registerLocationY).read()) ? 1 : 0);
-						dataRegisters.get(registerLocationX).write(convertToUnsignedInt(dataRegisters.get(registerLocationX).read() - dataRegisters.get(registerLocationY).read()) & FIT_8BIT_REGISTER);
-						programCounter.write(programCounter.read() + 2);
+						alu.subtractWithBorrow(dataRegisters.get(registerLocationX), dataRegisters.get(registerLocationY).read());
 						break;
 					case "6":
-						dataRegisters.get(0xF).write(dataRegisters.get(registerLocationX).read() & 0x1);
-						dataRegisters.get(registerLocationX).write((dataRegisters.get(registerLocationX).read() >> 1) & FIT_8BIT_REGISTER);
-						programCounter.write(programCounter.read() + 2);
+						alu.rightShiftWithCarry(dataRegisters.get(registerLocationX));
 						break;
 					case "7":
-						dataRegisters.get(0xF).write(((dataRegisters.get(registerLocationX).read() > dataRegisters.get(registerLocationY).read()) ? 0 : 1));
-						dataRegisters.get(registerLocationX).write(convertToUnsignedInt(dataRegisters.get(registerLocationY).read() - dataRegisters.get(registerLocationX).read()) & FIT_8BIT_REGISTER);
-						programCounter.write(programCounter.read() + 2);
+						alu.subtractWithNegatedBorrow(dataRegisters.get(registerLocationX), dataRegisters.get(registerLocationY).read());
 						break;
 					case "E":
-						dataRegisters.get(0xF).write((dataRegisters.get(registerLocationX).read() >> 7) & 0x1);
-						dataRegisters.get(registerLocationX).write((dataRegisters.get(registerLocationX).read() << 1) & FIT_8BIT_REGISTER);
-						programCounter.write(programCounter.read() + 2);
+						alu.leftShiftWithCarry(dataRegisters.get(registerLocationX));
 						break;
 					default:
 						System.out.println("Unknown instruction " + Integer.toHexString(instruction & FIT_16BIT_REGISTER) + " at (8) location " + programCounter.read());
@@ -232,19 +217,16 @@ public class CPU {
 				}
 				break;
 			case "9000":
-				programCounter.write(programCounter.read() + ((dataRegisters.get(registerLocationX).read() != dataRegisters.get(registerLocationY).read()) ? 4 : 2));
+				alu.skipNextIfNotEqual(dataRegisters.get(registerLocationX), dataRegisters.get(registerLocationY).read());
 				break;
 			case "A000":
-				indexRegister.write(address);
-				programCounter.write(programCounter.read() + 2);
+				alu.load(indexRegister, address);
 				break;
 			case "B000":
 				programCounter.write(dataRegisters.get(0x0).read() + address);
 				break;
 			case "C000":
-				randomNumberGenerator.generate(FIT_8BIT_REGISTER);
-				dataRegisters.get(registerLocationX).write(randomNumberGenerator.value() & lowestByte);
-				programCounter.write(programCounter.read() + 2);
+				alu.addWithRandom(dataRegisters.get(registerLocationX), lowestByte);
 				break;
 			case "D000":
 				dataRegisters.get(0xF).write(0);
@@ -271,10 +253,10 @@ public class CPU {
 			case "E000":
 				switch(Integer.toHexString(lowestByte).toUpperCase()) {
 					case "9E":
-						programCounter.write(programCounter.read() + (getKeyboard().getCurrentlyPressedKey() == dataRegisters.get(registerLocationX).read() ? 4 : 2));
+						alu.skipNextIfEqual(dataRegisters.get(registerLocationX), getKeyboard().getCurrentlyPressedKey());
 						break;
 					case "A1":
-						programCounter.write(programCounter.read() + (getKeyboard().getCurrentlyPressedKey() != dataRegisters.get(registerLocationX).read() ? 4 : 2));
+						alu.skipNextIfNotEqual(dataRegisters.get(registerLocationX), getKeyboard().getCurrentlyPressedKey());
 						break;
 					default:
 						System.out.println("Unknown instruction " + Integer.toHexString(instruction & FIT_16BIT_REGISTER) + " at (E) location " + programCounter.read());
@@ -284,33 +266,28 @@ public class CPU {
 			case "F000":
 				switch(Integer.toHexString(lowestByte).toUpperCase()) {
 					case "7":
-						dataRegisters.get(registerLocationX).write(delayTimer.currentValue());
-						programCounter.write(programCounter.read() + 2);
+						alu.load(dataRegisters.get(registerLocationX), delayTimer.currentValue());
 						break;
 					case "A":
 						while (getKeyboard().getCurrentlyPressedKey() == 0) {
 							;
 						}
-						dataRegisters.get(registerLocationX).write(getKeyboard().getCurrentlyPressedKey());
-						programCounter.write(programCounter.read() + 2);
+						alu.load(dataRegisters.get(registerLocationX), getKeyboard().getCurrentlyPressedKey());
 						break;
 					case "15":
 						delayTimer.setValue(dataRegisters.get(registerLocationX).read());
 						programCounter.write(programCounter.read() + 2);
 						break;
 					case "18":
-						soundTimer.setValue(dataRegisters.get(registerLocationX).read().equals(1) ? 2 : dataRegisters.get(registerLocationX).read());
+						int value = dataRegisters.get(registerLocationX).read();
+						soundTimer.setValue(value == 1 ? 2 : value);
 						programCounter.write(programCounter.read() + 2);
 						break;
 					case "1E":
-						int sum = (indexRegister.read() + dataRegisters.get(registerLocationX).read()) & FIT_16BIT_REGISTER;
-						dataRegisters.get(0xF).write(sum > 0xFFF ? 1 : 0);
-						indexRegister.write(sum);
-						programCounter.write(programCounter.read() + 2);
+						alu.addWithCarry(indexRegister, dataRegisters.get(registerLocationX).read(), 0xFFF);
 						break;
 					case "29":
-						indexRegister.write((dataRegisters.get(registerLocationX).read() * 5) & FIT_16BIT_REGISTER);
-				 		programCounter.write(programCounter.read() + 2);
+				 		alu.load(indexRegister, (dataRegisters.get(registerLocationX).read().intValue() * 5) & FIT_16BIT_REGISTER);
 						break;
 					case "33":
 				 		getPrimaryMemory().write(indexRegister.read(), dataRegisters.get(registerLocationX).read() / 100);
@@ -340,10 +317,6 @@ public class CPU {
 				break;
 		}
 		programCounter.write(programCounter.read() & FIT_16BIT_REGISTER);
-	}
-	
-	private int convertToUnsignedInt(int value) {
-		return value < 0 ? value + 65536 : value;
 	}
 	
 	private int convertToIndex(int coordinateX, int coordinateY) {

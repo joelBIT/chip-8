@@ -1,4 +1,4 @@
-package joelbits.emu.cpu;
+package joelbits.emu.flags;
 
 public interface Flag {
 	boolean isActive();

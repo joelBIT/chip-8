@@ -1,6 +1,6 @@
-package joelbits.emu.cpu;
+package joelbits.emu.flags;
 
-public class DrawFlag implements Flag {
+public class ClearFlag implements Flag {
 	private boolean active;
 
 	@Override

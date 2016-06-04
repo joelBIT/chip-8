@@ -1,8 +1,8 @@
 package joelbits.emu.cpu;
 
-import joelbits.emu.Screen;
 import joelbits.emu.input.Keyboard;
 import joelbits.emu.output.Beep;
+import joelbits.emu.output.Screen;
 import joelbits.emu.output.Sound;
 
 public class ExpansionBus {

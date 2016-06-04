@@ -12,20 +12,20 @@ import org.junit.Before;
 import org.junit.Test;
 
 import javafx.scene.input.KeyCode;
+import joelbits.emu.cpu.ALU;
 import joelbits.emu.cpu.CPU;
-import joelbits.emu.cpu.ClearFlag;
-import joelbits.emu.cpu.DelayTimer;
-import joelbits.emu.cpu.DrawFlag;
-import joelbits.emu.cpu.Flag;
-import joelbits.emu.cpu.RandomNumberGenerator;
-import joelbits.emu.cpu.SoundTimer;
-import joelbits.emu.cpu.Timer;
 import joelbits.emu.cpu.registers.DataRegister;
 import joelbits.emu.cpu.registers.IndexRegister;
 import joelbits.emu.cpu.registers.InstructionRegister;
 import joelbits.emu.cpu.registers.ProgramCounter;
 import joelbits.emu.cpu.registers.Register;
+import joelbits.emu.flags.ClearFlag;
+import joelbits.emu.flags.DrawFlag;
+import joelbits.emu.flags.Flag;
 import joelbits.emu.memory.Memory;
+import joelbits.emu.timers.DelayTimer;
+import joelbits.emu.timers.SoundTimer;
+import joelbits.emu.timers.Timer;
 
 public class TestCPU {
 	private CPU target;
@@ -68,7 +68,7 @@ public class TestCPU {
 		indexRegister = new IndexRegister<Integer>();
 		randomNumberGenerator = new RandomNumberGenerator();
 		
-		target = new CPU(dataRegisters, instructionRegister, programCounter, indexRegister, Arrays.asList(delayTimer, soundTimer), Arrays.asList(drawFlag, clearFlag), randomNumberGenerator);
+		target = new CPU(dataRegisters, instructionRegister, programCounter, indexRegister, Arrays.asList(delayTimer, soundTimer), Arrays.asList(drawFlag, clearFlag), new ALU(programCounter, dataRegisters.get(0xF), randomNumberGenerator));
 		target.initialize(address, instruction, index, delayTime, soundTime, fontset);
 		
 		memory = target.getPrimaryMemory();

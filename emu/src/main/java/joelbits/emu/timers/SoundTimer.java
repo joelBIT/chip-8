@@ -1,4 +1,4 @@
-package joelbits.emu.cpu;
+package joelbits.emu.timers;
 
 public class SoundTimer<T> implements Timer<T> {
 	private T value;
