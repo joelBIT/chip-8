@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.Before;
@@ -12,7 +13,10 @@ import org.junit.Test;
 
 import javafx.scene.input.KeyCode;
 import joelbits.emu.cpu.CPU;
+import joelbits.emu.cpu.ClearFlag;
 import joelbits.emu.cpu.DelayTimer;
+import joelbits.emu.cpu.DrawFlag;
+import joelbits.emu.cpu.Flag;
 import joelbits.emu.cpu.SoundTimer;
 import joelbits.emu.cpu.Timer;
 import joelbits.emu.cpu.registers.DataRegister;
@@ -40,6 +44,8 @@ public class TestCPU {
 	private List<Register<Integer>> dataRegisters;
 	private Timer<Integer> delayTimer;
 	private Timer<Integer> soundTimer;
+	private Flag drawFlag;
+	private Flag clearFlag;
 	private InstructionRegister<Integer> instructionRegister;
 	private ProgramCounter<Integer> programCounter;
 	private IndexRegister<Integer> indexRegister;
@@ -53,12 +59,14 @@ public class TestCPU {
 		}
 		delayTimer = new DelayTimer<Integer>();
 		soundTimer = new SoundTimer<Integer>();
+		drawFlag = new DrawFlag();
+		clearFlag = new ClearFlag();
 		instructionRegister = new InstructionRegister<Integer>();
 		programCounter = new ProgramCounter<Integer>();
 		indexRegister = new IndexRegister<Integer>();
 		
-		target = new CPU(dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer);
-		target.initializeChip8(address, instruction, index, delayTime, soundTime, fontset);
+		target = new CPU(dataRegisters, instructionRegister, programCounter, indexRegister, Arrays.asList(delayTimer, soundTimer), Arrays.asList(drawFlag, clearFlag));
+		target.initialize(address, instruction, index, delayTime, soundTime, fontset);
 		
 		memory = target.getMemory();
 	}
@@ -77,7 +85,7 @@ public class TestCPU {
 		for (int i = 0; i < SCREEN_HEIGHT * SCREEN_WIDTH; i++) {
 			assertEquals(0x0, target.getDisplayBuffer().read(i));
 		}
-		assertTrue(target.isClearFlag());
+		assertTrue(clearFlag.isActive());
 	}
 	
 	private void executeOpCode(int opcode) {
@@ -519,7 +527,7 @@ public class TestCPU {
 			}
 		}
 		assertEquals(0, dataRegisters.get(0xF).read().intValue());
-		assertTrue(target.isDrawFlag());
+		assertTrue(drawFlag.isActive());
 	}
 	
 	private int convertToIndex(int coordinateX, int coordinateY) {
@@ -674,7 +682,7 @@ public class TestCPU {
 	@Test
 	public void storeIndexRegisterPlusDataRegisterValueInIndexRegisterAndSetDataRegisterToOne() {
 		index = 0xFFF;
-		target.initializeChip8(address, instruction, index, delayTime, soundTime, fontset);
+		target.initialize(address, instruction, index, delayTime, soundTime, fontset);
 		executeOpCode(0xFD1E);
 		
 		assertEquals(1, dataRegisters.get(0xF).read().intValue());

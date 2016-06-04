@@ -27,15 +27,15 @@ public class CPU {
 	private final Buffer displayBuffer = BufferFactory.createDisplayBuffer(getScreen().width(), getScreen().height());
 	private final Buffer dirtyBuffer = BufferFactory.createDirtyBuffer();
 	private final Stack<Integer> stack = new Stack<Integer>();
-	private final Timer<Integer> delayTimer;
-	private final Timer<Integer> soundTimer;
+	private Timer<Integer> delayTimer;
+	private Timer<Integer> soundTimer;
+	private Flag drawFlag;
+	private Flag clearFlag;
 	private final List<Register<Integer>> dataRegisters;
 	private final InstructionRegister<Integer> instructionRegister;
 	private final ProgramCounter<Integer> programCounter;
 	private final IndexRegister<Integer> indexRegister;
 	
-	private boolean drawFlag;
-	private boolean clearFlag;
 	private int registerLocationX;
 	private int registerLocationY;
 	private int nibble;
@@ -45,13 +45,37 @@ public class CPU {
 	private final int FIT_16BIT_REGISTER = 0xFFFF;
 	private int randomNumber;		// For testing purposes
 	
-	public CPU(List<Register<Integer>> dataRegisters, InstructionRegister<Integer> instructionRegister, ProgramCounter<Integer> programCounter, IndexRegister<Integer> indexRegister, Timer<Integer> delayTimer, Timer<Integer> soundTimer) {
-		this.delayTimer = delayTimer;
-		this.soundTimer = soundTimer;
+	public CPU(List<Register<Integer>> dataRegisters, InstructionRegister<Integer> instructionRegister, ProgramCounter<Integer> programCounter, IndexRegister<Integer> indexRegister, List<Timer<Integer>> timers, List<Flag> flags) {
 		this.dataRegisters = dataRegisters;
 		this.instructionRegister = instructionRegister;
 		this.programCounter = programCounter;
 		this.indexRegister = indexRegister;
+		assignTimers(timers);
+		assignFlags(flags);
+	}
+	
+	private void assignTimers(List<Timer<Integer>> timers) {
+		String className;
+		for (Timer<Integer> timer : timers) {
+			className = timer.getClass().getName();
+			if (className.equals("joelbits.emu.cpu.SoundTimer")) {
+				soundTimer = timer;
+			} else if (className.equals("joelbits.emu.cpu.DelayTimer")) {
+				delayTimer = timer;
+			}
+		}
+	}
+	
+	private void assignFlags(List<Flag> flags) {
+		String className;
+		for (Flag flag : flags) {
+			className = flag.getClass().getName();
+			if (className.equals("joelbits.emu.cpu.ClearFlag")) {
+				clearFlag = flag;
+			} else if (className.equals("joelbits.emu.cpu.DrawFlag")) {
+				drawFlag = flag;
+			}
+		}
 	}
 	
 	public Keyboard getKeyboard() {
@@ -78,23 +102,7 @@ public class CPU {
 		return memoryBus.getPrimaryMemory();
 	}
 	
-	public boolean isDrawFlag() {
-		return drawFlag;
-	}
-	
-	public void toggleDrawFlag() {
-		drawFlag = !drawFlag;
-	}
-	
-	public boolean isClearFlag() {
-		return clearFlag;
-	}
-	
-	public void toggleClearFlag() {
-		clearFlag = !clearFlag;
-	}
-	
-	public void initializeChip8(int address, int instruction, int index, int delayTime, int soundTime, int[] data) {
+	public void initialize(int address, int instruction, int index, int delayTime, int soundTime, int[] data) {
 		programCounter.write(address);
 		delayTimer.setValue(delayTime);
 		soundTimer.setValue(soundTime);
@@ -138,7 +146,9 @@ public class CPU {
 					case "E0":
 						getDisplayBuffer().clear();
 						getDirtyBuffer().clear();
-						clearFlag = true;
+						if (!clearFlag.isActive()) {
+							clearFlag.toggle();
+						}
 						programCounter.write(programCounter.read() + 2);
 						break;
 					case "EE":
@@ -254,7 +264,9 @@ public class CPU {
 						}
 					}
 				}
-				drawFlag = true;
+				if (!drawFlag.isActive()) {
+					drawFlag.toggle();
+				}
 				programCounter.write(programCounter.read() + 2);
 				break;
 			case "E000":

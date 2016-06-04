@@ -6,6 +6,7 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executors;
@@ -30,7 +31,10 @@ import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import joelbits.emu.cpu.CPU;
+import joelbits.emu.cpu.ClearFlag;
 import joelbits.emu.cpu.DelayTimer;
+import joelbits.emu.cpu.DrawFlag;
+import joelbits.emu.cpu.Flag;
 import joelbits.emu.cpu.SoundTimer;
 import joelbits.emu.cpu.Timer;
 import joelbits.emu.cpu.registers.DataRegister;
@@ -52,6 +56,8 @@ public class Chip8 extends Application {
 	private BorderPane root;
 	private Timer<Integer> delayTimer;
 	private Timer<Integer> soundTimer;
+	private Flag drawFlag;
+	private Flag clearFlag;
 	private int GAME_VELOCITY = 10;
 	private URI gamePath;
 	private boolean running;
@@ -94,8 +100,8 @@ public class Chip8 extends Application {
 		stage.setResizable(false);
 		stage.setOnCloseRequest(event -> terminateApplication());
 		
-		scene.setOnKeyPressed(event -> getCPU().getKeyboard().pressKey(event.getCode()));
-		scene.setOnKeyReleased(event -> getCPU().getKeyboard().releasePressedKey());
+		scene.setOnKeyPressed(event -> cpu.getKeyboard().pressKey(event.getCode()));
+		scene.setOnKeyReleased(event -> cpu.getKeyboard().releasePressedKey());
 		
 		fileChooser = new FileChooser();
 		fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("rom", "*.rom"), new FileChooser.ExtensionFilter("ch8", "*.ch8"));
@@ -123,17 +129,15 @@ public class Chip8 extends Application {
 		
 		delayTimer = new DelayTimer<Integer>();
 		soundTimer = new SoundTimer<Integer>();
+		clearFlag = new ClearFlag();
+		drawFlag = new DrawFlag();
 		
-		cpu = new CPU(dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer);
+		cpu = new CPU(dataRegisters, instructionRegister, programCounter, indexRegister, Arrays.asList(delayTimer, soundTimer), Arrays.asList(drawFlag, clearFlag));
 	}
 	
 	private void terminateApplication() {
 	    Platform.exit();
 	    System.exit(0);
-	}
-	
-	protected CPU getCPU() {
-		return cpu;
 	}
 	
 	private MenuBar createMenuBar() {
@@ -166,9 +170,9 @@ public class Chip8 extends Application {
 		muteSound.setAccelerator(new KeyCodeCombination(KeyCode.F4));
 		muteSound.setOnAction(event -> {
 			if (muteSound.isSelected()) {
-				getCPU().getSound().mute();
+				cpu.getSound().mute();
 			} else {
-				getCPU().getSound().unmute();
+				cpu.getSound().unmute();
 			}
 		});
 		MenuItem velocity = new MenuItem("Change velocity");
@@ -209,17 +213,19 @@ public class Chip8 extends Application {
 	}
 	
 	private void clearDisplay() {
-		int displayBufferSize = getCPU().getDisplayBuffer().size();
+		int displayBufferSize = cpu.getDisplayBuffer().size();
+		int pixelSize = cpu.getScreen().pixelSize();
+		int screenWidth = cpu.getScreen().width();
 		for (int i = 0; i < displayBufferSize; i++) {
-			int coordinateX = i % getCPU().getScreen().width();
-			int coordinateY = i / getCPU().getScreen().width();
-			graphicsContext.clearRect(coordinateX*getCPU().getScreen().pixelSize(), coordinateY*getCPU().getScreen().pixelSize(), getCPU().getScreen().pixelSize(), getCPU().getScreen().pixelSize());
+			int coordinateX = i % screenWidth;
+			int coordinateY = i / screenWidth;
+			graphicsContext.clearRect(coordinateX*pixelSize, coordinateY*pixelSize, pixelSize, pixelSize);
 		}
 	}
 	
 	private void startGame(URI gamePath) {
-		getCPU().initializeChip8(0x200, 0x0, 0x0, 0x0, 0x0, fontset);
-		getCPU().resetDataRegisters();
+		cpu.initialize(0x200, 0x0, 0x0, 0x0, 0x0, fontset);
+		cpu.resetDataRegisters();
 		loadGame(gamePath);
 		if (!running) {
 			Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new InstructionCycle(), 0, 17, TimeUnit.MILLISECONDS);
@@ -230,7 +236,7 @@ public class Chip8 extends Application {
 	private void loadGame(URI gamePath) {
 		try {
 			byte[] ROM = Files.readAllBytes(Paths.get(gamePath));
-			getCPU().loadROM(ROM, 0x200);
+			cpu.loadROM(ROM, 0x200);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -246,25 +252,25 @@ public class Chip8 extends Application {
 	 			}
 	 			
 	 			if (soundTimer.currentValue() > 0) {
-	 				getCPU().getSound().start();
+	 				cpu.getSound().start();
 	 				decrementSoundTimer();
 	 				if (soundTimer.currentValue() <= 0) {
-	 					getCPU().getSound().stop();
+	 					cpu.getSound().stop();
 	 				}
 	 			}
 	 			
 	 			for (int i = 0; i < GAME_VELOCITY; i++) {
-	 				if (getCPU().isClearFlag()) {
+	 				if (clearFlag.isActive()) {
 	 	 				clearDisplay();
-	 	 				getCPU().toggleClearFlag();
+	 	 				clearFlag.toggle();
 	 	 			}
 	 	 			
-	 	 			if (getCPU().isDrawFlag()) {
+	 	 			if (drawFlag.isActive()) {
 	 	 				drawSprites();
-	 	 				getCPU().toggleDrawFlag();
+	 	 				drawFlag.toggle();
 	 	 			}
 	 				
-	 				getCPU().nextInstructionCycle();
+	 				cpu.nextInstructionCycle();
 	 			}
 			}
 			return;
@@ -279,15 +285,17 @@ public class Chip8 extends Application {
 		}
 		
 		private synchronized void drawSprites() {
-			int dirtyBufferSize = getCPU().getDirtyBuffer().size();
+			int dirtyBufferSize = cpu.getDirtyBuffer().size();
+			int pixelSize = cpu.getScreen().pixelSize();
+			int screenWidth = cpu.getScreen().width();
 			for (int i = 0; i < dirtyBufferSize; i++) {
-				int dirtyLocation = getCPU().getDirtyBuffer().read(i);
-				int coordinateX = dirtyLocation % getCPU().getScreen().width();
-				int coordinateY = dirtyLocation / getCPU().getScreen().width();
-				if (getCPU().getDisplayBuffer().read(dirtyLocation) != 0) {
-					graphicsContext.fillRect(coordinateX*getCPU().getScreen().pixelSize(), coordinateY*getCPU().getScreen().pixelSize(), getCPU().getScreen().pixelSize(), getCPU().getScreen().pixelSize());
+				int dirtyLocation = cpu.getDirtyBuffer().read(i);
+				int coordinateX = dirtyLocation % screenWidth;
+				int coordinateY = dirtyLocation / screenWidth;
+				if (cpu.getDisplayBuffer().read(dirtyLocation) != 0) {
+					graphicsContext.fillRect(coordinateX*pixelSize, coordinateY*pixelSize, pixelSize, pixelSize);
 				} else {
-					graphicsContext.clearRect(coordinateX*getCPU().getScreen().pixelSize(), coordinateY*getCPU().getScreen().pixelSize(), getCPU().getScreen().pixelSize(), getCPU().getScreen().pixelSize());
+					graphicsContext.clearRect(coordinateX*pixelSize, coordinateY*pixelSize, pixelSize, pixelSize);
 				}
 			}
 		}
