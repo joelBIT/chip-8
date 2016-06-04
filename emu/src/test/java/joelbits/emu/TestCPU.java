@@ -4,32 +4,62 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.Before;
 import org.junit.Test;
 
 import javafx.scene.input.KeyCode;
 import joelbits.emu.cpu.CPU;
+import joelbits.emu.cpu.DelayTimer;
+import joelbits.emu.cpu.SoundTimer;
+import joelbits.emu.cpu.Timer;
+import joelbits.emu.cpu.registers.DataRegister;
+import joelbits.emu.cpu.registers.IndexRegister;
+import joelbits.emu.cpu.registers.InstructionRegister;
+import joelbits.emu.cpu.registers.ProgramCounter;
+import joelbits.emu.cpu.registers.Register;
 import joelbits.emu.memory.Memory;
 
 public class TestCPU {
 	private CPU target;
 	private Memory memory;
-	private int[] dataRegisters = {43, 176, 40, 206, 33, 148, 33, 136, 77, 29, 48, 81, 30, 8, 1, 0};
+	private int[] dataRegisterValues = {43, 176, 40, 206, 33, 148, 33, 136, 77, 29, 48, 81, 30, 8, 1, 0};
 	private int[] fontset = new int[80];
-	private int programCounter = 0x200;
-	private int instructionRegister = 0x0;
-	private int indexRegister = 0x250;
-	private int delayTimer = 0x0;
-	private int soundTimer = 0x0;
+	private int address = 0x200;
+	private int instruction = 0x0;
+	private int index = 0x250;
+	private int delayTime = 0x0;
+	private int soundTime = 0x0;
 	private final int FIT_8BIT_REGISTER = 0xFF;
 	private final int FIT_16BIT_REGISTER = 0xFFFF;
 	private int SCREEN_WIDTH = 64;
 	private int SCREEN_HEIGHT = 32;
 	
+	private List<Register<Integer>> dataRegisters;
+	private Timer<Integer> delayTimer;
+	private Timer<Integer> soundTimer;
+	private InstructionRegister<Integer> instructionRegister;
+	private ProgramCounter<Integer> programCounter;
+	private IndexRegister<Integer> indexRegister;
+	
 	@Before
 	public void setUp() {
-		target = new CPU();
-		target.initialize(programCounter, instructionRegister, indexRegister, delayTimer, soundTimer, fontset);
+		dataRegisters = new ArrayList<>();
+		for (int i = 0; i <= 0xF; i++) {
+			dataRegisters.add(i, new DataRegister<Integer>());
+			dataRegisters.get(i).write(dataRegisterValues[i]);
+		}
+		delayTimer = new DelayTimer<Integer>();
+		soundTimer = new SoundTimer<Integer>();
+		instructionRegister = new InstructionRegister<Integer>();
+		programCounter = new ProgramCounter<Integer>();
+		indexRegister = new IndexRegister<Integer>();
+		
+		target = new CPU(dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer);
+		target.initializeChip8(address, instruction, index, delayTime, soundTime, fontset);
+		
 		memory = target.getMemory();
 	}
 	
@@ -51,8 +81,8 @@ public class TestCPU {
 	}
 	
 	private void executeOpCode(int opcode) {
-		writeToMemory(programCounter, (opcode >> 8) & FIT_8BIT_REGISTER);
-		writeToMemory(programCounter + 1, opcode & FIT_8BIT_REGISTER);
+		writeToMemory(address, (opcode >> 8) & FIT_8BIT_REGISTER);
+		writeToMemory(address + 1, opcode & FIT_8BIT_REGISTER);
 		
 		target.nextInstructionCycle();
 	}
@@ -74,14 +104,14 @@ public class TestCPU {
 	@Test
 	public void popTopOfStackAddressIntoProgramCounter() {
 		executeOpCode(0x2567);
-		assertEquals(programCounter, target.readStackTopValue());
+		assertEquals(address, target.readStackTopValue());
 		
 		writeToMemory(0x567, 0x0);
 		writeToMemory(0x568, 0xEE);
 		executeOpCode(0x00EE);
 		
 		assertEquals(-1, target.readStackTopValue());
-		assertEquals(programCounter+2 , target.readProgramCounter());
+		assertEquals(address+2 , programCounter.read().intValue());
 	}
 	
 	/**
@@ -93,7 +123,7 @@ public class TestCPU {
 	public void storeAddressInProgramCounter() {
 		executeOpCode(0x1AB5);
 		
-		assertEquals(0xAB5, target.readProgramCounter());
+		assertEquals(0xAB5, programCounter.read().intValue());
 	}
 	
 	/**
@@ -106,8 +136,8 @@ public class TestCPU {
 	public void pushProgramCounterValueOntoStack() {
 		executeOpCode(0x2567);
 		
-		assertEquals(programCounter, target.readStackTopValue());
-		assertEquals(0x567, target.readProgramCounter());
+		assertEquals(address, target.readStackTopValue());
+		assertEquals(0x567, programCounter.read().intValue());
 	}
 	
 	/**
@@ -119,7 +149,7 @@ public class TestCPU {
 	public void skipNextInstructionSinceDataRegisterValueAndLowestByteEqual() {
 		executeOpCode(0x3421);
 
-		assertEquals(programCounter + 4, target.readProgramCounter());
+		assertEquals(address + 4, programCounter.read().intValue());
 	}
 	
 	/**
@@ -131,7 +161,7 @@ public class TestCPU {
 	public void doNotSkipNextInstructionSinceDataRegisterValueAndLowestByteNotEqual() {
 		executeOpCode(0x339E);
 		
-		assertEquals(programCounter + 2, target.readProgramCounter());
+		assertEquals(address + 2, programCounter.read().intValue());
 	}
 	
 	/**
@@ -144,7 +174,7 @@ public class TestCPU {
 	public void skipNextInstructionSinceDataRegisterValueAndLowestByteNotEqual() {
 		executeOpCode(0x439E);
 		
-		assertEquals(programCounter + 4, target.readProgramCounter());
+		assertEquals(address + 4, programCounter.read().intValue());
 	}
 	
 	/**
@@ -157,7 +187,7 @@ public class TestCPU {
 	public void doNotSkipNextInstructionSinceDataRegisterValueAndLowestByteAreEqual() {
 		executeOpCode(0x4421);
 
-		assertEquals(programCounter + 2, target.readProgramCounter());
+		assertEquals(address + 2, programCounter.read().intValue());
 	}
 	
 	/**
@@ -170,7 +200,7 @@ public class TestCPU {
 	public void skipNextInstructionSinceDataRegisterValuesEqual() {
 		executeOpCode(0x5460);
 		
-		assertEquals(programCounter + 4, target.readProgramCounter());
+		assertEquals(address + 4, programCounter.read().intValue());
 	}
 	
 	/**
@@ -183,7 +213,7 @@ public class TestCPU {
 	public void doNotSkipNextInstructionSinceDataRegisterValuesNotEqual() {
 		executeOpCode(0x5180);
 		
-		assertEquals(programCounter + 2, target.readProgramCounter());
+		assertEquals(address + 2, programCounter.read().intValue());
 	}
 	
 	/**
@@ -195,7 +225,7 @@ public class TestCPU {
 	public void storeLowestByteIntoDataRegister() {
 		executeOpCode(0x63DA);
 		
-		assertEquals(0xDA, target.readDataRegister(0x3));
+		assertEquals(0xDA, dataRegisters.get(0x3).read().intValue());
 	}
 	
 	/**
@@ -207,7 +237,7 @@ public class TestCPU {
 	public void addsLowestByteToDataRegister() {
 		executeOpCode(0x7398);
 		
-		assertEquals((dataRegisters[0x3] + 0x98) & FIT_8BIT_REGISTER, target.readDataRegister(0x3));
+		assertEquals((dataRegisterValues[0x3] + 0x98) & FIT_8BIT_REGISTER, dataRegisters.get(0x3).read().intValue());
 	}
 	
 	/**
@@ -219,7 +249,7 @@ public class TestCPU {
 	public void storeDataRegisterValueInAnotherDataRegister() {
 		executeOpCode(0x8DC0);
 		
-		assertEquals(dataRegisters[0xC], target.readDataRegister(0xD));
+		assertEquals(dataRegisters.get(0xC).read().intValue(), dataRegisters.get(0xD).read().intValue());
 	}
 	
 	/**
@@ -229,10 +259,10 @@ public class TestCPU {
 	 */
 	@Test
 	public void storeBitwiseORedDataRegisterValuesInDataRegister() {
-		int result = dataRegisters[0x3] | dataRegisters[0x4];
+		int result = dataRegisters.get(0x3).read() | dataRegisters.get(0x4).read();
 		executeOpCode(0x8341);
 		
-		assertEquals(result, target.readDataRegister(0x3));
+		assertEquals(result, dataRegisters.get(0x3).read().intValue());
 	}
 	
 	/**
@@ -242,10 +272,10 @@ public class TestCPU {
 	 */
 	@Test
 	public void storeBitwiseANDedDataRegisterValuesInDataRegister() {
-		int result = dataRegisters[0x3] & dataRegisters[0x4];
+		int result = dataRegisterValues[0x3] & dataRegisterValues[0x4];
 		executeOpCode(0x8342);
 		
-		assertEquals(result, target.readDataRegister(0x3));
+		assertEquals(result, dataRegisters.get(0x3).read().intValue());
 	}
 	
 	/**
@@ -255,10 +285,10 @@ public class TestCPU {
 	 */
 	@Test
 	public void storeBitwiseXORedDataRegisterValuesInDataRegister() {
-		int result = dataRegisters[0xD] ^ dataRegisters[0x5];
+		int result = dataRegisters.get(0xD).read() ^ dataRegisters.get(0x5).read();
 		executeOpCode(0x85D3);
 		
-		assertEquals(result, target.readDataRegister(0x5));
+		assertEquals(result, dataRegisters.get(0x5).read().intValue());
 	}
 	
 	/**
@@ -271,8 +301,8 @@ public class TestCPU {
 	public void sumDataRegisterValuesAndSetCarryBecauseSumGreaterThanEightBits() {
 		executeOpCode(0x8134);
 		
-		assertEquals(1, target.readDataRegister(0xF));
-		assertEquals((dataRegisters[0x1] + dataRegisters[0x3]) & FIT_8BIT_REGISTER, target.readDataRegister(0x1));
+		assertEquals(1, dataRegisters.get(0xF).read().intValue());
+		assertEquals((dataRegisterValues[0x1] + dataRegisterValues[0x3]) & FIT_8BIT_REGISTER, dataRegisters.get(0x1).read().intValue());
 	}
 	
 	/**
@@ -285,8 +315,8 @@ public class TestCPU {
 	public void sumDataRegisterValuesAndDoNotSetCarryBecauseSumLessThanEightBits() {
 		executeOpCode(0x8424);
 		
-		assertEquals(0, target.readDataRegister(0xF));
-		assertEquals((dataRegisters[0x4] + dataRegisters[0x2]) & FIT_8BIT_REGISTER, target.readDataRegister(0x4));
+		assertEquals(0, dataRegisters.get(0xF).read().intValue());
+		assertEquals((dataRegisterValues[0x4] + dataRegisterValues[0x2]) & FIT_8BIT_REGISTER, dataRegisters.get(0x4).read().intValue());
 	}
 	
 	/**
@@ -299,8 +329,8 @@ public class TestCPU {
 	public void doNotSetBorrowSinceFirstDataRegisterLessThanSecondDataRegister() {
 		executeOpCode(0x8235);
 		
-		assertEquals(0, target.readDataRegister(0xF));
-		assertEquals((convertToUnsignedInt(dataRegisters[0x2] - dataRegisters[0x3]) & FIT_8BIT_REGISTER), target.readDataRegister(0x2));
+		assertEquals(0, dataRegisters.get(0xF).read().intValue());
+		assertEquals((convertToUnsignedInt(dataRegisterValues[0x2] - dataRegisterValues[0x3]) & FIT_8BIT_REGISTER), dataRegisters.get(0x2).read().intValue());
 	}
 	
 	/**
@@ -313,8 +343,8 @@ public class TestCPU {
 	public void setBorrowSinceFirstDataRegisterLargerThanSecondDataRegister() {
 		executeOpCode(0x8325);
 		
-		assertEquals(1, target.readDataRegister(0xF));
-		assertEquals((dataRegisters[0x3] - dataRegisters[0x2]) & FIT_8BIT_REGISTER, target.readDataRegister(0x3));
+		assertEquals(1, dataRegisters.get(0xF).read().intValue());
+		assertEquals((dataRegisterValues[0x3] - dataRegisterValues[0x2]) & FIT_8BIT_REGISTER, dataRegisters.get(0x3).read().intValue());
 	}
 	
 	/**
@@ -326,8 +356,8 @@ public class TestCPU {
 	public void setCarryAndShiftRight() {
 		executeOpCode(0x8456);
 		
-		assertEquals(1, target.readDataRegister(0xF));
-		assertEquals(dataRegisters[0x4] >> 1, target.readDataRegister(0x4));
+		assertEquals(1, dataRegisters.get(0xF).read().intValue());
+		assertEquals(dataRegisterValues[0x4] >> 1, dataRegisters.get(0x4).read().intValue());
 	}
 	
 	/**
@@ -339,8 +369,8 @@ public class TestCPU {
 	public void doNotSetCarryAndShiftRight() {
 		executeOpCode(0x8AB6);
 		
-		assertEquals(0, target.readDataRegister(0xF));
-		assertEquals(dataRegisters[0xA] >> 1, target.readDataRegister(0xA));
+		assertEquals(0, dataRegisters.get(0xF).read().intValue());
+		assertEquals(dataRegisterValues[0xA] >> 1, dataRegisters.get(0xA).read().intValue());
 	}
 	
 	/**
@@ -353,8 +383,8 @@ public class TestCPU {
 	public void setBorrowAndSubtractFirstDataRegisterValueFromSecondDataRegister() {
 		executeOpCode(0x8017);
 		
-		assertEquals(1, target.readDataRegister(0xF));
-		assertEquals(convertToUnsignedInt(dataRegisters[0x1] - dataRegisters[0x0]) & FIT_8BIT_REGISTER, target.readDataRegister(0x0));
+		assertEquals(1, dataRegisters.get(0xF).read().intValue());
+		assertEquals(convertToUnsignedInt(dataRegisterValues[0x1] - dataRegisterValues[0x0]) & FIT_8BIT_REGISTER, dataRegisters.get(0x0).read().intValue());
 	}
 	
 	/**
@@ -367,8 +397,8 @@ public class TestCPU {
 	public void doNotSetBorrowAndSubtractFirstDataRegisterValueFromSecondDataRegister() {
 		executeOpCode(0x8107);
 		
-		assertEquals(0, target.readDataRegister(0xF));
-		assertEquals(convertToUnsignedInt(dataRegisters[0x0] - dataRegisters[0x1]) & FIT_8BIT_REGISTER, target.readDataRegister(0x1));
+		assertEquals(0, dataRegisters.get(0xF).read().intValue());
+		assertEquals(convertToUnsignedInt(dataRegisterValues[0x0] - dataRegisterValues[0x1]) & FIT_8BIT_REGISTER, dataRegisters.get(0x1).read().intValue());
 	}
 	
 	/**
@@ -380,8 +410,8 @@ public class TestCPU {
 	public void setDataRegisterToZeroSinceMostSignificantBitIsNotOne() {
 		executeOpCode(0x8ABE);
 		
-		assertEquals(0, target.readDataRegister(0xF));
-		assertEquals((dataRegisters[0xA] << 1) & FIT_8BIT_REGISTER, target.readDataRegister(0xA));
+		assertEquals(0, dataRegisters.get(0xF).read().intValue());
+		assertEquals((dataRegisterValues[0xA] << 1) & FIT_8BIT_REGISTER, dataRegisters.get(0xA).read().intValue());
 	}
 	
 	/**
@@ -393,8 +423,8 @@ public class TestCPU {
 	public void setDataRegisterToOneSinceMostSignificantBitIsOne() {
 		executeOpCode(0x835E);
 		
-		assertEquals(1, target.readDataRegister(0xF));
-		assertEquals((dataRegisters[0x3] << 1) & FIT_8BIT_REGISTER, target.readDataRegister(0x3));
+		assertEquals(1, dataRegisters.get(0xF).read().intValue());
+		assertEquals((dataRegisterValues[0x3] << 1) & FIT_8BIT_REGISTER, dataRegisters.get(0x3).read().intValue());
 	}
 	
 	/**
@@ -406,7 +436,7 @@ public class TestCPU {
 	public void skipNextInstructionSinceDataRegisterValuesNotEqual() {
 		executeOpCode(0x95C0);
 		
-		assertEquals(programCounter + 4, target.readProgramCounter());
+		assertEquals(address + 4, programCounter.read().intValue());
 	}
 	
 	/**
@@ -418,7 +448,7 @@ public class TestCPU {
 	public void doNotSkipNextInstructionSinceDataRegisterValuesAreEqual() {
 		executeOpCode(0x9460);
 		
-		assertEquals(programCounter + 2, target.readProgramCounter());
+		assertEquals(address + 2, programCounter.read().intValue());
 	}
 	
 	/**
@@ -430,7 +460,7 @@ public class TestCPU {
 	public void storeAddressInIndexRegister() {
 		executeOpCode(0xAEBA);
 		
-		assertEquals(0xEBA, target.readIndexRegister());
+		assertEquals(0xEBA, indexRegister.read().intValue());
 	}
 	
 	/**
@@ -442,7 +472,7 @@ public class TestCPU {
 	public void setProgramCounterToAddressPlusDataRegisterValue() {
 		executeOpCode(0xB348);
 
-		assertEquals(0x348 + dataRegisters[0], target.readProgramCounter());
+		assertEquals(0x348 + dataRegisters.get(0).read(), programCounter.read().intValue());
 	}
 	
 	/**
@@ -456,7 +486,7 @@ public class TestCPU {
 		executeOpCode(0xC023);
 		
 		int randomNumber = target.readRandomNumber();
-		assertEquals(randomNumber & 0x23, target.readDataRegister(0x0));
+		assertEquals(randomNumber & 0x23, dataRegisters.get(0x0).read().intValue());
 	}
 	
 	/**
@@ -469,18 +499,18 @@ public class TestCPU {
 	 */
 	@Test
 	public void storeSpriteStartingAtIndexRegisterLocationIntoDataRegistersWithoutCollisions() {
-		writeToMemory(indexRegister, 0xF0);
-		writeToMemory(indexRegister+1, 0x10);
-		writeToMemory(indexRegister+2, 0xF0);
-		writeToMemory(indexRegister+3, 0x80);
-		writeToMemory(indexRegister+4, 0xF0);
+		writeToMemory(index, 0xF0);
+		writeToMemory(index+1, 0x10);
+		writeToMemory(index+2, 0xF0);
+		writeToMemory(index+3, 0x80);
+		writeToMemory(index+4, 0xF0);
 		executeOpCode(0xD475);
 		
 		for (int row = 0; row < 0x5; row++) {
-			int coordinateY = dataRegisters[0x7] + row;
-			int memoryByte = target.getMemory().read(indexRegister + row);
+			int coordinateY = dataRegisterValues[0x7] + row;
+			int memoryByte = target.getMemory().read(index + row);
 			for (int column = 0; column < 8; column++) {
-				int coordinateX = dataRegisters[0x4] + column;
+				int coordinateX = dataRegisterValues[0x4] + column;
 				if ((memoryByte & (0x80 >> column)) != 0) {
 					assertTrue(target.getDisplayBuffer().read(convertToIndex(coordinateX, coordinateY)) != 0);
 				} else {
@@ -488,7 +518,7 @@ public class TestCPU {
 				}
 			}
 		}
-		assertEquals(0, target.readDataRegister(0xF));
+		assertEquals(0, dataRegisters.get(0xF).read().intValue());
 		assertTrue(target.isDrawFlag());
 	}
 	
@@ -507,8 +537,8 @@ public class TestCPU {
 		target.getKeyboard().pressKey(KeyCode.R);
 		executeOpCode(0xEA9E);
 		
-		assertFalse(target.getKeyboard().getCurrentlyPressedKey() == target.readDataRegister(0xA));
-		assertEquals(programCounter + 2, target.readProgramCounter());
+		assertFalse(target.getKeyboard().getCurrentlyPressedKey() == dataRegisters.get(0xA).read().intValue());
+		assertEquals(address + 2, programCounter.read().intValue());
 	}
 	
 	/**
@@ -522,8 +552,8 @@ public class TestCPU {
 		target.getKeyboard().pressKey(KeyCode.R);
 		executeOpCode(0xED9E);
 		
-		assertEquals(target.getKeyboard().getCurrentlyPressedKey(), target.readDataRegister(0xD));
-		assertEquals(programCounter + 4, target.readProgramCounter());
+		assertEquals(target.getKeyboard().getCurrentlyPressedKey(), dataRegisters.get(0xD).read().intValue());
+		assertEquals(address + 4, programCounter.read().intValue());
 	}
 	
 	/**
@@ -537,8 +567,8 @@ public class TestCPU {
 		target.getKeyboard().pressKey(KeyCode.R);
 		executeOpCode(0xEAA1);
 		
-		assertFalse(target.getKeyboard().getCurrentlyPressedKey() == target.readDataRegister(0xA));
-		assertEquals(programCounter + 4, target.readProgramCounter());
+		assertFalse(target.getKeyboard().getCurrentlyPressedKey() == dataRegisters.get(0xA).read().intValue());
+		assertEquals(address + 4, programCounter.read().intValue());
 	}
 	
 	/**
@@ -552,8 +582,8 @@ public class TestCPU {
 		target.getKeyboard().pressKey(KeyCode.R);
 		executeOpCode(0xEDA1);
 		
-		assertEquals(target.getKeyboard().getCurrentlyPressedKey(), target.readDataRegister(0xD));
-		assertEquals(programCounter + 2, target.readProgramCounter());
+		assertEquals(target.getKeyboard().getCurrentlyPressedKey(), dataRegisters.get(0xD).read().intValue());
+		assertEquals(address + 2, programCounter.read().intValue());
 	}
 	
 	/**
@@ -565,7 +595,7 @@ public class TestCPU {
 	public void storeDelayTimerValueInDataRegister() {
 		executeOpCode(0xF207);
 		
-		assertEquals(target.readDelayTimer(), target.readDataRegister(0x2));
+		assertEquals(delayTimer.currentValue(), dataRegisters.get(0x2).read());
 	}
 	
 	/**
@@ -579,7 +609,7 @@ public class TestCPU {
 		target.getKeyboard().pressKey(KeyCode.A);
 		executeOpCode(0xF70A);
 		
-		assertEquals(target.getKeyboard().getCurrentlyPressedKey(), target.readDataRegister(0x7));
+		assertEquals(target.getKeyboard().getCurrentlyPressedKey(), dataRegisters.get(0x7).read().intValue());
 	}
 	
 	/**
@@ -591,7 +621,7 @@ public class TestCPU {
 	public void setDelayTimerEqualToDataRegisterValue() {
 		executeOpCode(0xF615);
 		
-		assertEquals(dataRegisters[0x6], target.readDelayTimer());
+		assertEquals(dataRegisters.get(0x6).read(), delayTimer.currentValue());
 	}
 	
 	/**
@@ -604,7 +634,7 @@ public class TestCPU {
 	public void setSoundTimerEqualToDataRegisterValue() {
 		executeOpCode(0xF518);
 		
-		assertEquals(dataRegisters[0x5], target.readSoundTimer());
+		assertEquals(dataRegisters.get(0x5).read(), soundTimer.currentValue());
 	}
 	
 	/**
@@ -617,8 +647,8 @@ public class TestCPU {
 	public void setSoundTimerEqualToTwoSinceDataRegisterValueIsOne() {
 		executeOpCode(0xFE18);
 		
-		assertEquals(1, target.readDataRegister(0xE));
-		assertEquals(2, target.readSoundTimer());
+		assertEquals(1, dataRegisters.get(0xE).read().intValue());
+		assertEquals(2, soundTimer.currentValue().intValue());
 	}
 	
 	/**
@@ -631,8 +661,8 @@ public class TestCPU {
 	public void storeIndexRegisterPlusDataRegisterValueInIndexRegisterAndSetDataRegisterToZero() {
 		executeOpCode(0xFD1E);
 		
-		assertEquals(0, target.readDataRegister(0xF));
-		assertEquals((indexRegister + dataRegisters[0xD]) & FIT_16BIT_REGISTER, target.readIndexRegister());
+		assertEquals(0, dataRegisters.get(0xF).read().intValue());
+		assertEquals((index + dataRegisterValues[0xD]) & FIT_16BIT_REGISTER, indexRegister.read().intValue());
 	}
 	
 	/**
@@ -643,12 +673,12 @@ public class TestCPU {
 	 */
 	@Test
 	public void storeIndexRegisterPlusDataRegisterValueInIndexRegisterAndSetDataRegisterToOne() {
-		indexRegister = 0xFFF;
-		target.initialize(programCounter, instructionRegister, indexRegister, delayTimer, soundTimer, fontset);
+		index = 0xFFF;
+		target.initializeChip8(address, instruction, index, delayTime, soundTime, fontset);
 		executeOpCode(0xFD1E);
 		
-		assertEquals(1, target.readDataRegister(0xF));
-		assertEquals((indexRegister + dataRegisters[0xD]) & FIT_16BIT_REGISTER, target.readIndexRegister());
+		assertEquals(1, dataRegisters.get(0xF).read().intValue());
+		assertEquals((index + dataRegisterValues[0xD]) & FIT_16BIT_REGISTER, indexRegister.read().intValue());
 	}
 	
 	/**
@@ -661,7 +691,7 @@ public class TestCPU {
 	public void storeSpriteLocationInIndexRegister() {
 		executeOpCode(0xFD29);
 		
-		assertEquals(dataRegisters[0xD]*5 & FIT_16BIT_REGISTER, target.readIndexRegister());
+		assertEquals(dataRegisters.get(0xD).read()*5 & FIT_16BIT_REGISTER, indexRegister.read().intValue());
 	}
 	
 	/**
@@ -675,9 +705,9 @@ public class TestCPU {
 	public void storeBinaryCodedDecimalRepresentationOfDataRegisterValue() {
 		executeOpCode(0xF733);
 
-		assertEquals(1, memory.read(indexRegister));
-		assertEquals(3, memory.read(indexRegister+1));
-		assertEquals(6, memory.read(indexRegister+2));
+		assertEquals(1, memory.read(index));
+		assertEquals(3, memory.read(index+1));
+		assertEquals(6, memory.read(index+2));
 	}
 	
 	/**
@@ -691,7 +721,7 @@ public class TestCPU {
 		executeOpCode(0xF755);
 
 		for (int i = 0; i < 8; i++) {
-			assertEquals(target.readDataRegister(i), memory.read(indexRegister+i));
+			assertEquals(dataRegisters.get(i).read().intValue(), memory.read(index+i));
 		}
 	}
 	
@@ -706,7 +736,7 @@ public class TestCPU {
 		executeOpCode(0xF465);
 		
 		for (int i = 0; i < 5; i++) {
-			assertEquals(memory.read(indexRegister+i), target.readDataRegister(i));
+			assertEquals(memory.read(index+i), dataRegisters.get(i).read().intValue());
 		}
 	}
 }

@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -28,6 +30,14 @@ import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import joelbits.emu.cpu.CPU;
+import joelbits.emu.cpu.DelayTimer;
+import joelbits.emu.cpu.SoundTimer;
+import joelbits.emu.cpu.Timer;
+import joelbits.emu.cpu.registers.DataRegister;
+import joelbits.emu.cpu.registers.IndexRegister;
+import joelbits.emu.cpu.registers.InstructionRegister;
+import joelbits.emu.cpu.registers.ProgramCounter;
+import joelbits.emu.cpu.registers.Register;
 
 /**
  * Last 8 or 16 bits of each int are used to represent an unsigned byte or an unsigned short respectively. A ROM is written to memory starting
@@ -35,11 +45,13 @@ import joelbits.emu.cpu.CPU;
  * 
  */
 public class Chip8 extends Application {
-	private CPU cpu = new CPU();
-	private FileChooser fileChooser = new FileChooser();
+	private CPU cpu;
+	private FileChooser fileChooser;
 	private GraphicsContext graphicsContext;
 	private Stage stage;
 	private BorderPane root;
+	private Timer<Integer> delayTimer;
+	private Timer<Integer> soundTimer;
 	private int GAME_VELOCITY = 10;
 	private URI gamePath;
 	private boolean running;
@@ -73,6 +85,8 @@ public class Chip8 extends Application {
 		this.stage = stage;
 		stage.setTitle("Chip-8 interpreter");
 		
+		initializeCPU();
+		
 		root = new BorderPane();
 		root.setStyle("-fx-background: black;");
 		Scene scene = new Scene(root);
@@ -83,6 +97,7 @@ public class Chip8 extends Application {
 		scene.setOnKeyPressed(event -> getCPU().getKeyboard().pressKey(event.getCode()));
 		scene.setOnKeyReleased(event -> getCPU().getKeyboard().releasePressedKey());
 		
+		fileChooser = new FileChooser();
 		fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("rom", "*.rom"), new FileChooser.ExtensionFilter("ch8", "*.ch8"));
 		
 		Canvas canvas = new Canvas(896, 448);
@@ -94,6 +109,22 @@ public class Chip8 extends Application {
 		root.setBottom(canvas);
 		
 		stage.show();
+	}
+	
+	private void initializeCPU() {
+		List<Register<Integer>> dataRegisters = new ArrayList<>();
+		for (int i = 0; i <= 0xF; i++) {
+			dataRegisters.add(i, new DataRegister<Integer>());
+			dataRegisters.get(i).write(0);
+		}
+		InstructionRegister<Integer> instructionRegister = new InstructionRegister<Integer>();
+		ProgramCounter<Integer> programCounter = new ProgramCounter<Integer>();
+		IndexRegister<Integer> indexRegister = new IndexRegister<Integer>();
+		
+		delayTimer = new DelayTimer<Integer>();
+		soundTimer = new SoundTimer<Integer>();
+		
+		cpu = new CPU(dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer);
 	}
 	
 	private void terminateApplication() {
@@ -187,7 +218,8 @@ public class Chip8 extends Application {
 	}
 	
 	private void startGame(URI gamePath) {
-		getCPU().initialize(0x200, 0x0, 0x0, 0x0, 0x0, fontset);
+		getCPU().initializeChip8(0x200, 0x0, 0x0, 0x0, 0x0, fontset);
+		getCPU().resetDataRegisters();
 		loadGame(gamePath);
 		if (!running) {
 			Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new InstructionCycle(), 0, 17, TimeUnit.MILLISECONDS);
@@ -209,13 +241,16 @@ public class Chip8 extends Application {
 		@Override
 		public void run() {
 			if (!paused) {
-	 			if (getCPU().readDelayTimer() > 0) {
-	 				getCPU().decrementDelayTimer();
+	 			if (delayTimer.currentValue() > 0) {
+	 				decrementDelayTimer();
 	 			}
 	 			
-	 			if (getCPU().readSoundTimer() > 0) {
+	 			if (soundTimer.currentValue() > 0) {
 	 				getCPU().getSound().start();
-	 				getCPU().decrementSoundTimer();
+	 				decrementSoundTimer();
+	 				if (soundTimer.currentValue() <= 0) {
+	 					getCPU().getSound().stop();
+	 				}
 	 			}
 	 			
 	 			for (int i = 0; i < GAME_VELOCITY; i++) {
@@ -233,6 +268,14 @@ public class Chip8 extends Application {
 	 			}
 			}
 			return;
+		}
+		
+		private void decrementDelayTimer() {
+			delayTimer.setValue(delayTimer.currentValue() - 1);
+		}
+		
+		private void decrementSoundTimer() {
+			soundTimer.setValue(soundTimer.currentValue() - 1);
 		}
 		
 		private synchronized void drawSprites() {

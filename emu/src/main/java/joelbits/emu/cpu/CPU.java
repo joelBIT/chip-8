@@ -1,12 +1,10 @@
 package joelbits.emu.cpu;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.Stack;
 
 import joelbits.emu.Screen;
-import joelbits.emu.cpu.registers.DataRegister;
 import joelbits.emu.cpu.registers.IndexRegister;
 import joelbits.emu.cpu.registers.InstructionRegister;
 import joelbits.emu.cpu.registers.ProgramCounter;
@@ -29,14 +27,12 @@ public class CPU {
 	private final Buffer displayBuffer = BufferFactory.createDisplayBuffer(getScreen().width(), getScreen().height());
 	private final Buffer dirtyBuffer = BufferFactory.createDirtyBuffer();
 	private final Stack<Integer> stack = new Stack<Integer>();
-	//private final Registers<Integer> registers = new Registers<Integer>(0xF, 0);
-	private final Timer<Integer> delayTimer = new DelayTimer<Integer>();
-	private final Timer<Integer> soundTimer = new SoundTimer<Integer>();
-	
-	private final List<Register<Integer>> dataRegisters = new ArrayList<>();
-	private final InstructionRegister<Integer> instructionRegister = new InstructionRegister<Integer>();
-	private final ProgramCounter<Integer> programCounter = new ProgramCounter<Integer>();
-	private final IndexRegister<Integer> indexRegister = new IndexRegister<Integer>();
+	private final Timer<Integer> delayTimer;
+	private final Timer<Integer> soundTimer;
+	private final List<Register<Integer>> dataRegisters;
+	private final InstructionRegister<Integer> instructionRegister;
+	private final ProgramCounter<Integer> programCounter;
+	private final IndexRegister<Integer> indexRegister;
 	
 	private boolean drawFlag;
 	private boolean clearFlag;
@@ -48,6 +44,15 @@ public class CPU {
 	private final int FIT_8BIT_REGISTER = 0xFF;
 	private final int FIT_16BIT_REGISTER = 0xFFFF;
 	private int randomNumber;		// For testing purposes
+	
+	public CPU(List<Register<Integer>> dataRegisters, InstructionRegister<Integer> instructionRegister, ProgramCounter<Integer> programCounter, IndexRegister<Integer> indexRegister, Timer<Integer> delayTimer, Timer<Integer> soundTimer) {
+		this.delayTimer = delayTimer;
+		this.soundTimer = soundTimer;
+		this.dataRegisters = dataRegisters;
+		this.instructionRegister = instructionRegister;
+		this.programCounter = programCounter;
+		this.indexRegister = indexRegister;
+	}
 	
 	public Keyboard getKeyboard() {
 		return expansionBus.getKeyboard();
@@ -89,40 +94,25 @@ public class CPU {
 		clearFlag = !clearFlag;
 	}
 	
-	public synchronized void decrementDelayTimer() {
-		if (delayTimer.currentValue() > 0) {
-			delayTimer.setValue(delayTimer.currentValue() - 1);;
-		}
-	}
-	
-	public synchronized void decrementSoundTimer() {
-		soundTimer.setValue(soundTimer.currentValue() - 1);
-		if (soundTimer.currentValue() <= 0) {
-			getSound().stop();
-		}
-	}
-	
-	public void initialize(int address, int instruction, int index, int delayTime, int soundTime, int[] fontset) {
+	public void initializeChip8(int address, int instruction, int index, int delayTime, int soundTime, int[] data) {
 		programCounter.write(address);
-		//instructionRegister.write(instructionRegister);
-		//indexRegister.write(index);
 		delayTimer.setValue(delayTime);
 		soundTimer.setValue(soundTime);
-		
 		indexRegister.write(index);
 		instructionRegister.write(instruction);
-		programCounter.write(address);
-		
-		dataRegisters.clear();
-		for (int i = 0; i <= 0xF; i++) {
-			dataRegisters.add(i, new DataRegister<Integer>());
-		}
 		
 		getDirtyBuffer().clear();
 		getDisplayBuffer().clear();
 		getMemory().clear();
-		for (int i = 0; i < fontset.length; i++) {
-			getMemory().write(i, fontset[i]);
+		
+		for (int i = 0; i < data.length; i++) {
+			getMemory().write(i, data[i]);
+		}
+	}
+	
+	public void resetDataRegisters() {
+		for (int i = 0; i < dataRegisters.size(); i++) {
+			dataRegisters.get(i).write(0);
 		}
 	}
 	
@@ -173,7 +163,7 @@ public class CPU {
 				programCounter.write(programCounter.read() + ((dataRegisters.get(registerLocationX).read() != lowestByte) ? 4 : 2));
 				break;
 			case "5000":
-				programCounter.write(programCounter.read() + ((dataRegisters.get(registerLocationX).read().equals(dataRegisters.get(registerLocationY)) ? 4 : 2)));
+				programCounter.write(programCounter.read() + ((dataRegisters.get(registerLocationX).read().equals(dataRegisters.get(registerLocationY).read()) ? 4 : 2)));
 				break;
 			case "6000":
 				dataRegisters.get(registerLocationX).write(lowestByte);
@@ -208,7 +198,7 @@ public class CPU {
 						programCounter.write(programCounter.read() + 2);
 						break;
 					case "5":
-						dataRegisters.get(0xF).write(((dataRegisters.get(registerLocationX).read() > dataRegisters.get(registerLocationY).read()) ? 1 : 0));
+						dataRegisters.get(0xF).write((dataRegisters.get(registerLocationX).read() > dataRegisters.get(registerLocationY).read()) ? 1 : 0);
 						dataRegisters.get(registerLocationX).write(convertToUnsignedInt(dataRegisters.get(registerLocationX).read() - dataRegisters.get(registerLocationY).read()) & FIT_8BIT_REGISTER);
 						programCounter.write(programCounter.read() + 2);
 						break;
@@ -347,26 +337,6 @@ public class CPU {
 	
 	private int convertToIndex(int coordinateX, int coordinateY) {
 		return (coordinateX % getScreen().width()) + ((coordinateY % getScreen().width()) * getScreen().width());
-	}
-	
-	public int readDataRegister(int registerLocation) {
-		return dataRegisters.get(registerLocation).read();
-	}
-	
-	public int readIndexRegister() {
-		return indexRegister.read();
-	}
-	
-	public int readSoundTimer() {
-		return soundTimer.currentValue();
-	}
-	
-	public int readDelayTimer() {
-		return delayTimer.currentValue();
-	}
-	
-	public int readProgramCounter() {
-		return programCounter.read();
 	}
 	
 	public int readRandomNumber() {
