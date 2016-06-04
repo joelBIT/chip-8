@@ -5,7 +5,7 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 
-import joelbits.emu.output.DisplayBuffer;
+import joelbits.emu.memory.DisplayBuffer;
 
 public class TestDisplayBuffer {
 	private DisplayBuffer target;

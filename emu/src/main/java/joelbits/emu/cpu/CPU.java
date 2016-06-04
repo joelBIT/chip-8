@@ -1,7 +1,6 @@
 package joelbits.emu.cpu;
 
 import java.util.List;
-import java.util.Random;
 import java.util.Stack;
 
 import joelbits.emu.Screen;
@@ -10,9 +9,8 @@ import joelbits.emu.cpu.registers.InstructionRegister;
 import joelbits.emu.cpu.registers.ProgramCounter;
 import joelbits.emu.cpu.registers.Register;
 import joelbits.emu.input.Keyboard;
+import joelbits.emu.memory.BufferFactory;
 import joelbits.emu.memory.Memory;
-import joelbits.emu.output.Buffer;
-import joelbits.emu.output.BufferFactory;
 import joelbits.emu.output.Sound;
 
 /**
@@ -24,32 +22,33 @@ import joelbits.emu.output.Sound;
 public class CPU {
 	private MemoryBus memoryBus = new MemoryBus();
 	private final ExpansionBus expansionBus = new ExpansionBus();
-	private final Buffer displayBuffer = BufferFactory.createDisplayBuffer(getScreen().width(), getScreen().height());
-	private final Buffer dirtyBuffer = BufferFactory.createDirtyBuffer();
+	private final Memory displayBuffer = BufferFactory.createDisplayBuffer(getScreen().width(), getScreen().height());
+	private final Memory dirtyBuffer = BufferFactory.createDirtyBuffer();
 	private final Stack<Integer> stack = new Stack<Integer>();
-	private Timer<Integer> delayTimer;
-	private Timer<Integer> soundTimer;
-	private Flag drawFlag;
-	private Flag clearFlag;
 	private final List<Register<Integer>> dataRegisters;
 	private final InstructionRegister<Integer> instructionRegister;
 	private final ProgramCounter<Integer> programCounter;
 	private final IndexRegister<Integer> indexRegister;
+	private final RandomNumberGenerator randomNumberGenerator;
+	private Timer<Integer> delayTimer;
+	private Timer<Integer> soundTimer;
+	private Flag drawFlag;
+	private Flag clearFlag;
 	
+	private final int FIT_8BIT_REGISTER = 0xFF;
+	private final int FIT_16BIT_REGISTER = 0xFFFF;
 	private int registerLocationX;
 	private int registerLocationY;
 	private int nibble;
 	private int address;
 	private int lowestByte;
-	private final int FIT_8BIT_REGISTER = 0xFF;
-	private final int FIT_16BIT_REGISTER = 0xFFFF;
-	private int randomNumber;		// For testing purposes
 	
-	public CPU(List<Register<Integer>> dataRegisters, InstructionRegister<Integer> instructionRegister, ProgramCounter<Integer> programCounter, IndexRegister<Integer> indexRegister, List<Timer<Integer>> timers, List<Flag> flags) {
+	public CPU(List<Register<Integer>> dataRegisters, InstructionRegister<Integer> instructionRegister, ProgramCounter<Integer> programCounter, IndexRegister<Integer> indexRegister, List<Timer<Integer>> timers, List<Flag> flags, RandomNumberGenerator randomNumberGenerator) {
 		this.dataRegisters = dataRegisters;
 		this.instructionRegister = instructionRegister;
 		this.programCounter = programCounter;
 		this.indexRegister = indexRegister;
+		this.randomNumberGenerator = randomNumberGenerator;
 		assignTimers(timers);
 		assignFlags(flags);
 	}
@@ -82,11 +81,11 @@ public class CPU {
 		return expansionBus.getKeyboard();
 	}
 	
-	public Buffer getDisplayBuffer() {
+	public Memory getDisplayBuffer() {
 		return displayBuffer;
 	}
 	
-	public Buffer getDirtyBuffer() {
+	public Memory getDirtyBuffer() {
 		return dirtyBuffer;
 	}
 	
@@ -98,7 +97,7 @@ public class CPU {
 		return expansionBus.getScreen();
 	}
 	
-	public Memory getMemory() {
+	public Memory getPrimaryMemory() {
 		return memoryBus.getPrimaryMemory();
 	}
 	
@@ -111,10 +110,10 @@ public class CPU {
 		
 		getDirtyBuffer().clear();
 		getDisplayBuffer().clear();
-		getMemory().clear();
+		getPrimaryMemory().clear();
 		
 		for (int i = 0; i < data.length; i++) {
-			getMemory().write(i, data[i]);
+			getPrimaryMemory().write(i, data[i]);
 		}
 	}
 	
@@ -126,12 +125,12 @@ public class CPU {
 	
 	public void loadROM(byte[] ROM, int startLocation) {
 		for (int i = 0, location = startLocation; i < ROM.length; i++, location++) {
-			getMemory().write(location, Byte.toUnsignedInt(ROM[i]));
+			getPrimaryMemory().write(location, Byte.toUnsignedInt(ROM[i]));
 		}
 	}
 	
 	public void nextInstructionCycle() {
-		int instruction = getMemory().read(programCounter.read()) << 8 | getMemory().read(programCounter.read()+1);
+		int instruction = getPrimaryMemory().read(programCounter.read()) << 8 | getPrimaryMemory().read(programCounter.read()+1);
 		instructionRegister.write(Integer.valueOf(instruction));
 		
 		registerLocationX = (instruction & 0x0F00) >> 8;
@@ -243,14 +242,14 @@ public class CPU {
 				programCounter.write(dataRegisters.get(0x0).read() + address);
 				break;
 			case "C000":
-				randomNumber = new Random().nextInt(FIT_8BIT_REGISTER);
-				dataRegisters.get(registerLocationX).write(randomNumber & lowestByte);
+				randomNumberGenerator.generate(FIT_8BIT_REGISTER);
+				dataRegisters.get(registerLocationX).write(randomNumberGenerator.value() & lowestByte);
 				programCounter.write(programCounter.read() + 2);
 				break;
 			case "D000":
 				dataRegisters.get(0xF).write(0);
 				for (int row = 0; row < nibble; row++) {
-					int memoryByte = getMemory().read(indexRegister.read() + row);
+					int memoryByte = getPrimaryMemory().read(indexRegister.read() + row);
 					int coordinateY = dataRegisters.get(registerLocationY).read() + row;
 					for (int column = 0; column < 8; column++) {
 						if ((memoryByte & (0x80 >> column)) != 0) {
@@ -314,20 +313,20 @@ public class CPU {
 				 		programCounter.write(programCounter.read() + 2);
 						break;
 					case "33":
-				 		getMemory().write(indexRegister.read(), dataRegisters.get(registerLocationX).read() / 100);
-				 		getMemory().write(indexRegister.read() + 1, (dataRegisters.get(registerLocationX).read() % 100) / 10);
-				 		getMemory().write(indexRegister.read() + 2, dataRegisters.get(registerLocationX).read() % 10);
+				 		getPrimaryMemory().write(indexRegister.read(), dataRegisters.get(registerLocationX).read() / 100);
+				 		getPrimaryMemory().write(indexRegister.read() + 1, (dataRegisters.get(registerLocationX).read() % 100) / 10);
+				 		getPrimaryMemory().write(indexRegister.read() + 2, dataRegisters.get(registerLocationX).read() % 10);
 				 		programCounter.write(programCounter.read() + 2);
 						break;
 					case "55":
 						for (int i = 0; i <= registerLocationX; i++) {
-							getMemory().write(indexRegister.read() + i, dataRegisters.get(i).read());
+							getPrimaryMemory().write(indexRegister.read() + i, dataRegisters.get(i).read());
 						}
 						programCounter.write(programCounter.read() + 2);
 						break;
 					case "65":
 						for (int i = 0; i <= registerLocationX; i++) {
-							dataRegisters.get(i).write(getMemory().read(indexRegister.read() + i));
+							dataRegisters.get(i).write(getPrimaryMemory().read(indexRegister.read() + i));
 						}
 						programCounter.write(programCounter.read() + 2);
 						break;
@@ -348,11 +347,8 @@ public class CPU {
 	}
 	
 	private int convertToIndex(int coordinateX, int coordinateY) {
-		return (coordinateX % getScreen().width()) + ((coordinateY % getScreen().width()) * getScreen().width());
-	}
-	
-	public int readRandomNumber() {
-		return randomNumber;
+		int screenWidth = getScreen().width();
+		return (coordinateX % screenWidth) + ((coordinateY % screenWidth) * screenWidth);
 	}
 	
 	public int readStackTopValue() {

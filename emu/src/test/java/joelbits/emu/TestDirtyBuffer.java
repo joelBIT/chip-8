@@ -5,7 +5,7 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 
-import joelbits.emu.output.DirtyBuffer;
+import joelbits.emu.memory.DirtyBuffer;
 
 public class TestDirtyBuffer {
 	private DirtyBuffer target;

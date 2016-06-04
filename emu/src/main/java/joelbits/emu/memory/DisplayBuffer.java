@@ -1,11 +1,11 @@
-package joelbits.emu.output;
+package joelbits.emu.memory;
 
 /**
  *  A display that is basically just an array of pixels that are either in state 0 or 1. The current screen state is
  *  stored in the display buffer.
  *
  */
-public class DisplayBuffer implements Buffer {
+public class DisplayBuffer implements Memory {
 	private final int[] displayBuffer;
 	
 	public DisplayBuffer(int width, int height) {

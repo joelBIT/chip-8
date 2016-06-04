@@ -35,6 +35,7 @@ import joelbits.emu.cpu.ClearFlag;
 import joelbits.emu.cpu.DelayTimer;
 import joelbits.emu.cpu.DrawFlag;
 import joelbits.emu.cpu.Flag;
+import joelbits.emu.cpu.RandomNumberGenerator;
 import joelbits.emu.cpu.SoundTimer;
 import joelbits.emu.cpu.Timer;
 import joelbits.emu.cpu.registers.DataRegister;
@@ -132,7 +133,7 @@ public class Chip8 extends Application {
 		clearFlag = new ClearFlag();
 		drawFlag = new DrawFlag();
 		
-		cpu = new CPU(dataRegisters, instructionRegister, programCounter, indexRegister, Arrays.asList(delayTimer, soundTimer), Arrays.asList(drawFlag, clearFlag));
+		cpu = new CPU(dataRegisters, instructionRegister, programCounter, indexRegister, Arrays.asList(delayTimer, soundTimer), Arrays.asList(drawFlag, clearFlag), new RandomNumberGenerator());
 	}
 	
 	private void terminateApplication() {

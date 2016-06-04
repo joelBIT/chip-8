@@ -1,4 +1,4 @@
-package joelbits.emu.output;
+package joelbits.emu.memory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,7 +8,7 @@ import java.util.List;
  *  pixels are re-rendered.
  *
  */
-public class DirtyBuffer implements Buffer {
+public class DirtyBuffer implements Memory {
 	private final List<Integer> dirtyBuffer = new ArrayList<>();
 	
 	/**

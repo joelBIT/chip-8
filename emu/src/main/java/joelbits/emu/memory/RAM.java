@@ -28,4 +28,9 @@ public class RAM implements Memory {
 			memory[i] = 0x0;
 		}
 	}
+
+	@Override
+	public int size() {
+		return memory.length;
+	}
 }

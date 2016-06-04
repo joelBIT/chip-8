@@ -17,6 +17,7 @@ import joelbits.emu.cpu.ClearFlag;
 import joelbits.emu.cpu.DelayTimer;
 import joelbits.emu.cpu.DrawFlag;
 import joelbits.emu.cpu.Flag;
+import joelbits.emu.cpu.RandomNumberGenerator;
 import joelbits.emu.cpu.SoundTimer;
 import joelbits.emu.cpu.Timer;
 import joelbits.emu.cpu.registers.DataRegister;
@@ -29,18 +30,6 @@ import joelbits.emu.memory.Memory;
 public class TestCPU {
 	private CPU target;
 	private Memory memory;
-	private int[] dataRegisterValues = {43, 176, 40, 206, 33, 148, 33, 136, 77, 29, 48, 81, 30, 8, 1, 0};
-	private int[] fontset = new int[80];
-	private int address = 0x200;
-	private int instruction = 0x0;
-	private int index = 0x250;
-	private int delayTime = 0x0;
-	private int soundTime = 0x0;
-	private final int FIT_8BIT_REGISTER = 0xFF;
-	private final int FIT_16BIT_REGISTER = 0xFFFF;
-	private int SCREEN_WIDTH = 64;
-	private int SCREEN_HEIGHT = 32;
-	
 	private List<Register<Integer>> dataRegisters;
 	private Timer<Integer> delayTimer;
 	private Timer<Integer> soundTimer;
@@ -49,6 +38,19 @@ public class TestCPU {
 	private InstructionRegister<Integer> instructionRegister;
 	private ProgramCounter<Integer> programCounter;
 	private IndexRegister<Integer> indexRegister;
+	private RandomNumberGenerator randomNumberGenerator;
+	
+	private final int FIT_8BIT_REGISTER = 0xFF;
+	private final int FIT_16BIT_REGISTER = 0xFFFF;
+	private int[] dataRegisterValues = {43, 176, 40, 206, 33, 148, 33, 136, 77, 29, 48, 81, 30, 8, 1, 0};
+	private int[] fontset = new int[80];
+	private int address = 0x200;
+	private int instruction = 0x0;
+	private int index = 0x250;
+	private int delayTime = 0x0;
+	private int soundTime = 0x0;
+	private int SCREEN_WIDTH = 64;
+	private int SCREEN_HEIGHT = 32;
 	
 	@Before
 	public void setUp() {
@@ -64,11 +66,12 @@ public class TestCPU {
 		instructionRegister = new InstructionRegister<Integer>();
 		programCounter = new ProgramCounter<Integer>();
 		indexRegister = new IndexRegister<Integer>();
+		randomNumberGenerator = new RandomNumberGenerator();
 		
-		target = new CPU(dataRegisters, instructionRegister, programCounter, indexRegister, Arrays.asList(delayTimer, soundTimer), Arrays.asList(drawFlag, clearFlag));
+		target = new CPU(dataRegisters, instructionRegister, programCounter, indexRegister, Arrays.asList(delayTimer, soundTimer), Arrays.asList(drawFlag, clearFlag), randomNumberGenerator);
 		target.initialize(address, instruction, index, delayTime, soundTime, fontset);
 		
-		memory = target.getMemory();
+		memory = target.getPrimaryMemory();
 	}
 	
 	/**
@@ -493,8 +496,7 @@ public class TestCPU {
 	public void storeRandomizedValueInDataRegister() {
 		executeOpCode(0xC023);
 		
-		int randomNumber = target.readRandomNumber();
-		assertEquals(randomNumber & 0x23, dataRegisters.get(0x0).read().intValue());
+		assertEquals(randomNumberGenerator.value() & 0x23, dataRegisters.get(0x0).read().intValue());
 	}
 	
 	/**
@@ -516,7 +518,7 @@ public class TestCPU {
 		
 		for (int row = 0; row < 0x5; row++) {
 			int coordinateY = dataRegisterValues[0x7] + row;
-			int memoryByte = target.getMemory().read(index + row);
+			int memoryByte = target.getPrimaryMemory().read(index + row);
 			for (int column = 0; column < 8; column++) {
 				int coordinateX = dataRegisterValues[0x4] + column;
 				if ((memoryByte & (0x80 >> column)) != 0) {
