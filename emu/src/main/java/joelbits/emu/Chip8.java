@@ -115,6 +115,7 @@ public class Chip8 extends Application {
 			paused = true;
 			File file = fileChooser.showOpenDialog(stage);
 			if (file != null) {
+				clearDisplay();
 				gamePath = file.toURI();
 				startGame(gamePath);
 			}
@@ -162,7 +163,7 @@ public class Chip8 extends Application {
 		game.setOnHidden(event -> paused = false);
 		CheckMenuItem pause = new CheckMenuItem("Pause");
 		pause.setAccelerator(new KeyCodeCombination(KeyCode.F2));
-		pause.setOnAction(event -> paused = pause.isSelected() == true ? true : false);
+		pause.setOnAction(event -> paused = pause.isSelected());
 		MenuItem reset = new MenuItem("Reset");
 		reset.setAccelerator(new KeyCodeCombination(KeyCode.F3));
 		reset.setOnAction(event -> {

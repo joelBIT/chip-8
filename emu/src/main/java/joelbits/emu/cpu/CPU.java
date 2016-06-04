@@ -1,9 +1,16 @@
 package joelbits.emu.cpu;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.Stack;
 
 import joelbits.emu.Screen;
+import joelbits.emu.cpu.registers.DataRegister;
+import joelbits.emu.cpu.registers.IndexRegister;
+import joelbits.emu.cpu.registers.InstructionRegister;
+import joelbits.emu.cpu.registers.ProgramCounter;
+import joelbits.emu.cpu.registers.Register;
 import joelbits.emu.input.Keyboard;
 import joelbits.emu.memory.Memory;
 import joelbits.emu.output.Buffer;
@@ -22,9 +29,15 @@ public class CPU {
 	private final Buffer displayBuffer = BufferFactory.createDisplayBuffer(getScreen().width(), getScreen().height());
 	private final Buffer dirtyBuffer = BufferFactory.createDirtyBuffer();
 	private final Stack<Integer> stack = new Stack<Integer>();
-	private final Registers<Integer> registers = new Registers<Integer>(0xF, 0);
+	//private final Registers<Integer> registers = new Registers<Integer>(0xF, 0);
 	private final Timer<Integer> delayTimer = new DelayTimer<Integer>();
 	private final Timer<Integer> soundTimer = new SoundTimer<Integer>();
+	
+	private final List<Register<Integer>> dataRegisters = new ArrayList<>();
+	private final InstructionRegister<Integer> instructionRegister = new InstructionRegister<Integer>();
+	private final ProgramCounter<Integer> programCounter = new ProgramCounter<Integer>();
+	private final IndexRegister<Integer> indexRegister = new IndexRegister<Integer>();
+	
 	private boolean drawFlag;
 	private boolean clearFlag;
 	private int registerLocationX;
@@ -89,13 +102,22 @@ public class CPU {
 		}
 	}
 	
-	public void initialize(int programCounter, int instructionRegister, int indexRegister, int delayTimer, int soundTimer, int[] fontset) {
-		registers.writeProgramCounter(programCounter);
-		registers.writeInstructionRegister(instructionRegister);
-		registers.writeIndexRegister(indexRegister);
-		this.delayTimer.setValue(delayTimer);
-		this.soundTimer.setValue(soundTimer);
-		getMemory().clear();
+	public void initialize(int address, int instruction, int index, int delayTime, int soundTime, int[] fontset) {
+		programCounter.write(address);
+		//instructionRegister.write(instructionRegister);
+		//indexRegister.write(index);
+		delayTimer.setValue(delayTime);
+		soundTimer.setValue(soundTime);
+		
+		indexRegister.write(index);
+		instructionRegister.write(instruction);
+		programCounter.write(address);
+		
+		dataRegisters.clear();
+		for (int i = 0; i <= 0xF; i++) {
+			dataRegisters.add(i, new DataRegister<Integer>());
+		}
+		
 		getDirtyBuffer().clear();
 		getDisplayBuffer().clear();
 		getMemory().clear();
@@ -111,131 +133,131 @@ public class CPU {
 	}
 	
 	public void nextInstructionCycle() {
-		int instructionRegister = getMemory().read(registers.readProgramCounter()) << 8 | getMemory().read(registers.readProgramCounter()+1);
-		registers.writeInstructionRegister(instructionRegister);
+		int instruction = getMemory().read(programCounter.read()) << 8 | getMemory().read(programCounter.read()+1);
+		instructionRegister.write(Integer.valueOf(instruction));
 		
-		registerLocationX = (instructionRegister & 0x0F00) >> 8;
-		registerLocationY = (instructionRegister & 0x00F0) >> 4;
-		nibble = instructionRegister & 0x000F;
-		address = instructionRegister & 0x0FFF;
-		lowestByte = instructionRegister & 0x00FF;
+		registerLocationX = (instruction & 0x0F00) >> 8;
+		registerLocationY = (instruction & 0x00F0) >> 4;
+		nibble = instruction & 0x000F;
+		address = instruction & 0x0FFF;
+		lowestByte = instruction & 0x00FF;
 		
-		switch(Integer.toHexString(instructionRegister & 0xF000).toUpperCase()) {
+		switch(Integer.toHexString(instruction & 0xF000).toUpperCase()) {
 			case "0":
 				switch(Integer.toHexString(address).toUpperCase()) {
 					case "E0":
 						getDisplayBuffer().clear();
 						getDirtyBuffer().clear();
 						clearFlag = true;
-						registers.writeProgramCounter(registers.readProgramCounter() + 2);
+						programCounter.write(programCounter.read() + 2);
 						break;
 					case "EE":
-						registers.writeProgramCounter(stack.pop() + 2);
+						programCounter.write(stack.pop() + 2);
 						break;
 					default:
-						System.out.println("Unknown instruction " + Integer.toHexString(instructionRegister & FIT_16BIT_REGISTER) + " at (0) location " + registers.readProgramCounter());
+						System.out.println("Unknown instruction " + Integer.toHexString(instruction & FIT_16BIT_REGISTER) + " at (0) location " + programCounter.read());
 						break;
 				}
 				break;
 			case "1000":
-				registers.writeProgramCounter(address);
+				programCounter.write(address);
 				break;
 			case "2000":
-				stack.push(registers.readProgramCounter());
-				registers.writeProgramCounter(address);
+				stack.push(programCounter.read());
+				programCounter.write(address);
 				break;
 			case "3000":
-				registers.writeProgramCounter(registers.readProgramCounter() + ((registers.readDataRegister(registerLocationX).equals(lowestByte)) ? 4 : 2));
+				programCounter.write(programCounter.read() + ((dataRegisters.get(registerLocationX).read().equals(lowestByte)) ? 4 : 2));
 				break;
 			case "4000":
-				registers.writeProgramCounter(registers.readProgramCounter() + ((registers.readDataRegister(registerLocationX) != lowestByte) ? 4 : 2));
+				programCounter.write(programCounter.read() + ((dataRegisters.get(registerLocationX).read() != lowestByte) ? 4 : 2));
 				break;
 			case "5000":
-				registers.writeProgramCounter(registers.readProgramCounter() + ((registers.readDataRegister(registerLocationX).equals(registers.readDataRegister(registerLocationY)) ? 4 : 2)));
+				programCounter.write(programCounter.read() + ((dataRegisters.get(registerLocationX).read().equals(dataRegisters.get(registerLocationY)) ? 4 : 2)));
 				break;
 			case "6000":
-				registers.writeDataRegister(registerLocationX, lowestByte);
-				registers.writeProgramCounter(registers.readProgramCounter() + 2);
+				dataRegisters.get(registerLocationX).write(lowestByte);
+				programCounter.write(programCounter.read() + 2);
 				break;
 			case "7000":
-				registers.writeDataRegister(registerLocationX, (registers.readDataRegister(registerLocationX) + lowestByte) & FIT_8BIT_REGISTER);
-				registers.writeProgramCounter(registers.readProgramCounter() + 2);
+				dataRegisters.get(registerLocationX).write((dataRegisters.get(registerLocationX).read() + lowestByte) & FIT_8BIT_REGISTER);
+				programCounter.write(programCounter.read() + 2);
 				break;
 			case "8000":
 				switch(Integer.toHexString(nibble).toUpperCase()) {
 					case "0":
-						registers.writeDataRegister(registerLocationX, registers.readDataRegister(registerLocationY));
-						registers.writeProgramCounter(registers.readProgramCounter() + 2);
+						dataRegisters.get(registerLocationX).write(dataRegisters.get(registerLocationY).read());
+						programCounter.write(programCounter.read() + 2);
 						break;
 					case "1":
-						registers.writeDataRegister(registerLocationX, (registers.readDataRegister(registerLocationX) | registers.readDataRegister(registerLocationY)));
-						registers.writeProgramCounter(registers.readProgramCounter() + 2);
+						dataRegisters.get(registerLocationX).write((dataRegisters.get(registerLocationX).read() | dataRegisters.get(registerLocationY).read()));
+						programCounter.write(programCounter.read() + 2);
 						break;
 					case "2":
-						registers.writeDataRegister(registerLocationX, (registers.readDataRegister(registerLocationX) & registers.readDataRegister(registerLocationY)));
-						registers.writeProgramCounter(registers.readProgramCounter() + 2);
+						dataRegisters.get(registerLocationX).write((dataRegisters.get(registerLocationX).read() & dataRegisters.get(registerLocationY).read()));
+						programCounter.write(programCounter.read() + 2);
 						break;
 					case "3":
-						registers.writeDataRegister(registerLocationX, (registers.readDataRegister(registerLocationX) ^ registers.readDataRegister(registerLocationY)));
-						registers.writeProgramCounter(registers.readProgramCounter() + 2);
+						dataRegisters.get(registerLocationX).write((dataRegisters.get(registerLocationX).read() ^ dataRegisters.get(registerLocationY).read()));
+						programCounter.write(programCounter.read() + 2);
 						break;
 					case "4":
-						int sum = registers.readDataRegister(registerLocationX) + registers.readDataRegister(registerLocationY);
-						registers.writeDataRegister(0xF, ((sum > FIT_8BIT_REGISTER) ? 1 : 0));
-						registers.writeDataRegister(registerLocationX, sum & FIT_8BIT_REGISTER);
-						registers.writeProgramCounter(registers.readProgramCounter() + 2);
+						int sum = dataRegisters.get(registerLocationX).read() + dataRegisters.get(registerLocationY).read();
+						dataRegisters.get(0xF).write(((sum > FIT_8BIT_REGISTER) ? 1 : 0));
+						dataRegisters.get(registerLocationX).write(sum & FIT_8BIT_REGISTER);
+						programCounter.write(programCounter.read() + 2);
 						break;
 					case "5":
-						registers.writeDataRegister(0xF, ((registers.readDataRegister(registerLocationX) > registers.readDataRegister(registerLocationY)) ? 1 : 0));
-						registers.writeDataRegister(registerLocationX, convertToUnsignedInt(registers.readDataRegister(registerLocationX) - registers.readDataRegister(registerLocationY)) & FIT_8BIT_REGISTER);
-						registers.writeProgramCounter(registers.readProgramCounter() + 2);
+						dataRegisters.get(0xF).write(((dataRegisters.get(registerLocationX).read() > dataRegisters.get(registerLocationY).read()) ? 1 : 0));
+						dataRegisters.get(registerLocationX).write(convertToUnsignedInt(dataRegisters.get(registerLocationX).read() - dataRegisters.get(registerLocationY).read()) & FIT_8BIT_REGISTER);
+						programCounter.write(programCounter.read() + 2);
 						break;
 					case "6":
-						registers.writeDataRegister(0xF, registers.readDataRegister(registerLocationX) & 0x1);
-						registers.writeDataRegister(registerLocationX, (registers.readDataRegister(registerLocationX) >> 1) & FIT_8BIT_REGISTER);
-						registers.writeProgramCounter(registers.readProgramCounter() + 2);
+						dataRegisters.get(0xF).write(dataRegisters.get(registerLocationX).read() & 0x1);
+						dataRegisters.get(registerLocationX).write((dataRegisters.get(registerLocationX).read() >> 1) & FIT_8BIT_REGISTER);
+						programCounter.write(programCounter.read() + 2);
 						break;
 					case "7":
-						registers.writeDataRegister(0xF, ((registers.readDataRegister(registerLocationX) > registers.readDataRegister(registerLocationY)) ? 0 : 1));
-						registers.writeDataRegister(registerLocationX, convertToUnsignedInt(registers.readDataRegister(registerLocationY) - registers.readDataRegister(registerLocationX)) & FIT_8BIT_REGISTER);
-						registers.writeProgramCounter(registers.readProgramCounter() + 2);
+						dataRegisters.get(0xF).write(((dataRegisters.get(registerLocationX).read() > dataRegisters.get(registerLocationY).read()) ? 0 : 1));
+						dataRegisters.get(registerLocationX).write(convertToUnsignedInt(dataRegisters.get(registerLocationY).read() - dataRegisters.get(registerLocationX).read()) & FIT_8BIT_REGISTER);
+						programCounter.write(programCounter.read() + 2);
 						break;
 					case "E":
-						registers.writeDataRegister(0xF, (registers.readDataRegister(registerLocationX) >> 7) & 0x1);
-						registers.writeDataRegister(registerLocationX, (registers.readDataRegister(registerLocationX) << 1) & FIT_8BIT_REGISTER);
-						registers.writeProgramCounter(registers.readProgramCounter() + 2);
+						dataRegisters.get(0xF).write((dataRegisters.get(registerLocationX).read() >> 7) & 0x1);
+						dataRegisters.get(registerLocationX).write((dataRegisters.get(registerLocationX).read() << 1) & FIT_8BIT_REGISTER);
+						programCounter.write(programCounter.read() + 2);
 						break;
 					default:
-						System.out.println("Unknown instruction " + Integer.toHexString(instructionRegister & FIT_16BIT_REGISTER) + " at (8) location " + registers.readProgramCounter());
+						System.out.println("Unknown instruction " + Integer.toHexString(instruction & FIT_16BIT_REGISTER) + " at (8) location " + programCounter.read());
 						break;
 				}
 				break;
 			case "9000":
-				registers.writeProgramCounter(registers.readProgramCounter() + ((registers.readDataRegister(registerLocationX) != registers.readDataRegister(registerLocationY)) ? 4 : 2));
+				programCounter.write(programCounter.read() + ((dataRegisters.get(registerLocationX).read() != dataRegisters.get(registerLocationY).read()) ? 4 : 2));
 				break;
 			case "A000":
-				registers.writeIndexRegister(address);
-				registers.writeProgramCounter(registers.readProgramCounter() + 2);
+				indexRegister.write(address);
+				programCounter.write(programCounter.read() + 2);
 				break;
 			case "B000":
-				registers.writeProgramCounter(registers.readDataRegister(0x0) + address);
+				programCounter.write(dataRegisters.get(0x0).read() + address);
 				break;
 			case "C000":
 				randomNumber = new Random().nextInt(FIT_8BIT_REGISTER);
-				registers.writeDataRegister(registerLocationX, randomNumber & lowestByte);
-				registers.writeProgramCounter(registers.readProgramCounter() + 2);
+				dataRegisters.get(registerLocationX).write(randomNumber & lowestByte);
+				programCounter.write(programCounter.read() + 2);
 				break;
 			case "D000":
-				registers.writeDataRegister(0xF, 0);
+				dataRegisters.get(0xF).write(0);
 				for (int row = 0; row < nibble; row++) {
-					int memoryByte = getMemory().read(registers.readIndexRegister() + row);
-					int coordinateY = registers.readDataRegister(registerLocationY) + row;
+					int memoryByte = getMemory().read(indexRegister.read() + row);
+					int coordinateY = dataRegisters.get(registerLocationY).read() + row;
 					for (int column = 0; column < 8; column++) {
 						if ((memoryByte & (0x80 >> column)) != 0) {
-							int coordinateX = registers.readDataRegister(registerLocationX) + column;
+							int coordinateX = dataRegisters.get(registerLocationX).read() + column;
 							int data = getDisplayBuffer().read(convertToIndex(coordinateX, coordinateY));
 							if (data != 0) {
-								registers.writeDataRegister(0xF, 1);
+								dataRegisters.get(0xF).write(1);
 							} 
 							getDisplayBuffer().write(convertToIndex(coordinateX, coordinateY), data^1);
 							getDirtyBuffer().write(convertToIndex(coordinateX, coordinateY), data^1);
@@ -243,80 +265,80 @@ public class CPU {
 					}
 				}
 				drawFlag = true;
-				registers.writeProgramCounter(registers.readProgramCounter() + 2);
+				programCounter.write(programCounter.read() + 2);
 				break;
 			case "E000":
 				switch(Integer.toHexString(lowestByte).toUpperCase()) {
 					case "9E":
-						registers.writeProgramCounter(registers.readProgramCounter() + (getKeyboard().getCurrentlyPressedKey() == registers.readDataRegister(registerLocationX) ? 4 : 2));
+						programCounter.write(programCounter.read() + (getKeyboard().getCurrentlyPressedKey() == dataRegisters.get(registerLocationX).read() ? 4 : 2));
 						break;
 					case "A1":
-						registers.writeProgramCounter(registers.readProgramCounter() + (getKeyboard().getCurrentlyPressedKey() != registers.readDataRegister(registerLocationX) ? 4 : 2));
+						programCounter.write(programCounter.read() + (getKeyboard().getCurrentlyPressedKey() != dataRegisters.get(registerLocationX).read() ? 4 : 2));
 						break;
 					default:
-						System.out.println("Unknown instruction " + Integer.toHexString(instructionRegister & FIT_16BIT_REGISTER) + " at (E) location " + registers.readProgramCounter());
+						System.out.println("Unknown instruction " + Integer.toHexString(instruction & FIT_16BIT_REGISTER) + " at (E) location " + programCounter.read());
 						break;
 				}
 				break;
 			case "F000":
 				switch(Integer.toHexString(lowestByte).toUpperCase()) {
 					case "7":
-						registers.writeDataRegister(registerLocationX, delayTimer.currentValue());
-						registers.writeProgramCounter(registers.readProgramCounter() + 2);
+						dataRegisters.get(registerLocationX).write(delayTimer.currentValue());
+						programCounter.write(programCounter.read() + 2);
 						break;
 					case "A":
 						while (getKeyboard().getCurrentlyPressedKey() == 0) {
 							;
 						}
-						registers.writeDataRegister(registerLocationX, getKeyboard().getCurrentlyPressedKey());
-						registers.writeProgramCounter(registers.readProgramCounter() + 2);
+						dataRegisters.get(registerLocationX).write(getKeyboard().getCurrentlyPressedKey());
+						programCounter.write(programCounter.read() + 2);
 						break;
 					case "15":
-						delayTimer.setValue(registers.readDataRegister(registerLocationX));
-						registers.writeProgramCounter(registers.readProgramCounter() + 2);
+						delayTimer.setValue(dataRegisters.get(registerLocationX).read());
+						programCounter.write(programCounter.read() + 2);
 						break;
 					case "18":
-						soundTimer.setValue(registers.readDataRegister(registerLocationX).equals(1) ? 2 : registers.readDataRegister(registerLocationX));
-						registers.writeProgramCounter(registers.readProgramCounter() + 2);
+						soundTimer.setValue(dataRegisters.get(registerLocationX).read().equals(1) ? 2 : dataRegisters.get(registerLocationX).read());
+						programCounter.write(programCounter.read() + 2);
 						break;
 					case "1E":
-						int sum = (registers.readIndexRegister() + registers.readDataRegister(registerLocationX)) & FIT_16BIT_REGISTER;
-						registers.writeDataRegister(0xF, (sum > 0xFFF ? 1 : 0));
-						registers.writeIndexRegister(sum);
-						registers.writeProgramCounter(registers.readProgramCounter() + 2);
+						int sum = (indexRegister.read() + dataRegisters.get(registerLocationX).read()) & FIT_16BIT_REGISTER;
+						dataRegisters.get(0xF).write(sum > 0xFFF ? 1 : 0);
+						indexRegister.write(sum);
+						programCounter.write(programCounter.read() + 2);
 						break;
 					case "29":
-						registers.writeIndexRegister((registers.readDataRegister(registerLocationX) * 5) & FIT_16BIT_REGISTER);
-				 		registers.writeProgramCounter(registers.readProgramCounter() + 2);
+						indexRegister.write((dataRegisters.get(registerLocationX).read() * 5) & FIT_16BIT_REGISTER);
+				 		programCounter.write(programCounter.read() + 2);
 						break;
 					case "33":
-				 		getMemory().write(registers.readIndexRegister(), registers.readDataRegister(registerLocationX) / 100);
-				 		getMemory().write(registers.readIndexRegister() + 1, (registers.readDataRegister(registerLocationX) % 100) / 10);
-				 		getMemory().write(registers.readIndexRegister() + 2, registers.readDataRegister(registerLocationX) % 10);
-				 		registers.writeProgramCounter(registers.readProgramCounter() + 2);
+				 		getMemory().write(indexRegister.read(), dataRegisters.get(registerLocationX).read() / 100);
+				 		getMemory().write(indexRegister.read() + 1, (dataRegisters.get(registerLocationX).read() % 100) / 10);
+				 		getMemory().write(indexRegister.read() + 2, dataRegisters.get(registerLocationX).read() % 10);
+				 		programCounter.write(programCounter.read() + 2);
 						break;
 					case "55":
 						for (int i = 0; i <= registerLocationX; i++) {
-							getMemory().write(registers.readIndexRegister() + i, registers.readDataRegister(i));
+							getMemory().write(indexRegister.read() + i, dataRegisters.get(i).read());
 						}
-						registers.writeProgramCounter(registers.readProgramCounter() + 2);
+						programCounter.write(programCounter.read() + 2);
 						break;
 					case "65":
 						for (int i = 0; i <= registerLocationX; i++) {
-							registers.writeDataRegister(i, getMemory().read(registers.readIndexRegister() + i));
+							dataRegisters.get(i).write(getMemory().read(indexRegister.read() + i));
 						}
-						registers.writeProgramCounter(registers.readProgramCounter() + 2);
+						programCounter.write(programCounter.read() + 2);
 						break;
 					default:
-						System.out.println("Unknown instruction " + Integer.toHexString(instructionRegister & FIT_16BIT_REGISTER) + " at (f) location " + registers.readProgramCounter());
+						System.out.println("Unknown instruction " + Integer.toHexString(instruction & FIT_16BIT_REGISTER) + " at (f) location " + programCounter.read());
 						break;
 				}
 				break;
 			default:
-				System.out.println("Unknown instruction " + Integer.toHexString(instructionRegister & FIT_16BIT_REGISTER) + " at (all) location " + registers.readProgramCounter());
+				System.out.println("Unknown instruction " + Integer.toHexString(instruction & FIT_16BIT_REGISTER) + " at (all) location " + programCounter.read());
 				break;
 		}
-		registers.writeProgramCounter(registers.readProgramCounter() & FIT_16BIT_REGISTER);
+		programCounter.write(programCounter.read() & FIT_16BIT_REGISTER);
 	}
 	
 	private int convertToUnsignedInt(int value) {
@@ -328,11 +350,11 @@ public class CPU {
 	}
 	
 	public int readDataRegister(int registerLocation) {
-		return registers.readDataRegister(registerLocation);
+		return dataRegisters.get(registerLocation).read();
 	}
 	
 	public int readIndexRegister() {
-		return registers.readIndexRegister();
+		return indexRegister.read();
 	}
 	
 	public int readSoundTimer() {
@@ -344,7 +366,7 @@ public class CPU {
 	}
 	
 	public int readProgramCounter() {
-		return registers.readProgramCounter();
+		return programCounter.read();
 	}
 	
 	public int readRandomNumber() {
