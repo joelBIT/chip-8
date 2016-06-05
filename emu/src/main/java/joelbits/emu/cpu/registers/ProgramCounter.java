@@ -1,15 +1,24 @@
 package joelbits.emu.cpu.registers;
 
 public final class ProgramCounter<T> implements Register<T> {
-	private T programCounter;
+	private static final Register<Integer> programCounter = new ProgramCounter<Integer>();
+	private T data;
+	
+	private ProgramCounter() {
+		
+	}
 	
 	@Override
 	public T read() {
-		return programCounter;
+		return data;
 	}
 
 	@Override
 	public void write(T data) {
-		programCounter = data;
+		this.data = data;
+	}
+	
+	public static final Register<Integer> getInstance() {
+		return programCounter;
 	}
 }

@@ -1,15 +1,15 @@
 package joelbits.emu.cpu.registers;
 
 public final class DataRegister<T> implements Register<T> {
-	private T dataRegister;
+	private T data;
 
 	@Override
 	public T read() {
-		return dataRegister;
+		return data;
 	}
 
 	@Override
 	public void write(T data) {
-		dataRegister = data;
+		this.data = data;
 	}
 }

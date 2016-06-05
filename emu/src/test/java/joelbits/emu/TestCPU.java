@@ -35,9 +35,9 @@ public class TestCPU {
 	private Timer<Integer> soundTimer;
 	private Flag drawFlag;
 	private Flag clearFlag;
-	private InstructionRegister<Integer> instructionRegister;
-	private ProgramCounter<Integer> programCounter;
-	private IndexRegister<Integer> indexRegister;
+	private Register<Integer> instructionRegister;
+	private Register<Integer> programCounter;
+	private Register<Integer> indexRegister;
 	private RandomNumberGenerator randomNumberGenerator;
 	
 	private final int FIT_8BIT_REGISTER = 0xFF;
@@ -63,9 +63,9 @@ public class TestCPU {
 		soundTimer = new SoundTimer<Integer>();
 		drawFlag = new DrawFlag();
 		clearFlag = new ClearFlag();
-		instructionRegister = new InstructionRegister<Integer>();
-		programCounter = new ProgramCounter<Integer>();
-		indexRegister = new IndexRegister<Integer>();
+		instructionRegister = InstructionRegister.getInstance();
+		programCounter = ProgramCounter.getInstance();
+		indexRegister = IndexRegister.getInstance();
 		randomNumberGenerator = new RandomNumberGenerator();
 		
 		target = new CPU(dataRegisters, instructionRegister, programCounter, indexRegister, Arrays.asList(delayTimer, soundTimer), Arrays.asList(drawFlag, clearFlag), new ALU(programCounter, dataRegisters.get(0xF), randomNumberGenerator));

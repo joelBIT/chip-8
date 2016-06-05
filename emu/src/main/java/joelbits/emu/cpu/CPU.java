@@ -3,9 +3,6 @@ package joelbits.emu.cpu;
 import java.util.List;
 import java.util.Stack;
 
-import joelbits.emu.cpu.registers.IndexRegister;
-import joelbits.emu.cpu.registers.InstructionRegister;
-import joelbits.emu.cpu.registers.ProgramCounter;
 import joelbits.emu.cpu.registers.Register;
 import joelbits.emu.flags.Flag;
 import joelbits.emu.input.Keyboard;
@@ -28,9 +25,9 @@ public class CPU {
 	private final Memory dirtyBuffer = BufferFactory.createDirtyBuffer();
 	private final Stack<Integer> stack = new Stack<Integer>();
 	private final List<Register<Integer>> dataRegisters;
-	private final InstructionRegister<Integer> instructionRegister;
-	private final ProgramCounter<Integer> programCounter;
-	private final IndexRegister<Integer> indexRegister;
+	private final Register<Integer> instructionRegister;
+	private final Register<Integer> programCounter;
+	private final Register<Integer> indexRegister;
 	private final ALU alu;
 	private Timer<Integer> delayTimer;
 	private Timer<Integer> soundTimer;
@@ -45,7 +42,7 @@ public class CPU {
 	private int address;
 	private int lowestByte;
 	
-	public CPU(List<Register<Integer>> dataRegisters, InstructionRegister<Integer> instructionRegister, ProgramCounter<Integer> programCounter, IndexRegister<Integer> indexRegister, List<Timer<Integer>> timers, List<Flag> flags, ALU alu) {
+	public CPU(List<Register<Integer>> dataRegisters, Register<Integer> instructionRegister, Register<Integer> programCounter, Register<Integer> indexRegister, List<Timer<Integer>> timers, List<Flag> flags, ALU alu) {
 		this.dataRegisters = dataRegisters;
 		this.instructionRegister = instructionRegister;
 		this.programCounter = programCounter;
@@ -287,7 +284,7 @@ public class CPU {
 						alu.addWithCarry(indexRegister, dataRegisters.get(registerLocationX).read(), 0xFFF);
 						break;
 					case "29":
-				 		alu.load(indexRegister, (dataRegisters.get(registerLocationX).read().intValue() * 5) & FIT_16BIT_REGISTER);
+				 		alu.load(indexRegister, (dataRegisters.get(registerLocationX).read() * 5) & FIT_16BIT_REGISTER);
 						break;
 					case "33":
 				 		getPrimaryMemory().write(indexRegister.read(), dataRegisters.get(registerLocationX).read() / 100);

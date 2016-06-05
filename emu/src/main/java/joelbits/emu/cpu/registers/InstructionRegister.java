@@ -1,15 +1,24 @@
 package joelbits.emu.cpu.registers;
 
 public final class InstructionRegister<T> implements Register<T> {
-	private T instructionRegister;
+	private static final Register<Integer> instructionRegister = new InstructionRegister<Integer>();
+	private T data;
+	
+	private InstructionRegister() {
+		
+	}
 
 	@Override
 	public T read() {
-		return instructionRegister;
+		return data;
 	}
 
 	@Override
 	public void write(T data) {
-		instructionRegister = data;
+		this.data = data;
+	}
+	
+	public static final Register<Integer> getInstance() {
+		return instructionRegister;
 	}
 }

@@ -33,48 +33,48 @@ public class ALU {
 	}
 	
 	public void addWithCarry(Register<Integer> register, int value, int limit) {
-		int sum = (register.read().intValue() + value) & FIT_16BIT_REGISTER;
+		int sum = (register.read() + value) & FIT_16BIT_REGISTER;
 		dataRegisterVF.write((sum > limit) ? 1 : 0);
 		register.write(limit == FIT_8BIT_REGISTER ? sum & FIT_8BIT_REGISTER : sum);
 		incrementProgramCounter(programCounter);
 	}
 	
 	public void subtractWithBorrow(Register<Integer> register, int value) {
-		dataRegisterVF.write(register.read().intValue() > value ? 1 : 0);
-		register.write(convertToUnsignedInt(register.read().intValue() - value) & FIT_8BIT_REGISTER);
+		dataRegisterVF.write(register.read() > value ? 1 : 0);
+		register.write(convertToUnsignedInt(register.read() - value) & FIT_8BIT_REGISTER);
 		incrementProgramCounter(programCounter);
 	}
 	
 	public void subtractWithNegatedBorrow(Register<Integer> register, int value) {
-		dataRegisterVF.write(register.read().intValue() > value ? 0 : 1);
-		register.write(convertToUnsignedInt(value - register.read().intValue()) & FIT_8BIT_REGISTER);
+		dataRegisterVF.write(register.read() > value ? 0 : 1);
+		register.write(convertToUnsignedInt(value - register.read()) & FIT_8BIT_REGISTER);
 		incrementProgramCounter(programCounter);
 	}
 	
 	public void bitwiseOR(Register<Integer> register, int value) {
-		register.write(register.read().intValue() | value);
+		register.write(register.read() | value);
 		incrementProgramCounter(programCounter);
 	}
 	
 	public void bitwiseAND(Register<Integer> register, int value) {
-		register.write(register.read().intValue() & value);
+		register.write(register.read() & value);
 		incrementProgramCounter(programCounter);
 	}
 	
 	public void bitwiseXOR(Register<Integer> register, int value) {
-		register.write(register.read().intValue() ^ value);
+		register.write(register.read() ^ value);
 		incrementProgramCounter(programCounter);
 	}
 	
 	public void leftShiftWithCarry(Register<Integer> register) {
-		dataRegisterVF.write((register.read().intValue() >> 7) & 0x1);
-		register.write((register.read().intValue() << 1) & FIT_8BIT_REGISTER);
+		dataRegisterVF.write((register.read() >> 7) & 0x1);
+		register.write((register.read() << 1) & FIT_8BIT_REGISTER);
 		incrementProgramCounter(programCounter);
 	}
 	
 	public void rightShiftWithCarry(Register<Integer> register) {
-		dataRegisterVF.write(register.read().intValue() & 0x1);
-		register.write((register.read().intValue() >> 1));
+		dataRegisterVF.write(register.read() & 0x1);
+		register.write((register.read() >> 1));
 		incrementProgramCounter(programCounter);
 	}
 	

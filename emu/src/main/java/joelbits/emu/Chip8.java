@@ -124,9 +124,9 @@ public class Chip8 extends Application {
 			dataRegisters.add(i, new DataRegister<Integer>());
 			dataRegisters.get(i).write(0);
 		}
-		InstructionRegister<Integer> instructionRegister = new InstructionRegister<Integer>();
-		ProgramCounter<Integer> programCounter = new ProgramCounter<Integer>();
-		IndexRegister<Integer> indexRegister = new IndexRegister<Integer>();
+		Register<Integer> instructionRegister = InstructionRegister.getInstance();
+		Register<Integer> programCounter = ProgramCounter.getInstance();
+		Register<Integer> indexRegister = IndexRegister.getInstance();
 		
 		delayTimer = new DelayTimer<Integer>();
 		soundTimer = new SoundTimer<Integer>();
@@ -246,7 +246,7 @@ public class Chip8 extends Application {
 	class InstructionCycle implements Runnable {
 
 		@Override
-		public synchronized void run() {
+		public void run() {
 			if (!paused) {
 	 			if (delayTimer.currentValue() > 0) {
 	 				decrementDelayTimer();
@@ -285,7 +285,7 @@ public class Chip8 extends Application {
 			soundTimer.setValue(soundTimer.currentValue() - 1);
 		}
 		
-		private synchronized void drawSprites() {
+		private void drawSprites() {
 			int dirtyBufferSize = cpu.getDirtyBuffer().size();
 			int pixelSize = cpu.getScreen().pixelSize();
 			int screenWidth = cpu.getScreen().width();
