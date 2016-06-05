@@ -271,7 +271,7 @@ public class Chip8 extends Application {
 	 	 				drawFlag.toggle();
 	 	 			}
 	 				
-	 				cpu.nextInstructionCycle();
+	 				cpu.executeOperation();
 	 			}
 			}
 			return;

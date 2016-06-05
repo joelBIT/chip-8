@@ -95,7 +95,7 @@ public class TestCPU {
 		writeToMemory(address, (opcode >> 8) & FIT_8BIT_REGISTER);
 		writeToMemory(address + 1, opcode & FIT_8BIT_REGISTER);
 		
-		target.nextInstructionCycle();
+		target.executeOperation();
 	}
 	
 	private void writeToMemory(int location, int data) {

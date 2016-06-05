@@ -19,7 +19,7 @@ import joelbits.emu.timers.Timer;
  *
  */
 public class CPU {
-	private MemoryBus memoryBus = new MemoryBus();
+	private final MemoryBus memoryBus = new MemoryBus();
 	private final ExpansionBus expansionBus = new ExpansionBus();
 	private final Memory displayBuffer = BufferFactory.createDisplayBuffer(getScreen().width(), getScreen().height());
 	private final Memory dirtyBuffer = BufferFactory.createDirtyBuffer();
@@ -128,7 +128,7 @@ public class CPU {
 		}
 	}
 	
-	public void nextInstructionCycle() {
+	public void executeOperation() {
 		int instruction = getPrimaryMemory().read(programCounter.read()) << 8 | getPrimaryMemory().read(programCounter.read()+1);
 		instructionRegister.write(Integer.valueOf(instruction));
 		
@@ -137,24 +137,16 @@ public class CPU {
 		nibble = instruction & 0x000F;
 		address = instruction & 0x0FFF;
 		lowestByte = instruction & 0x00FF;
+		String leastSignificantNibble = Integer.toHexString(nibble).toUpperCase();
+		String leastSignificantByte = Integer.toHexString(lowestByte).toUpperCase();
 		
 		switch(Integer.toHexString(instruction & 0xF000).toUpperCase()) {
 			case "0":
-				switch(Integer.toHexString(address).toUpperCase()) {
-					case "E0":
-						getDisplayBuffer().clear();
-						getDirtyBuffer().clear();
-						if (!clearFlag.isActive()) {
-							clearFlag.toggle();
-						}
-						programCounter.write(programCounter.read() + 2);
-						break;
-					case "EE":
-						programCounter.write(stack.pop() + 2);
-						break;
-					default:
-						System.out.println("Unknown instruction " + Integer.toHexString(instruction & FIT_16BIT_REGISTER) + " at (0) location " + programCounter.read());
-						break;
+				if (Integer.toHexString(lowestByte).toUpperCase().equals("E0")) {
+					clearDisplayBuffers();
+					programCounter.write(programCounter.read() + 2);
+				} else if (Integer.toHexString(lowestByte).toUpperCase().equals("EE")) {
+					programCounter.write(stack.pop() + 2);
 				}
 				break;
 			case "1000":
@@ -180,37 +172,24 @@ public class CPU {
 				alu.add(dataRegisters.get(registerLocationX), lowestByte);
 				break;
 			case "8000":
-				switch(Integer.toHexString(nibble).toUpperCase()) {
-					case "0":
-						alu.load(dataRegisters.get(registerLocationX), dataRegisters.get(registerLocationY).read());
-						break;
-					case "1":
-						alu.bitwiseOR(dataRegisters.get(registerLocationX), dataRegisters.get(registerLocationY).read());
-						break;
-					case "2":
-						alu.bitwiseAND(dataRegisters.get(registerLocationX), dataRegisters.get(registerLocationY).read());
-						break;
-					case "3":
-						alu.bitwiseXOR(dataRegisters.get(registerLocationX), dataRegisters.get(registerLocationY).read());
-						break;
-					case "4":
-						alu.addWithCarry(dataRegisters.get(registerLocationX), dataRegisters.get(registerLocationY).read(), FIT_8BIT_REGISTER);
-						break;
-					case "5":
-						alu.subtractWithBorrow(dataRegisters.get(registerLocationX), dataRegisters.get(registerLocationY).read());
-						break;
-					case "6":
-						alu.rightShiftWithCarry(dataRegisters.get(registerLocationX));
-						break;
-					case "7":
-						alu.subtractWithNegatedBorrow(dataRegisters.get(registerLocationX), dataRegisters.get(registerLocationY).read());
-						break;
-					case "E":
-						alu.leftShiftWithCarry(dataRegisters.get(registerLocationX));
-						break;
-					default:
-						System.out.println("Unknown instruction " + Integer.toHexString(instruction & FIT_16BIT_REGISTER) + " at (8) location " + programCounter.read());
-						break;
+				if (leastSignificantNibble.equals("0")) {
+					alu.load(dataRegisters.get(registerLocationX), dataRegisters.get(registerLocationY).read());
+				} else if (leastSignificantNibble.equals("1")) {
+					alu.bitwiseOR(dataRegisters.get(registerLocationX), dataRegisters.get(registerLocationY).read());
+				} else if (leastSignificantNibble.equals("2")) {
+					alu.bitwiseAND(dataRegisters.get(registerLocationX), dataRegisters.get(registerLocationY).read());
+				} else if (leastSignificantNibble.equals("3")) {
+					alu.bitwiseXOR(dataRegisters.get(registerLocationX), dataRegisters.get(registerLocationY).read());
+				} else if (leastSignificantNibble.equals("4")) {
+					alu.addWithCarry(dataRegisters.get(registerLocationX), dataRegisters.get(registerLocationY).read(), FIT_8BIT_REGISTER);
+				} else if (leastSignificantNibble.equals("5")) {
+					alu.subtractWithBorrow(dataRegisters.get(registerLocationX), dataRegisters.get(registerLocationY).read());
+				} else if (leastSignificantNibble.equals("6")) {
+					alu.rightShiftWithCarry(dataRegisters.get(registerLocationX));
+				} else if (leastSignificantNibble.equals("7")) {
+					alu.subtractWithNegatedBorrow(dataRegisters.get(registerLocationX), dataRegisters.get(registerLocationY).read());
+				} else if (leastSignificantNibble.equals("E")) {
+					alu.leftShiftWithCarry(dataRegisters.get(registerLocationX));
 				}
 				break;
 			case "9000":
@@ -248,65 +227,46 @@ public class CPU {
 				programCounter.write(programCounter.read() + 2);
 				break;
 			case "E000":
-				switch(Integer.toHexString(lowestByte).toUpperCase()) {
-					case "9E":
-						alu.skipNextIfEqual(dataRegisters.get(registerLocationX), getKeyboard().getCurrentlyPressedKey());
-						break;
-					case "A1":
-						alu.skipNextIfNotEqual(dataRegisters.get(registerLocationX), getKeyboard().getCurrentlyPressedKey());
-						break;
-					default:
-						System.out.println("Unknown instruction " + Integer.toHexString(instruction & FIT_16BIT_REGISTER) + " at (E) location " + programCounter.read());
-						break;
+				if (leastSignificantByte.equals("9E")) {
+					alu.skipNextIfEqual(dataRegisters.get(registerLocationX), getKeyboard().getCurrentlyPressedKey());
+				} else if (leastSignificantByte.equals("A1")) {
+					alu.skipNextIfNotEqual(dataRegisters.get(registerLocationX), getKeyboard().getCurrentlyPressedKey());
 				}
 				break;
 			case "F000":
-				switch(Integer.toHexString(lowestByte).toUpperCase()) {
-					case "7":
-						alu.load(dataRegisters.get(registerLocationX), delayTimer.currentValue());
-						break;
-					case "A":
-						while (getKeyboard().getCurrentlyPressedKey() == 0) {
-							;
-						}
-						alu.load(dataRegisters.get(registerLocationX), getKeyboard().getCurrentlyPressedKey());
-						break;
-					case "15":
-						delayTimer.setValue(dataRegisters.get(registerLocationX).read());
-						programCounter.write(programCounter.read() + 2);
-						break;
-					case "18":
-						int value = dataRegisters.get(registerLocationX).read();
-						soundTimer.setValue(value == 1 ? 2 : value);
-						programCounter.write(programCounter.read() + 2);
-						break;
-					case "1E":
-						alu.addWithCarry(indexRegister, dataRegisters.get(registerLocationX).read(), 0xFFF);
-						break;
-					case "29":
-				 		alu.load(indexRegister, (dataRegisters.get(registerLocationX).read() * 5) & FIT_16BIT_REGISTER);
-						break;
-					case "33":
-				 		getPrimaryMemory().write(indexRegister.read(), dataRegisters.get(registerLocationX).read() / 100);
-				 		getPrimaryMemory().write(indexRegister.read() + 1, (dataRegisters.get(registerLocationX).read() % 100) / 10);
-				 		getPrimaryMemory().write(indexRegister.read() + 2, dataRegisters.get(registerLocationX).read() % 10);
-				 		programCounter.write(programCounter.read() + 2);
-						break;
-					case "55":
-						for (int i = 0; i <= registerLocationX; i++) {
-							getPrimaryMemory().write(indexRegister.read() + i, dataRegisters.get(i).read());
-						}
-						programCounter.write(programCounter.read() + 2);
-						break;
-					case "65":
-						for (int i = 0; i <= registerLocationX; i++) {
-							dataRegisters.get(i).write(getPrimaryMemory().read(indexRegister.read() + i));
-						}
-						programCounter.write(programCounter.read() + 2);
-						break;
-					default:
-						System.out.println("Unknown instruction " + Integer.toHexString(instruction & FIT_16BIT_REGISTER) + " at (f) location " + programCounter.read());
-						break;
+				if (leastSignificantNibble.equals("7")) {
+					alu.load(dataRegisters.get(registerLocationX), delayTimer.currentValue());
+				} else if (leastSignificantNibble.equals("A")) {
+					while (getKeyboard().getCurrentlyPressedKey() == 0) {
+						;
+					}
+					alu.load(dataRegisters.get(registerLocationX), getKeyboard().getCurrentlyPressedKey());
+				} else if (leastSignificantByte.equals("15")) {
+					delayTimer.setValue(dataRegisters.get(registerLocationX).read());
+					programCounter.write(programCounter.read() + 2);
+				} else if (leastSignificantByte.equals("18")) {
+					int value = dataRegisters.get(registerLocationX).read();
+					soundTimer.setValue(value == 1 ? 2 : value);
+					programCounter.write(programCounter.read() + 2);
+				} else if (leastSignificantByte.equals("1E")) {
+					alu.addWithCarry(indexRegister, dataRegisters.get(registerLocationX).read(), 0xFFF);
+				} else if (leastSignificantByte.equals("29")) {
+					alu.load(indexRegister, (dataRegisters.get(registerLocationX).read() * 5) & FIT_16BIT_REGISTER);
+				} else if (leastSignificantByte.equals("33")) {
+					getPrimaryMemory().write(indexRegister.read(), dataRegisters.get(registerLocationX).read() / 100);
+			 		getPrimaryMemory().write(indexRegister.read() + 1, (dataRegisters.get(registerLocationX).read() % 100) / 10);
+			 		getPrimaryMemory().write(indexRegister.read() + 2, dataRegisters.get(registerLocationX).read() % 10);
+			 		programCounter.write(programCounter.read() + 2);
+				} else if (leastSignificantByte.equals("55")) {
+					for (int i = 0; i <= registerLocationX; i++) {
+						getPrimaryMemory().write(indexRegister.read() + i, dataRegisters.get(i).read());
+					}
+					programCounter.write(programCounter.read() + 2);
+				} else if (leastSignificantByte.equals("65")) {
+					for (int i = 0; i <= registerLocationX; i++) {
+						dataRegisters.get(i).write(getPrimaryMemory().read(indexRegister.read() + i));
+					}
+					programCounter.write(programCounter.read() + 2);
 				}
 				break;
 			default:
@@ -314,6 +274,14 @@ public class CPU {
 				break;
 		}
 		programCounter.write(programCounter.read() & FIT_16BIT_REGISTER);
+	}
+	
+	private void clearDisplayBuffers() {
+		getDisplayBuffer().clear();
+		getDirtyBuffer().clear();
+		if (!clearFlag.isActive()) {
+			clearFlag.toggle();
+		}
 	}
 	
 	private int convertToIndex(int coordinateX, int coordinateY) {
