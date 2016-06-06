@@ -6,7 +6,6 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executors;
@@ -32,6 +31,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import joelbits.emu.cpu.ALU;
 import joelbits.emu.cpu.CPU;
+import joelbits.emu.cpu.ExpansionBus;
 import joelbits.emu.cpu.registers.DataRegister;
 import joelbits.emu.cpu.registers.IndexRegister;
 import joelbits.emu.cpu.registers.InstructionRegister;
@@ -40,6 +40,9 @@ import joelbits.emu.cpu.registers.Register;
 import joelbits.emu.flags.ClearFlag;
 import joelbits.emu.flags.DrawFlag;
 import joelbits.emu.flags.Flag;
+import joelbits.emu.input.Keyboard;
+import joelbits.emu.output.Beep;
+import joelbits.emu.output.Screen;
 import joelbits.emu.timers.DelayTimer;
 import joelbits.emu.timers.SoundTimer;
 import joelbits.emu.timers.Timer;
@@ -51,6 +54,7 @@ import joelbits.emu.timers.Timer;
  */
 public class Chip8 extends Application {
 	private CPU cpu;
+	private ExpansionBus<Integer> expansionBus;
 	private FileChooser fileChooser;
 	private GraphicsContext graphicsContext;
 	private Stage stage;
@@ -101,8 +105,8 @@ public class Chip8 extends Application {
 		stage.setResizable(false);
 		stage.setOnCloseRequest(event -> terminateApplication());
 		
-		scene.setOnKeyPressed(event -> cpu.getKeyboard().pressKey(event.getCode()));
-		scene.setOnKeyReleased(event -> cpu.getKeyboard().releasePressedKey());
+		scene.setOnKeyPressed(event -> expansionBus.getKeyboard().pressKey(event.getCode()));
+		scene.setOnKeyReleased(event -> expansionBus.getKeyboard().releasePressedKey());
 		
 		fileChooser = new FileChooser();
 		fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("rom", "*.rom"), new FileChooser.ExtensionFilter("ch8", "*.ch8"));
@@ -133,7 +137,13 @@ public class Chip8 extends Application {
 		clearFlag = new ClearFlag();
 		drawFlag = new DrawFlag();
 		
-		cpu = new CPU(dataRegisters, instructionRegister, programCounter, indexRegister, Arrays.asList(delayTimer, soundTimer), Arrays.asList(drawFlag, clearFlag), new ALU(programCounter, dataRegisters.get(0xF), new RandomNumberGenerator()));
+		expansionBus = initializeExpansionBus();
+		
+		cpu = new CPU(expansionBus, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, drawFlag, clearFlag, new ALU(programCounter, dataRegisters.get(0xF), new RandomNumberGenerator()));
+	}
+	
+	private ExpansionBus<Integer> initializeExpansionBus() {
+		return new ExpansionBus<Integer>(new Keyboard(), new Beep(), new Screen<Integer>(64, 32, 14));
 	}
 	
 	private void terminateApplication() {
@@ -171,9 +181,9 @@ public class Chip8 extends Application {
 		muteSound.setAccelerator(new KeyCodeCombination(KeyCode.F4));
 		muteSound.setOnAction(event -> {
 			if (muteSound.isSelected()) {
-				cpu.getSound().mute();
+				expansionBus.getSound().mute();
 			} else {
-				cpu.getSound().unmute();
+				expansionBus.getSound().unmute();
 			}
 		});
 		MenuItem velocity = new MenuItem("Change velocity");
@@ -215,8 +225,8 @@ public class Chip8 extends Application {
 	
 	private void clearDisplay() {
 		int displayBufferSize = cpu.getDisplayBuffer().size();
-		int pixelSize = cpu.getScreen().pixelSize();
-		int screenWidth = cpu.getScreen().width();
+		int pixelSize = expansionBus.getScreen().pixelSize();
+		int screenWidth = expansionBus.getScreen().width();
 		for (int i = 0; i < displayBufferSize; i++) {
 			int coordinateX = i % screenWidth;
 			int coordinateY = i / screenWidth;
@@ -253,10 +263,10 @@ public class Chip8 extends Application {
 	 			}
 	 			
 	 			if (soundTimer.currentValue() > 0) {
-	 				cpu.getSound().start();
+	 				expansionBus.getSound().start();
 	 				decrementSoundTimer();
 	 				if (soundTimer.currentValue() <= 0) {
-	 					cpu.getSound().stop();
+	 					expansionBus.getSound().stop();
 	 				}
 	 			}
 	 			
@@ -271,7 +281,7 @@ public class Chip8 extends Application {
 	 	 				drawFlag.toggle();
 	 	 			}
 	 				
-	 				cpu.executeOperation();
+	 				cpu.executeNextOperation();
 	 			}
 			}
 			return;
@@ -287,8 +297,8 @@ public class Chip8 extends Application {
 		
 		private void drawSprites() {
 			int dirtyBufferSize = cpu.getDirtyBuffer().size();
-			int pixelSize = cpu.getScreen().pixelSize();
-			int screenWidth = cpu.getScreen().width();
+			int pixelSize = expansionBus.getScreen().pixelSize();
+			int screenWidth = expansionBus.getScreen().width();
 			for (int i = 0; i < dirtyBufferSize; i++) {
 				int dirtyLocation = cpu.getDirtyBuffer().read(i);
 				int coordinateX = dirtyLocation % screenWidth;

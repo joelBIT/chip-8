@@ -1,14 +1,19 @@
 package joelbits.emu.cpu;
 
 import joelbits.emu.input.Keyboard;
-import joelbits.emu.output.Beep;
 import joelbits.emu.output.Screen;
 import joelbits.emu.output.Sound;
 
-public class ExpansionBus {
-	private Keyboard keyboard = new Keyboard();
-	private Sound sound = new Beep();
-	private Screen<Integer> screen = new Screen<Integer>(64, 32, 14);
+public class ExpansionBus<T> {
+	private final Keyboard keyboard;
+	private final Sound sound;
+	private final Screen<T> screen;
+	
+	public ExpansionBus(Keyboard keyboard, Sound sound, Screen<T> screen) {
+		this.keyboard = keyboard;
+		this.sound = sound;
+		this.screen = screen;
+	}
 	
 	public Keyboard getKeyboard() {
 		return keyboard;
@@ -18,7 +23,7 @@ public class ExpansionBus {
 		return sound;
 	}
 	
-	public Screen<Integer> getScreen() {
+	public Screen<T> getScreen() {
 		return screen;
 	}
 }

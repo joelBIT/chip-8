@@ -5,7 +5,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.junit.Before;
@@ -14,6 +13,7 @@ import org.junit.Test;
 import javafx.scene.input.KeyCode;
 import joelbits.emu.cpu.ALU;
 import joelbits.emu.cpu.CPU;
+import joelbits.emu.cpu.ExpansionBus;
 import joelbits.emu.cpu.registers.DataRegister;
 import joelbits.emu.cpu.registers.IndexRegister;
 import joelbits.emu.cpu.registers.InstructionRegister;
@@ -22,7 +22,10 @@ import joelbits.emu.cpu.registers.Register;
 import joelbits.emu.flags.ClearFlag;
 import joelbits.emu.flags.DrawFlag;
 import joelbits.emu.flags.Flag;
+import joelbits.emu.input.Keyboard;
 import joelbits.emu.memory.Memory;
+import joelbits.emu.output.Beep;
+import joelbits.emu.output.Screen;
 import joelbits.emu.timers.DelayTimer;
 import joelbits.emu.timers.SoundTimer;
 import joelbits.emu.timers.Timer;
@@ -30,6 +33,7 @@ import joelbits.emu.timers.Timer;
 public class TestCPU {
 	private CPU target;
 	private Memory memory;
+	private ExpansionBus<Integer> expansionBus;
 	private List<Register<Integer>> dataRegisters;
 	private Timer<Integer> delayTimer;
 	private Timer<Integer> soundTimer;
@@ -67,8 +71,9 @@ public class TestCPU {
 		programCounter = ProgramCounter.getInstance();
 		indexRegister = IndexRegister.getInstance();
 		randomNumberGenerator = new RandomNumberGenerator();
+		expansionBus = new ExpansionBus<Integer>(new Keyboard(), new Beep(), new Screen<Integer>(SCREEN_WIDTH, SCREEN_HEIGHT, 14));
 		
-		target = new CPU(dataRegisters, instructionRegister, programCounter, indexRegister, Arrays.asList(delayTimer, soundTimer), Arrays.asList(drawFlag, clearFlag), new ALU(programCounter, dataRegisters.get(0xF), randomNumberGenerator));
+		target = new CPU(expansionBus, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, drawFlag, clearFlag, new ALU(programCounter, dataRegisters.get(0xF), randomNumberGenerator));
 		target.initialize(address, instruction, index, delayTime, soundTime, fontset);
 		
 		memory = target.getPrimaryMemory();
@@ -95,7 +100,7 @@ public class TestCPU {
 		writeToMemory(address, (opcode >> 8) & FIT_8BIT_REGISTER);
 		writeToMemory(address + 1, opcode & FIT_8BIT_REGISTER);
 		
-		target.executeOperation();
+		target.executeNextOperation();
 	}
 	
 	private void writeToMemory(int location, int data) {
@@ -533,7 +538,7 @@ public class TestCPU {
 	}
 	
 	private int convertToIndex(int coordinateX, int coordinateY) {
-		return (coordinateX % target.getScreen().width()) + ((coordinateY % target.getScreen().width()) * target.getScreen().width());
+		return (coordinateX % SCREEN_WIDTH) + ((coordinateY % SCREEN_WIDTH) * SCREEN_WIDTH);
 	}
 	
 	/**
@@ -544,10 +549,10 @@ public class TestCPU {
 	 */
 	@Test
 	public void doNotSkipNextInstructionBecauseKeyEqualToDataRegisterValueIsNotPressed() {
-		target.getKeyboard().pressKey(KeyCode.R);
+		expansionBus.getKeyboard().pressKey(KeyCode.R);
 		executeOpCode(0xEA9E);
 		
-		assertFalse(target.getKeyboard().getCurrentlyPressedKey() == dataRegisters.get(0xA).read().intValue());
+		assertFalse(expansionBus.getKeyboard().getCurrentlyPressedKey() == dataRegisters.get(0xA).read().intValue());
 		assertEquals(address + 2, programCounter.read().intValue());
 	}
 	
@@ -559,10 +564,10 @@ public class TestCPU {
 	 */
 	@Test
 	public void skipNextInstructionBecauseKeyEqualToDataRegisterValueIsPressed() {
-		target.getKeyboard().pressKey(KeyCode.R);
+		expansionBus.getKeyboard().pressKey(KeyCode.R);
 		executeOpCode(0xED9E);
 		
-		assertEquals(target.getKeyboard().getCurrentlyPressedKey(), dataRegisters.get(0xD).read().intValue());
+		assertEquals(expansionBus.getKeyboard().getCurrentlyPressedKey(), dataRegisters.get(0xD).read().intValue());
 		assertEquals(address + 4, programCounter.read().intValue());
 	}
 	
@@ -574,10 +579,10 @@ public class TestCPU {
 	 */
 	@Test
 	public void skipNextInstructionBecauseKeyEqualToDataRegisterValueIsNotPressed() {
-		target.getKeyboard().pressKey(KeyCode.R);
+		expansionBus.getKeyboard().pressKey(KeyCode.R);
 		executeOpCode(0xEAA1);
 		
-		assertFalse(target.getKeyboard().getCurrentlyPressedKey() == dataRegisters.get(0xA).read().intValue());
+		assertFalse(expansionBus.getKeyboard().getCurrentlyPressedKey() == dataRegisters.get(0xA).read().intValue());
 		assertEquals(address + 4, programCounter.read().intValue());
 	}
 	
@@ -589,10 +594,10 @@ public class TestCPU {
 	 */
 	@Test
 	public void doNotSkipNextInstructionBecauseKeyEqualToDataRegisterValueIsPressed() {
-		target.getKeyboard().pressKey(KeyCode.R);
+		expansionBus.getKeyboard().pressKey(KeyCode.R);
 		executeOpCode(0xEDA1);
 		
-		assertEquals(target.getKeyboard().getCurrentlyPressedKey(), dataRegisters.get(0xD).read().intValue());
+		assertEquals(expansionBus.getKeyboard().getCurrentlyPressedKey(), dataRegisters.get(0xD).read().intValue());
 		assertEquals(address + 2, programCounter.read().intValue());
 	}
 	
@@ -616,10 +621,10 @@ public class TestCPU {
 	 */
 	@Test
 	public void valueOfPressedKeyStoredInDataRegister() {
-		target.getKeyboard().pressKey(KeyCode.A);
+		expansionBus.getKeyboard().pressKey(KeyCode.A);
 		executeOpCode(0xF70A);
 		
-		assertEquals(target.getKeyboard().getCurrentlyPressedKey(), dataRegisters.get(0x7).read().intValue());
+		assertEquals(expansionBus.getKeyboard().getCurrentlyPressedKey(), dataRegisters.get(0x7).read().intValue());
 	}
 	
 	/**

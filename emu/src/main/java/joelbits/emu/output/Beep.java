@@ -30,7 +30,7 @@ public class Beep implements Sound {
     
     private void openAudioInputStream() {
     	for (int i = 0; i < SAMPLE_RATE / SAMPLE_SIZE_IN_BITS; i++) {
-    		soundBytes[i] = (byte) ((double)SOUND_VOLUME * Math.sin(6.283185307179586 * (double)SOUND_FREQUENCY * (i / (double)SAMPLE_RATE)));
+    		soundBytes[i] = (byte) ((double)SOUND_VOLUME * Math.sin(6.28 * (double)SOUND_FREQUENCY * (i / (double)SAMPLE_RATE)));
     	}
     	byteArrayInputStream = new ByteArrayInputStream(soundBytes);
     	audioFormat = new AudioFormat(SAMPLE_RATE, SAMPLE_SIZE_IN_BITS, 1, true, false);
@@ -46,7 +46,7 @@ public class Beep implements Sound {
     }
 
     @Override
-    public synchronized void start() {
+    public void start() {
     	if (!isBeeping() && !isMuted()) {
     		beepSound.loop(-1);
         }
@@ -62,7 +62,7 @@ public class Beep implements Sound {
     }
 
     @Override
-    public synchronized void stop() {
+    public void stop() {
     	if (isBeeping() && !isMuted()) {
     		beepSound.stop();
     	}
@@ -70,7 +70,7 @@ public class Beep implements Sound {
     }
 
     @Override
-    public synchronized void mute() {
+    public void mute() {
     	if (isBeeping()) {
     		beepSound.stop();
     	}
@@ -78,7 +78,7 @@ public class Beep implements Sound {
     }
 
     @Override
-    public synchronized void unmute() {
+    public void unmute() {
     	if (isBeeping() && isMuted()) {
         	beepSound.loop(-1);
     	}

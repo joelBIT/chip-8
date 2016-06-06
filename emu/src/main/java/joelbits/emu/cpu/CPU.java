@@ -5,11 +5,8 @@ import java.util.Stack;
 
 import joelbits.emu.cpu.registers.Register;
 import joelbits.emu.flags.Flag;
-import joelbits.emu.input.Keyboard;
 import joelbits.emu.memory.BufferFactory;
 import joelbits.emu.memory.Memory;
-import joelbits.emu.output.Screen;
-import joelbits.emu.output.Sound;
 import joelbits.emu.timers.Timer;
 
 /**
@@ -20,8 +17,8 @@ import joelbits.emu.timers.Timer;
  */
 public class CPU {
 	private final MemoryBus memoryBus = new MemoryBus();
-	private final ExpansionBus expansionBus = new ExpansionBus();
-	private final Memory displayBuffer = BufferFactory.createDisplayBuffer(getScreen().width(), getScreen().height());
+	private final ExpansionBus<Integer> expansionBus;
+	private final Memory displayBuffer = BufferFactory.createDisplayBuffer(64, 32);
 	private final Memory dirtyBuffer = BufferFactory.createDirtyBuffer();
 	private final Stack<Integer> stack = new Stack<Integer>();
 	private final List<Register<Integer>> dataRegisters;
@@ -42,42 +39,17 @@ public class CPU {
 	private int address;
 	private int lowestByte;
 	
-	public CPU(List<Register<Integer>> dataRegisters, Register<Integer> instructionRegister, Register<Integer> programCounter, Register<Integer> indexRegister, List<Timer<Integer>> timers, List<Flag> flags, ALU alu) {
+	public CPU(ExpansionBus<Integer> expansionBus, List<Register<Integer>> dataRegisters, Register<Integer> instructionRegister, Register<Integer> programCounter, Register<Integer> indexRegister, Timer<Integer> delayTimer, Timer<Integer> soundTimer, Flag drawFlag, Flag clearFlag, ALU alu) {
+		this.expansionBus = expansionBus;
 		this.dataRegisters = dataRegisters;
 		this.instructionRegister = instructionRegister;
 		this.programCounter = programCounter;
 		this.indexRegister = indexRegister;
+		this.delayTimer = delayTimer;
+		this.soundTimer = soundTimer;
+		this.drawFlag = drawFlag;
+		this.clearFlag = clearFlag;
 		this.alu = alu;
-		assignTimers(timers);
-		assignFlags(flags);
-	}
-	
-	private void assignTimers(List<Timer<Integer>> timers) {
-		String className;
-		for (Timer<Integer> timer : timers) {
-			className = timer.getClass().getName();
-			if (className.equals("joelbits.emu.timers.SoundTimer")) {
-				soundTimer = timer;
-			} else if (className.equals("joelbits.emu.timers.DelayTimer")) {
-				delayTimer = timer;
-			}
-		}
-	}
-	
-	private void assignFlags(List<Flag> flags) {
-		String className;
-		for (Flag flag : flags) {
-			className = flag.getClass().getName();
-			if (className.equals("joelbits.emu.flags.ClearFlag")) {
-				clearFlag = flag;
-			} else if (className.equals("joelbits.emu.flags.DrawFlag")) {
-				drawFlag = flag;
-			}
-		}
-	}
-	
-	public Keyboard getKeyboard() {
-		return expansionBus.getKeyboard();
 	}
 	
 	public Memory getDisplayBuffer() {
@@ -86,14 +58,6 @@ public class CPU {
 	
 	public Memory getDirtyBuffer() {
 		return dirtyBuffer;
-	}
-	
-	public Sound getSound() {
-		return expansionBus.getSound();
-	}
-	
-	public Screen<Integer> getScreen() {
-		return expansionBus.getScreen();
 	}
 	
 	public Memory getPrimaryMemory() {
@@ -128,15 +92,10 @@ public class CPU {
 		}
 	}
 	
-	public void executeOperation() {
-		int instruction = getPrimaryMemory().read(programCounter.read()) << 8 | getPrimaryMemory().read(programCounter.read()+1);
-		instructionRegister.write(Integer.valueOf(instruction));
+	public void executeNextOperation() {
+		int instruction = fetchNextInstruction();
+		extractInstructionInformation(instruction);
 		
-		registerLocationX = (instruction & 0x0F00) >> 8;
-		registerLocationY = (instruction & 0x00F0) >> 4;
-		nibble = instruction & 0x000F;
-		address = instruction & 0x0FFF;
-		lowestByte = instruction & 0x00FF;
 		String leastSignificantNibble = Integer.toHexString(nibble).toUpperCase();
 		String leastSignificantByte = Integer.toHexString(lowestByte).toUpperCase();
 		
@@ -205,42 +164,24 @@ public class CPU {
 				alu.addWithRandom(dataRegisters.get(registerLocationX), lowestByte);
 				break;
 			case "D000":
-				dataRegisters.get(0xF).write(0);
-				for (int row = 0; row < nibble; row++) {
-					int memoryByte = getPrimaryMemory().read(indexRegister.read() + row);
-					int coordinateY = dataRegisters.get(registerLocationY).read() + row;
-					for (int column = 0; column < 8; column++) {
-						if ((memoryByte & (0x80 >> column)) != 0) {
-							int coordinateX = dataRegisters.get(registerLocationX).read() + column;
-							int data = getDisplayBuffer().read(convertToIndex(coordinateX, coordinateY));
-							if (data != 0) {
-								dataRegisters.get(0xF).write(1);
-							} 
-							getDisplayBuffer().write(convertToIndex(coordinateX, coordinateY), data^1);
-							getDirtyBuffer().write(convertToIndex(coordinateX, coordinateY), data^1);
-						}
-					}
-				}
-				if (!drawFlag.isActive()) {
-					drawFlag.toggle();
-				}
+				drawSprite();
 				programCounter.write(programCounter.read() + 2);
 				break;
 			case "E000":
 				if (leastSignificantByte.equals("9E")) {
-					alu.skipNextIfEqual(dataRegisters.get(registerLocationX), getKeyboard().getCurrentlyPressedKey());
+					alu.skipNextIfEqual(dataRegisters.get(registerLocationX), expansionBus.getKeyboard().getCurrentlyPressedKey());
 				} else if (leastSignificantByte.equals("A1")) {
-					alu.skipNextIfNotEqual(dataRegisters.get(registerLocationX), getKeyboard().getCurrentlyPressedKey());
+					alu.skipNextIfNotEqual(dataRegisters.get(registerLocationX), expansionBus.getKeyboard().getCurrentlyPressedKey());
 				}
 				break;
 			case "F000":
 				if (leastSignificantNibble.equals("7")) {
 					alu.load(dataRegisters.get(registerLocationX), delayTimer.currentValue());
 				} else if (leastSignificantNibble.equals("A")) {
-					while (getKeyboard().getCurrentlyPressedKey() == 0) {
+					while (expansionBus.getKeyboard().getCurrentlyPressedKey() == 0) {
 						;
 					}
-					alu.load(dataRegisters.get(registerLocationX), getKeyboard().getCurrentlyPressedKey());
+					alu.load(dataRegisters.get(registerLocationX), expansionBus.getKeyboard().getCurrentlyPressedKey());
 				} else if (leastSignificantByte.equals("15")) {
 					delayTimer.setValue(dataRegisters.get(registerLocationX).read());
 					programCounter.write(programCounter.read() + 2);
@@ -253,19 +194,13 @@ public class CPU {
 				} else if (leastSignificantByte.equals("29")) {
 					alu.load(indexRegister, (dataRegisters.get(registerLocationX).read() * 5) & FIT_16BIT_REGISTER);
 				} else if (leastSignificantByte.equals("33")) {
-					getPrimaryMemory().write(indexRegister.read(), dataRegisters.get(registerLocationX).read() / 100);
-			 		getPrimaryMemory().write(indexRegister.read() + 1, (dataRegisters.get(registerLocationX).read() % 100) / 10);
-			 		getPrimaryMemory().write(indexRegister.read() + 2, dataRegisters.get(registerLocationX).read() % 10);
+					writeBcdRepresentationToMemory(registerLocationX);
 			 		programCounter.write(programCounter.read() + 2);
 				} else if (leastSignificantByte.equals("55")) {
-					for (int i = 0; i <= registerLocationX; i++) {
-						getPrimaryMemory().write(indexRegister.read() + i, dataRegisters.get(i).read());
-					}
+					writeDataRegistersToMemory(registerLocationX);
 					programCounter.write(programCounter.read() + 2);
 				} else if (leastSignificantByte.equals("65")) {
-					for (int i = 0; i <= registerLocationX; i++) {
-						dataRegisters.get(i).write(getPrimaryMemory().read(indexRegister.read() + i));
-					}
+					writeMemoryToDataRegisters(registerLocationX);
 					programCounter.write(programCounter.read() + 2);
 				}
 				break;
@@ -273,7 +208,20 @@ public class CPU {
 				System.out.println("Unknown instruction " + Integer.toHexString(instruction & FIT_16BIT_REGISTER) + " at (all) location " + programCounter.read());
 				break;
 		}
-		programCounter.write(programCounter.read() & FIT_16BIT_REGISTER);
+	}
+	
+	private int fetchNextInstruction() {
+		int instruction = getPrimaryMemory().read(programCounter.read()) << 8 | getPrimaryMemory().read(programCounter.read()+1);
+		instructionRegister.write(Integer.valueOf(instruction));
+		return instruction;
+	}
+	
+	private void extractInstructionInformation(int instruction) {
+		registerLocationX = (instruction & 0x0F00) >> 8;
+		registerLocationY = (instruction & 0x00F0) >> 4;
+		nibble = instruction & 0x000F;
+		address = instruction & 0x0FFF;
+		lowestByte = instruction & 0x00FF;
 	}
 	
 	private void clearDisplayBuffers() {
@@ -284,9 +232,49 @@ public class CPU {
 		}
 	}
 	
+	private void drawSprite() {
+		dataRegisters.get(0xF).write(0);
+		for (int row = 0; row < nibble; row++) {
+			int memoryByte = getPrimaryMemory().read(indexRegister.read() + row);
+			int coordinateY = dataRegisters.get(registerLocationY).read() + row;
+			for (int column = 0; column < 8; column++) {
+				if ((memoryByte & (0x80 >> column)) != 0) {
+					int coordinateX = dataRegisters.get(registerLocationX).read() + column;
+					int data = getDisplayBuffer().read(convertToIndex(coordinateX, coordinateY));
+					if (data != 0) {
+						dataRegisters.get(0xF).write(1);
+					} 
+					getDisplayBuffer().write(convertToIndex(coordinateX, coordinateY), data^1);
+					getDirtyBuffer().write(convertToIndex(coordinateX, coordinateY), data^1);
+				}
+			}
+		}
+		if (!drawFlag.isActive()) {
+			drawFlag.toggle();
+		}
+	}
+	
 	private int convertToIndex(int coordinateX, int coordinateY) {
-		int screenWidth = getScreen().width();
+		int screenWidth = expansionBus.getScreen().width();
 		return (coordinateX % screenWidth) + ((coordinateY % screenWidth) * screenWidth);
+	}
+	
+	private void writeBcdRepresentationToMemory(int registerLocation) {
+		getPrimaryMemory().write(indexRegister.read(), dataRegisters.get(registerLocation).read() / 100);
+ 		getPrimaryMemory().write(indexRegister.read() + 1, (dataRegisters.get(registerLocation).read() % 100) / 10);
+ 		getPrimaryMemory().write(indexRegister.read() + 2, dataRegisters.get(registerLocation).read() % 10);
+	}
+	
+	private void writeDataRegistersToMemory(int registerBound) {
+		for (int i = 0; i <= registerBound; i++) {
+			getPrimaryMemory().write(indexRegister.read() + i, dataRegisters.get(i).read());
+		}
+	}
+	
+	private void writeMemoryToDataRegisters(int registerBound) {
+		for (int i = 0; i <= registerBound; i++) {
+			dataRegisters.get(i).write(getPrimaryMemory().read(indexRegister.read() + i));
+		}
 	}
 	
 	public int readStackTopValue() {
