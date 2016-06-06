@@ -4,8 +4,6 @@ import java.util.List;
 import java.util.Stack;
 
 import joelbits.emu.cpu.registers.Register;
-import joelbits.emu.flags.Flag;
-import joelbits.emu.memory.BufferFactory;
 import joelbits.emu.memory.Memory;
 import joelbits.emu.timers.Timer;
 
@@ -18,18 +16,15 @@ import joelbits.emu.timers.Timer;
 public class CPU {
 	private final MemoryBus memoryBus = new MemoryBus();
 	private final ExpansionBus<Integer> expansionBus;
-	private final Memory displayBuffer = BufferFactory.createDisplayBuffer(64, 32);
-	private final Memory dirtyBuffer = BufferFactory.createDirtyBuffer();
 	private final Stack<Integer> stack = new Stack<Integer>();
 	private final List<Register<Integer>> dataRegisters;
 	private final Register<Integer> instructionRegister;
 	private final Register<Integer> programCounter;
 	private final Register<Integer> indexRegister;
 	private final ALU alu;
+	private final GPU gpu;
 	private Timer<Integer> delayTimer;
 	private Timer<Integer> soundTimer;
-	private Flag drawFlag;
-	private Flag clearFlag;
 	
 	private final int FIT_8BIT_REGISTER = 0xFF;
 	private final int FIT_16BIT_REGISTER = 0xFFFF;
@@ -39,7 +34,7 @@ public class CPU {
 	private int address;
 	private int lowestByte;
 	
-	public CPU(ExpansionBus<Integer> expansionBus, List<Register<Integer>> dataRegisters, Register<Integer> instructionRegister, Register<Integer> programCounter, Register<Integer> indexRegister, Timer<Integer> delayTimer, Timer<Integer> soundTimer, Flag drawFlag, Flag clearFlag, ALU alu) {
+	public CPU(ExpansionBus<Integer> expansionBus, List<Register<Integer>> dataRegisters, Register<Integer> instructionRegister, Register<Integer> programCounter, Register<Integer> indexRegister, Timer<Integer> delayTimer, Timer<Integer> soundTimer, ALU alu, GPU gpu) {
 		this.expansionBus = expansionBus;
 		this.dataRegisters = dataRegisters;
 		this.instructionRegister = instructionRegister;
@@ -47,17 +42,8 @@ public class CPU {
 		this.indexRegister = indexRegister;
 		this.delayTimer = delayTimer;
 		this.soundTimer = soundTimer;
-		this.drawFlag = drawFlag;
-		this.clearFlag = clearFlag;
 		this.alu = alu;
-	}
-	
-	public Memory getDisplayBuffer() {
-		return displayBuffer;
-	}
-	
-	public Memory getDirtyBuffer() {
-		return dirtyBuffer;
+		this.gpu = gpu;
 	}
 	
 	public Memory getPrimaryMemory() {
@@ -71,8 +57,7 @@ public class CPU {
 		indexRegister.write(index);
 		instructionRegister.write(instruction);
 		
-		getDirtyBuffer().clear();
-		getDisplayBuffer().clear();
+		gpu.clearBuffers();
 		getPrimaryMemory().clear();
 		
 		for (int i = 0; i < data.length; i++) {
@@ -102,7 +87,7 @@ public class CPU {
 		switch(Integer.toHexString(instruction & 0xF000).toUpperCase()) {
 			case "0":
 				if (Integer.toHexString(lowestByte).toUpperCase().equals("E0")) {
-					clearDisplayBuffers();
+					gpu.clearBuffers();
 					programCounter.write(programCounter.read() + 2);
 				} else if (Integer.toHexString(lowestByte).toUpperCase().equals("EE")) {
 					programCounter.write(stack.pop() + 2);
@@ -164,7 +149,7 @@ public class CPU {
 				alu.addWithRandom(dataRegisters.get(registerLocationX), lowestByte);
 				break;
 			case "D000":
-				drawSprite();
+				gpu.drawSprite(dataRegisters, getPrimaryMemory(), indexRegister, instruction);
 				programCounter.write(programCounter.read() + 2);
 				break;
 			case "E000":
@@ -222,41 +207,6 @@ public class CPU {
 		nibble = instruction & 0x000F;
 		address = instruction & 0x0FFF;
 		lowestByte = instruction & 0x00FF;
-	}
-	
-	private void clearDisplayBuffers() {
-		getDisplayBuffer().clear();
-		getDirtyBuffer().clear();
-		if (!clearFlag.isActive()) {
-			clearFlag.toggle();
-		}
-	}
-	
-	private void drawSprite() {
-		dataRegisters.get(0xF).write(0);
-		for (int row = 0; row < nibble; row++) {
-			int memoryByte = getPrimaryMemory().read(indexRegister.read() + row);
-			int coordinateY = dataRegisters.get(registerLocationY).read() + row;
-			for (int column = 0; column < 8; column++) {
-				if ((memoryByte & (0x80 >> column)) != 0) {
-					int coordinateX = dataRegisters.get(registerLocationX).read() + column;
-					int data = getDisplayBuffer().read(convertToIndex(coordinateX, coordinateY));
-					if (data != 0) {
-						dataRegisters.get(0xF).write(1);
-					} 
-					getDisplayBuffer().write(convertToIndex(coordinateX, coordinateY), data^1);
-					getDirtyBuffer().write(convertToIndex(coordinateX, coordinateY), data^1);
-				}
-			}
-		}
-		if (!drawFlag.isActive()) {
-			drawFlag.toggle();
-		}
-	}
-	
-	private int convertToIndex(int coordinateX, int coordinateY) {
-		int screenWidth = expansionBus.getScreen().width();
-		return (coordinateX % screenWidth) + ((coordinateY % screenWidth) * screenWidth);
 	}
 	
 	private void writeBcdRepresentationToMemory(int registerLocation) {

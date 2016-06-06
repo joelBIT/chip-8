@@ -2,43 +2,46 @@ package joelbits.emu;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.MockitoAnnotations.initMocks;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
 
 import javafx.scene.input.KeyCode;
 import joelbits.emu.cpu.ALU;
 import joelbits.emu.cpu.CPU;
 import joelbits.emu.cpu.ExpansionBus;
+import joelbits.emu.cpu.GPU;
 import joelbits.emu.cpu.registers.DataRegister;
 import joelbits.emu.cpu.registers.IndexRegister;
 import joelbits.emu.cpu.registers.InstructionRegister;
 import joelbits.emu.cpu.registers.ProgramCounter;
 import joelbits.emu.cpu.registers.Register;
-import joelbits.emu.flags.ClearFlag;
-import joelbits.emu.flags.DrawFlag;
-import joelbits.emu.flags.Flag;
 import joelbits.emu.input.Keyboard;
 import joelbits.emu.memory.Memory;
 import joelbits.emu.output.Beep;
-import joelbits.emu.output.Screen;
 import joelbits.emu.timers.DelayTimer;
 import joelbits.emu.timers.SoundTimer;
 import joelbits.emu.timers.Timer;
 
 public class TestCPU {
+	@Mock
+	private GPU gpu;
+	
 	private CPU target;
 	private Memory memory;
 	private ExpansionBus<Integer> expansionBus;
 	private List<Register<Integer>> dataRegisters;
 	private Timer<Integer> delayTimer;
 	private Timer<Integer> soundTimer;
-	private Flag drawFlag;
-	private Flag clearFlag;
 	private Register<Integer> instructionRegister;
 	private Register<Integer> programCounter;
 	private Register<Integer> indexRegister;
@@ -53,8 +56,6 @@ public class TestCPU {
 	private int index = 0x250;
 	private int delayTime = 0x0;
 	private int soundTime = 0x0;
-	private int SCREEN_WIDTH = 64;
-	private int SCREEN_HEIGHT = 32;
 	
 	@Before
 	public void setUp() {
@@ -65,17 +66,16 @@ public class TestCPU {
 		}
 		delayTimer = new DelayTimer<Integer>();
 		soundTimer = new SoundTimer<Integer>();
-		drawFlag = new DrawFlag();
-		clearFlag = new ClearFlag();
 		instructionRegister = InstructionRegister.getInstance();
 		programCounter = ProgramCounter.getInstance();
 		indexRegister = IndexRegister.getInstance();
 		randomNumberGenerator = new RandomNumberGenerator();
-		expansionBus = new ExpansionBus<Integer>(new Keyboard(), new Beep(), new Screen<Integer>(SCREEN_WIDTH, SCREEN_HEIGHT, 14));
+		expansionBus = new ExpansionBus<Integer>(new Keyboard(), new Beep());
 		
-		target = new CPU(expansionBus, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, drawFlag, clearFlag, new ALU(programCounter, dataRegisters.get(0xF), randomNumberGenerator));
+		initMocks(this);
+		
+		target = new CPU(expansionBus, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, new ALU(programCounter, dataRegisters.get(0xF), randomNumberGenerator), gpu);
 		target.initialize(address, instruction, index, delayTime, soundTime, fontset);
-		
 		memory = target.getPrimaryMemory();
 	}
 	
@@ -85,15 +85,11 @@ public class TestCPU {
 	 * Clear the display.
 	 */
 	@Test
-	public void setDisplayBufferValuesToZero() {
-		target.getDisplayBuffer().write(0x345, 0x59);
-		target.getDisplayBuffer().write(0x298, 0x53);
+	public void clearBuffers() {
+		reset(gpu);
 		executeOpCode(0x00E0);
-		
-		for (int i = 0; i < SCREEN_HEIGHT * SCREEN_WIDTH; i++) {
-			assertEquals(0x0, target.getDisplayBuffer().read(i));
-		}
-		assertTrue(clearFlag.isActive());
+
+		verify(gpu, times(1)).clearBuffers();
 	}
 	
 	private void executeOpCode(int opcode) {
@@ -513,32 +509,10 @@ public class TestCPU {
 	 * sprite is positioned so part of it is outside the coordinates of the display, it wraps around to the opposite side of the screen.
 	 */
 	@Test
-	public void storeSpriteStartingAtIndexRegisterLocationIntoDataRegistersWithoutCollisions() {
-		writeToMemory(index, 0xF0);
-		writeToMemory(index+1, 0x10);
-		writeToMemory(index+2, 0xF0);
-		writeToMemory(index+3, 0x80);
-		writeToMemory(index+4, 0xF0);
+	public void drawSprite() {
 		executeOpCode(0xD475);
 		
-		for (int row = 0; row < 0x5; row++) {
-			int coordinateY = dataRegisterValues[0x7] + row;
-			int memoryByte = target.getPrimaryMemory().read(index + row);
-			for (int column = 0; column < 8; column++) {
-				int coordinateX = dataRegisterValues[0x4] + column;
-				if ((memoryByte & (0x80 >> column)) != 0) {
-					assertTrue(target.getDisplayBuffer().read(convertToIndex(coordinateX, coordinateY)) != 0);
-				} else {
-					assertTrue(target.getDisplayBuffer().read(convertToIndex(coordinateX, coordinateY)) == 0);
-				}
-			}
-		}
-		assertEquals(0, dataRegisters.get(0xF).read().intValue());
-		assertTrue(drawFlag.isActive());
-	}
-	
-	private int convertToIndex(int coordinateX, int coordinateY) {
-		return (coordinateX % SCREEN_WIDTH) + ((coordinateY % SCREEN_WIDTH) * SCREEN_WIDTH);
+		verify(gpu, times(1)).drawSprite(eq(dataRegisters), eq(memory), eq(indexRegister), eq(0xD475));
 	}
 	
 	/**

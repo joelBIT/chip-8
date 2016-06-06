@@ -32,6 +32,7 @@ import javafx.stage.Stage;
 import joelbits.emu.cpu.ALU;
 import joelbits.emu.cpu.CPU;
 import joelbits.emu.cpu.ExpansionBus;
+import joelbits.emu.cpu.GPU;
 import joelbits.emu.cpu.registers.DataRegister;
 import joelbits.emu.cpu.registers.IndexRegister;
 import joelbits.emu.cpu.registers.InstructionRegister;
@@ -54,6 +55,7 @@ import joelbits.emu.timers.Timer;
  */
 public class Chip8 extends Application {
 	private CPU cpu;
+	private GPU gpu;
 	private ExpansionBus<Integer> expansionBus;
 	private FileChooser fileChooser;
 	private GraphicsContext graphicsContext;
@@ -96,7 +98,11 @@ public class Chip8 extends Application {
 		this.stage = stage;
 		stage.setTitle("Chip-8 interpreter");
 		
-		initializeCPU();
+		Canvas canvas = new Canvas(896, 448);
+		graphicsContext = canvas.getGraphicsContext2D();
+		graphicsContext.setFill(Color.WHITE);
+		
+		initializeUnits();
 		
 		root = new BorderPane();
 		root.setStyle("-fx-background: black;");
@@ -111,18 +117,13 @@ public class Chip8 extends Application {
 		fileChooser = new FileChooser();
 		fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("rom", "*.rom"), new FileChooser.ExtensionFilter("ch8", "*.ch8"));
 		
-		Canvas canvas = new Canvas(896, 448);
-
-		graphicsContext = canvas.getGraphicsContext2D();
-		graphicsContext.setFill(Color.WHITE);
-		
 		root.setTop(createMenuBar());
 		root.setBottom(canvas);
 		
 		stage.show();
 	}
 	
-	private void initializeCPU() {
+	private void initializeUnits() {
 		List<Register<Integer>> dataRegisters = new ArrayList<>();
 		for (int i = 0; i <= 0xF; i++) {
 			dataRegisters.add(i, new DataRegister<Integer>());
@@ -131,19 +132,19 @@ public class Chip8 extends Application {
 		Register<Integer> instructionRegister = InstructionRegister.getInstance();
 		Register<Integer> programCounter = ProgramCounter.getInstance();
 		Register<Integer> indexRegister = IndexRegister.getInstance();
+		ALU alu = new ALU(programCounter, dataRegisters.get(0xF), new RandomNumberGenerator());
 		
 		delayTimer = new DelayTimer<Integer>();
 		soundTimer = new SoundTimer<Integer>();
 		clearFlag = new ClearFlag();
 		drawFlag = new DrawFlag();
-		
 		expansionBus = initializeExpansionBus();
-		
-		cpu = new CPU(expansionBus, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, drawFlag, clearFlag, new ALU(programCounter, dataRegisters.get(0xF), new RandomNumberGenerator()));
+		gpu = new GPU(new Screen<Integer>(64, 32, 14), graphicsContext, drawFlag, clearFlag);
+		cpu = new CPU(expansionBus, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, alu, gpu);
 	}
 	
 	private ExpansionBus<Integer> initializeExpansionBus() {
-		return new ExpansionBus<Integer>(new Keyboard(), new Beep(), new Screen<Integer>(64, 32, 14));
+		return new ExpansionBus<Integer>(new Keyboard(), new Beep());
 	}
 	
 	private void terminateApplication() {
@@ -161,7 +162,7 @@ public class Chip8 extends Application {
 			paused = true;
 			File file = fileChooser.showOpenDialog(stage);
 			if (file != null) {
-				clearDisplay();
+				gpu.clearScreen();
 				gamePath = file.toURI();
 				startGame(gamePath);
 			}
@@ -213,7 +214,7 @@ public class Chip8 extends Application {
 		MenuItem reset = new MenuItem("Reset");
 		reset.setAccelerator(new KeyCodeCombination(KeyCode.F3));
 		reset.setOnAction(event -> {
-			clearDisplay();
+			gpu.clearScreen();
 			startGame(gamePath);
 		});
 		game.getItems().addAll(pause, reset);
@@ -221,17 +222,6 @@ public class Chip8 extends Application {
 		MenuBar menuBar = new MenuBar();
 		menuBar.getMenus().addAll(emulator, options, game);
 		return menuBar;
-	}
-	
-	private void clearDisplay() {
-		int displayBufferSize = cpu.getDisplayBuffer().size();
-		int pixelSize = expansionBus.getScreen().pixelSize();
-		int screenWidth = expansionBus.getScreen().width();
-		for (int i = 0; i < displayBufferSize; i++) {
-			int coordinateX = i % screenWidth;
-			int coordinateY = i / screenWidth;
-			graphicsContext.clearRect(coordinateX*pixelSize, coordinateY*pixelSize, pixelSize, pixelSize);
-		}
 	}
 	
 	private void startGame(URI gamePath) {
@@ -272,12 +262,12 @@ public class Chip8 extends Application {
 	 			
 	 			for (int i = 0; i < GAME_VELOCITY; i++) {
 	 				if (clearFlag.isActive()) {
-	 	 				clearDisplay();
+	 	 				gpu.clearScreen();
 	 	 				clearFlag.toggle();
 	 	 			}
 	 	 			
 	 	 			if (drawFlag.isActive()) {
-	 	 				drawSprites();
+	 	 				gpu.drawScreen();
 	 	 				drawFlag.toggle();
 	 	 			}
 	 				
@@ -293,22 +283,6 @@ public class Chip8 extends Application {
 		
 		private void decrementSoundTimer() {
 			soundTimer.setValue(soundTimer.currentValue() - 1);
-		}
-		
-		private void drawSprites() {
-			int dirtyBufferSize = cpu.getDirtyBuffer().size();
-			int pixelSize = expansionBus.getScreen().pixelSize();
-			int screenWidth = expansionBus.getScreen().width();
-			for (int i = 0; i < dirtyBufferSize; i++) {
-				int dirtyLocation = cpu.getDirtyBuffer().read(i);
-				int coordinateX = dirtyLocation % screenWidth;
-				int coordinateY = dirtyLocation / screenWidth;
-				if (cpu.getDisplayBuffer().read(dirtyLocation) != 0) {
-					graphicsContext.fillRect(coordinateX*pixelSize, coordinateY*pixelSize, pixelSize, pixelSize);
-				} else {
-					graphicsContext.clearRect(coordinateX*pixelSize, coordinateY*pixelSize, pixelSize, pixelSize);
-				}
-			}
 		}
 	}
 }
