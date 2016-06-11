@@ -17,7 +17,6 @@ import org.mockito.Mock;
 import javafx.scene.input.KeyCode;
 import joelbits.emu.cpu.ALU;
 import joelbits.emu.cpu.CPU;
-import joelbits.emu.cpu.ExpansionBus;
 import joelbits.emu.cpu.GPU;
 import joelbits.emu.cpu.registers.DataRegister;
 import joelbits.emu.cpu.registers.IndexRegister;
@@ -27,7 +26,6 @@ import joelbits.emu.cpu.registers.Register;
 import joelbits.emu.input.Keyboard;
 import joelbits.emu.memory.Memory;
 import joelbits.emu.memory.RAM;
-import joelbits.emu.output.Beep;
 import joelbits.emu.timers.DelayTimer;
 import joelbits.emu.timers.SoundTimer;
 import joelbits.emu.timers.Timer;
@@ -40,7 +38,7 @@ public class TestCPU {
 	
 	private CPU target;
 	private Memory primaryMemory;
-	private ExpansionBus<Integer> expansionBus;
+	private Keyboard keyboard;
 	private List<Register<Integer>> dataRegisters;
 	private Timer<Integer> delayTimer;
 	private Timer<Integer> soundTimer;
@@ -70,12 +68,12 @@ public class TestCPU {
 		instructionRegister = InstructionRegister.getInstance();
 		programCounter = ProgramCounter.getInstance();
 		indexRegister = IndexRegister.getInstance();
-		expansionBus = new ExpansionBus<Integer>(new Keyboard(), new Beep());
 		primaryMemory = new RAM(4096);
+		keyboard = new Keyboard();
 		
 		initMocks(this);
 		
-		target = new CPU(primaryMemory, expansionBus, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, alu, gpu);
+		target = new CPU(primaryMemory, keyboard, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, alu, gpu);
 		target.initialize(address, instruction, index, delayTime, soundTime, fontset);
 		
 	}
@@ -394,10 +392,10 @@ public class TestCPU {
 	 */
 	@Test
 	public void skipNextInstructionBecauseKeyEqualToDataRegisterValueIsPressed() {
-		expansionBus.getKeyboard().pressKey(KeyCode.R);
+		keyboard.pressKey(KeyCode.R);
 		executeOpCode(0xED9E);
 		
-		verify(alu, times(1)).skipNextIfEqual(eq(dataRegisters.get(0xD)), eq(expansionBus.getKeyboard().getCurrentlyPressedKey()));
+		verify(alu, times(1)).skipNextIfEqual(eq(dataRegisters.get(0xD)), eq(keyboard.getCurrentlyPressedKey()));
 	}
 	
 	/**
@@ -408,10 +406,10 @@ public class TestCPU {
 	 */
 	@Test
 	public void doNotSkipNextInstructionBecauseKeyEqualToDataRegisterValueIsPressed() {
-		expansionBus.getKeyboard().pressKey(KeyCode.R);
+		keyboard.pressKey(KeyCode.R);
 		executeOpCode(0xEDA1);
 		
-		verify(alu, times(1)).skipNextIfNotEqual(eq(dataRegisters.get(0xD)), eq(expansionBus.getKeyboard().getCurrentlyPressedKey()));
+		verify(alu, times(1)).skipNextIfNotEqual(eq(dataRegisters.get(0xD)), eq(keyboard.getCurrentlyPressedKey()));
 	}
 	
 	/**
@@ -434,10 +432,10 @@ public class TestCPU {
 	 */
 	@Test
 	public void valueOfPressedKeyStoredInDataRegister() {
-		expansionBus.getKeyboard().pressKey(KeyCode.A);
+		keyboard.pressKey(KeyCode.A);
 		executeOpCode(0xF70A);
 		
-		verify(alu, times(1)).load(eq(dataRegisters.get(0x7)), eq(expansionBus.getKeyboard().getCurrentlyPressedKey()));
+		verify(alu, times(1)).load(eq(dataRegisters.get(0x7)), eq(keyboard.getCurrentlyPressedKey()));
 	}
 	
 	/**

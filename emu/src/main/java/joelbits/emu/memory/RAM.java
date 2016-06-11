@@ -9,7 +9,7 @@ import joelbits.emu.memory.Memory;
  *
  */
 public class RAM implements Memory {
-	private int[] memory;
+	private final int[] memory;
 	
 	public RAM(int memoryLocations) {
 		memory = new int[memoryLocations];

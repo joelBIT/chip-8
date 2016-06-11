@@ -31,7 +31,6 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import joelbits.emu.cpu.ALU;
 import joelbits.emu.cpu.CPU;
-import joelbits.emu.cpu.ExpansionBus;
 import joelbits.emu.cpu.GPU;
 import joelbits.emu.cpu.registers.DataRegister;
 import joelbits.emu.cpu.registers.IndexRegister;
@@ -47,19 +46,21 @@ import joelbits.emu.memory.Memory;
 import joelbits.emu.memory.RAM;
 import joelbits.emu.output.Beep;
 import joelbits.emu.output.Screen;
+import joelbits.emu.output.Sound;
 import joelbits.emu.timers.DelayTimer;
 import joelbits.emu.timers.SoundTimer;
 import joelbits.emu.timers.Timer;
 
 /**
  * Last 8 or 16 bits of each int are used to represent an unsigned byte or an unsigned short respectively. A ROM is written to memory starting
- * at memory location 0x200.
+ * at location 0x200.
  * 
  */
 public class Chip8 extends Application {
 	private CPU cpu;
 	private GPU gpu;
-	private ExpansionBus<Integer> expansionBus;
+	private Keyboard keyboard;
+	private Sound sound;
 	private FileChooser fileChooser;
 	private GraphicsContext graphicsContext;
 	private Stage stage;
@@ -117,8 +118,8 @@ public class Chip8 extends Application {
 		stage.setResizable(false);
 		stage.setOnCloseRequest(event -> terminateApplication());
 		
-		scene.setOnKeyPressed(event -> expansionBus.getKeyboard().pressKey(event.getCode()));
-		scene.setOnKeyReleased(event -> expansionBus.getKeyboard().releasePressedKey());
+		scene.setOnKeyPressed(event -> keyboard.pressKey(event.getCode()));
+		scene.setOnKeyReleased(event -> keyboard.releasePressedKey());
 		
 		fileChooser = new FileChooser();
 		fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("rom", "*.rom"), new FileChooser.ExtensionFilter("ch8", "*.ch8"));
@@ -146,14 +147,11 @@ public class Chip8 extends Application {
 		soundTimer = new SoundTimer<Integer>();
 		clearFlag = new ClearFlag();
 		drawFlag = new DrawFlag();
-		expansionBus = initializeExpansionBus();
+		keyboard = new Keyboard();
+		sound = new Beep();
 		
 		gpu = new GPU(displayBuffer, dirtyBuffer, new Screen<Integer>(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SIZE), graphicsContext, drawFlag, clearFlag);
-		cpu = new CPU(new RAM(4096), expansionBus, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, alu, gpu);
-	}
-	
-	private ExpansionBus<Integer> initializeExpansionBus() {
-		return new ExpansionBus<Integer>(new Keyboard(), new Beep());
+		cpu = new CPU(new RAM(4096), keyboard, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, alu, gpu);
 	}
 	
 	private void terminateApplication() {
@@ -191,9 +189,9 @@ public class Chip8 extends Application {
 		muteSound.setAccelerator(new KeyCodeCombination(KeyCode.F4));
 		muteSound.setOnAction(event -> {
 			if (muteSound.isSelected()) {
-				expansionBus.getSound().mute();
+				sound.mute();
 			} else {
-				expansionBus.getSound().unmute();
+				sound.unmute();
 			}
 		});
 		MenuItem velocity = new MenuItem("Change velocity");
@@ -262,10 +260,10 @@ public class Chip8 extends Application {
 	 			}
 	 			
 	 			if (soundTimer.currentValue() > 0) {
-	 				expansionBus.getSound().start();
+	 				sound.start();
 	 				decrementSoundTimer();
 	 				if (soundTimer.currentValue() <= 0) {
-	 					expansionBus.getSound().stop();
+	 					sound.stop();
 	 				}
 	 			}
 	 			
