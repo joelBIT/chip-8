@@ -9,8 +9,11 @@ import joelbits.emu.memory.Memory;
  *
  */
 public class RAM implements Memory {
-	private final int MEMORY_LOCATIONS = 4096;
-	private int[] memory = new int[MEMORY_LOCATIONS];
+	private int[] memory;
+	
+	public RAM(int memoryLocations) {
+		memory = new int[memoryLocations];
+	}
 
 	@Override
 	public int read(int index) {

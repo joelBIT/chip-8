@@ -44,6 +44,7 @@ import joelbits.emu.flags.Flag;
 import joelbits.emu.input.Keyboard;
 import joelbits.emu.memory.BufferFactory;
 import joelbits.emu.memory.Memory;
+import joelbits.emu.memory.RAM;
 import joelbits.emu.output.Beep;
 import joelbits.emu.output.Screen;
 import joelbits.emu.timers.DelayTimer;
@@ -148,7 +149,7 @@ public class Chip8 extends Application {
 		expansionBus = initializeExpansionBus();
 		
 		gpu = new GPU(displayBuffer, dirtyBuffer, new Screen<Integer>(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SIZE), graphicsContext, drawFlag, clearFlag);
-		cpu = new CPU(expansionBus, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, alu, gpu);
+		cpu = new CPU(new RAM(4096), expansionBus, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, alu, gpu);
 	}
 	
 	private ExpansionBus<Integer> initializeExpansionBus() {

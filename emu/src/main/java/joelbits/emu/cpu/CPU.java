@@ -14,7 +14,7 @@ import joelbits.emu.timers.Timer;
  *
  */
 public class CPU {
-	private final MemoryBus memoryBus = new MemoryBus();
+	private final Memory primaryMemory;
 	private final ExpansionBus<Integer> expansionBus;
 	private final Stack<Integer> stack = new Stack<Integer>();
 	private final List<Register<Integer>> dataRegisters;
@@ -34,7 +34,8 @@ public class CPU {
 	private int address;
 	private int lowestByte;
 	
-	public CPU(ExpansionBus<Integer> expansionBus, List<Register<Integer>> dataRegisters, Register<Integer> instructionRegister, Register<Integer> programCounter, Register<Integer> indexRegister, Timer<Integer> delayTimer, Timer<Integer> soundTimer, ALU alu, GPU gpu) {
+	public CPU(Memory primaryMemory, ExpansionBus<Integer> expansionBus, List<Register<Integer>> dataRegisters, Register<Integer> instructionRegister, Register<Integer> programCounter, Register<Integer> indexRegister, Timer<Integer> delayTimer, Timer<Integer> soundTimer, ALU alu, GPU gpu) {
+		this.primaryMemory = primaryMemory;
 		this.expansionBus = expansionBus;
 		this.dataRegisters = dataRegisters;
 		this.instructionRegister = instructionRegister;
@@ -46,10 +47,6 @@ public class CPU {
 		this.gpu = gpu;
 	}
 	
-	public Memory getPrimaryMemory() {
-		return memoryBus.getPrimaryMemory();
-	}
-	
 	public void initialize(int address, int instruction, int index, int delayTime, int soundTime, int[] data) {
 		programCounter.write(address);
 		delayTimer.setValue(delayTime);
@@ -58,10 +55,10 @@ public class CPU {
 		instructionRegister.write(instruction);
 		
 		gpu.clearBuffers();
-		getPrimaryMemory().clear();
+		primaryMemory.clear();
 		
 		for (int i = 0; i < data.length; i++) {
-			getPrimaryMemory().write(i, data[i]);
+			primaryMemory.write(i, data[i]);
 		}
 	}
 	
@@ -73,7 +70,7 @@ public class CPU {
 	
 	public void loadROM(byte[] ROM, int startLocation) {
 		for (int i = 0, location = startLocation; i < ROM.length; i++, location++) {
-			getPrimaryMemory().write(location, Byte.toUnsignedInt(ROM[i]));
+			primaryMemory.write(location, Byte.toUnsignedInt(ROM[i]));
 		}
 	}
 	
@@ -149,7 +146,7 @@ public class CPU {
 				alu.addWithRandom(dataRegisters.get(registerLocationX), lowestByte);
 				break;
 			case "D000":
-				gpu.drawSprite(dataRegisters, getPrimaryMemory(), indexRegister, instruction);
+				gpu.drawSprite(dataRegisters, primaryMemory, indexRegister, instruction);
 				programCounter.write(programCounter.read() + 2);
 				break;
 			case "E000":
@@ -196,7 +193,7 @@ public class CPU {
 	}
 	
 	private int fetchNextInstruction() {
-		int instruction = getPrimaryMemory().read(programCounter.read()) << 8 | getPrimaryMemory().read(programCounter.read()+1);
+		int instruction = primaryMemory.read(programCounter.read()) << 8 | primaryMemory.read(programCounter.read()+1);
 		instructionRegister.write(Integer.valueOf(instruction));
 		return instruction;
 	}
@@ -210,20 +207,20 @@ public class CPU {
 	}
 	
 	private void writeBcdRepresentationToMemory(int registerLocation) {
-		getPrimaryMemory().write(indexRegister.read(), dataRegisters.get(registerLocation).read() / 100);
- 		getPrimaryMemory().write(indexRegister.read() + 1, (dataRegisters.get(registerLocation).read() % 100) / 10);
- 		getPrimaryMemory().write(indexRegister.read() + 2, dataRegisters.get(registerLocation).read() % 10);
+		primaryMemory.write(indexRegister.read(), dataRegisters.get(registerLocation).read() / 100);
+ 		primaryMemory.write(indexRegister.read() + 1, (dataRegisters.get(registerLocation).read() % 100) / 10);
+ 		primaryMemory.write(indexRegister.read() + 2, dataRegisters.get(registerLocation).read() % 10);
 	}
 	
 	private void writeDataRegistersToMemory(int registerBound) {
 		for (int i = 0; i <= registerBound; i++) {
-			getPrimaryMemory().write(indexRegister.read() + i, dataRegisters.get(i).read());
+			primaryMemory.write(indexRegister.read() + i, dataRegisters.get(i).read());
 		}
 	}
 	
 	private void writeMemoryToDataRegisters(int registerBound) {
 		for (int i = 0; i <= registerBound; i++) {
-			dataRegisters.get(i).write(getPrimaryMemory().read(indexRegister.read() + i));
+			dataRegisters.get(i).write(primaryMemory.read(indexRegister.read() + i));
 		}
 	}
 	

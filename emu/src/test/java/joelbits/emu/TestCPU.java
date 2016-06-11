@@ -26,6 +26,7 @@ import joelbits.emu.cpu.registers.ProgramCounter;
 import joelbits.emu.cpu.registers.Register;
 import joelbits.emu.input.Keyboard;
 import joelbits.emu.memory.Memory;
+import joelbits.emu.memory.RAM;
 import joelbits.emu.output.Beep;
 import joelbits.emu.timers.DelayTimer;
 import joelbits.emu.timers.SoundTimer;
@@ -38,7 +39,7 @@ public class TestCPU {
 	private ALU alu;
 	
 	private CPU target;
-	private Memory memory;
+	private Memory primaryMemory;
 	private ExpansionBus<Integer> expansionBus;
 	private List<Register<Integer>> dataRegisters;
 	private Timer<Integer> delayTimer;
@@ -70,12 +71,13 @@ public class TestCPU {
 		programCounter = ProgramCounter.getInstance();
 		indexRegister = IndexRegister.getInstance();
 		expansionBus = new ExpansionBus<Integer>(new Keyboard(), new Beep());
+		primaryMemory = new RAM(4096);
 		
 		initMocks(this);
 		
-		target = new CPU(expansionBus, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, alu, gpu);
+		target = new CPU(primaryMemory, expansionBus, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, alu, gpu);
 		target.initialize(address, instruction, index, delayTime, soundTime, fontset);
-		memory = target.getPrimaryMemory();
+		
 	}
 	
 	/**
@@ -99,7 +101,7 @@ public class TestCPU {
 	}
 	
 	private void writeToMemory(int location, int data) {
-		memory.write(location, data);
+		primaryMemory.write(location, data);
 	}
 	
 	/**
@@ -381,7 +383,7 @@ public class TestCPU {
 	public void drawSprite() {
 		executeOpCode(0xD475);
 		
-		verify(gpu, times(1)).drawSprite(eq(dataRegisters), eq(memory), eq(indexRegister), eq(0xD475));
+		verify(gpu, times(1)).drawSprite(eq(dataRegisters), eq(primaryMemory), eq(indexRegister), eq(0xD475));
 	}
 	
 	/**
@@ -516,9 +518,9 @@ public class TestCPU {
 	public void storeBinaryCodedDecimalRepresentationOfDataRegisterValue() {
 		executeOpCode(0xF733);
 
-		assertEquals(1, memory.read(index));
-		assertEquals(3, memory.read(index+1));
-		assertEquals(6, memory.read(index+2));
+		assertEquals(1, primaryMemory.read(index));
+		assertEquals(3, primaryMemory.read(index+1));
+		assertEquals(6, primaryMemory.read(index+2));
 	}
 	
 	/**
@@ -532,7 +534,7 @@ public class TestCPU {
 		executeOpCode(0xF755);
 
 		for (int i = 0; i < 8; i++) {
-			assertEquals(dataRegisters.get(i).read().intValue(), memory.read(index+i));
+			assertEquals(dataRegisters.get(i).read().intValue(), primaryMemory.read(index+i));
 		}
 	}
 	
@@ -547,7 +549,7 @@ public class TestCPU {
 		executeOpCode(0xF465);
 		
 		for (int i = 0; i < 5; i++) {
-			assertEquals(memory.read(index+i), dataRegisters.get(i).read().intValue());
+			assertEquals(primaryMemory.read(index+i), dataRegisters.get(i).read().intValue());
 		}
 	}
 }

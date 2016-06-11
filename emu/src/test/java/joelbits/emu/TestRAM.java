@@ -13,23 +13,23 @@ private Memory target;
 	
 	@Before
 	public void setUp() {
-		target = new RAM();
+		target = new RAM(4096);
 	}
 	
 	@Test
-	public void returnZeroBecauseMemoryLocationHasNotBeenWrittenTo() {
+	public void zeroIsReturnedBecauseMemoryLocationHasNotBeenWrittenTo() {
 		assertEquals(0, target.read(88));
 	}
 	
 	@Test
-	public void returnNewValueFromMemoryLocation() {
+	public void newValuereturnedFromMemoryLocation() {
 		target.write(88, 0xA);
 		
 		assertEquals(0xA, target.read(88));
 	}
 	
 	@Test
-	public void returnZeroBecauseMemoryHasBeenCleared() {
+	public void zeroReturnedBecauseMemoryHasBeenCleared() {
 		target.write(88, 0xA);
 		target.clear();
 		
