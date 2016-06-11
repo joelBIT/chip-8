@@ -7,15 +7,17 @@ import javafx.scene.input.KeyCode;
  * digit. The key presses of a standard keyboard is mapped to the key presses of a hex keypad.
  *
  */
-public class Keyboard {
+public class Keyboard implements Input<Integer, KeyCode> {
 	private int currentlyPressedKey;
 	private final char[] keyPad = {'8', '4', '6', '2', 'Q', 'W', 'E', 'R', 'T', 'Y', 'A', 'S', 'D', 'Z', 'X', 'C'};
 	
-	public int getCurrentlyPressedKey() {
+	@Override
+	public Integer currentlyPressed() {
 		return currentlyPressedKey;
 	}
 
-    public void pressKey(KeyCode keyCode) {
+	@Override
+    public void press(KeyCode keyCode) {
     	currentlyPressedKey = mapKeyCodeToChip8Key(keyCode);
     }
     
@@ -28,7 +30,8 @@ public class Keyboard {
 		return 0;
 	}
 
-    public void releasePressedKey() {
+    @Override
+    public void releasePressed() {
     	currentlyPressedKey = 0;
     }
 }

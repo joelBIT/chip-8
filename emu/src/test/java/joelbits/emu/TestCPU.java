@@ -392,10 +392,10 @@ public class TestCPU {
 	 */
 	@Test
 	public void skipNextInstructionBecauseKeyEqualToDataRegisterValueIsPressed() {
-		keyboard.pressKey(KeyCode.R);
+		keyboard.press(KeyCode.R);
 		executeOpCode(0xED9E);
 		
-		verify(alu, times(1)).skipNextIfEqual(eq(dataRegisters.get(0xD)), eq(keyboard.getCurrentlyPressedKey()));
+		verify(alu, times(1)).skipNextIfEqual(eq(dataRegisters.get(0xD)), eq(keyboard.currentlyPressed()));
 	}
 	
 	/**
@@ -406,10 +406,10 @@ public class TestCPU {
 	 */
 	@Test
 	public void doNotSkipNextInstructionBecauseKeyEqualToDataRegisterValueIsPressed() {
-		keyboard.pressKey(KeyCode.R);
+		keyboard.press(KeyCode.R);
 		executeOpCode(0xEDA1);
 		
-		verify(alu, times(1)).skipNextIfNotEqual(eq(dataRegisters.get(0xD)), eq(keyboard.getCurrentlyPressedKey()));
+		verify(alu, times(1)).skipNextIfNotEqual(eq(dataRegisters.get(0xD)), eq(keyboard.currentlyPressed()));
 	}
 	
 	/**
@@ -432,10 +432,10 @@ public class TestCPU {
 	 */
 	@Test
 	public void valueOfPressedKeyStoredInDataRegister() {
-		keyboard.pressKey(KeyCode.A);
+		keyboard.press(KeyCode.A);
 		executeOpCode(0xF70A);
 		
-		verify(alu, times(1)).load(eq(dataRegisters.get(0x7)), eq(keyboard.getCurrentlyPressedKey()));
+		verify(alu, times(1)).load(eq(dataRegisters.get(0x7)), eq(keyboard.currentlyPressed()));
 	}
 	
 	/**

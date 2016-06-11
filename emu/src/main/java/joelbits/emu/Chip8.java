@@ -40,6 +40,7 @@ import joelbits.emu.cpu.registers.Register;
 import joelbits.emu.flags.ClearFlag;
 import joelbits.emu.flags.DrawFlag;
 import joelbits.emu.flags.Flag;
+import joelbits.emu.input.Input;
 import joelbits.emu.input.Keyboard;
 import joelbits.emu.memory.BufferFactory;
 import joelbits.emu.memory.Memory;
@@ -59,7 +60,7 @@ import joelbits.emu.timers.Timer;
 public class Chip8 extends Application {
 	private CPU cpu;
 	private GPU gpu;
-	private Keyboard keyboard;
+	private Input<Integer, KeyCode> keyboard;
 	private Sound sound;
 	private FileChooser fileChooser;
 	private GraphicsContext graphicsContext;
@@ -118,8 +119,8 @@ public class Chip8 extends Application {
 		stage.setResizable(false);
 		stage.setOnCloseRequest(event -> terminateApplication());
 		
-		scene.setOnKeyPressed(event -> keyboard.pressKey(event.getCode()));
-		scene.setOnKeyReleased(event -> keyboard.releasePressedKey());
+		scene.setOnKeyPressed(event -> keyboard.press(event.getCode()));
+		scene.setOnKeyReleased(event -> keyboard.releasePressed());
 		
 		fileChooser = new FileChooser();
 		fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("rom", "*.rom"), new FileChooser.ExtensionFilter("ch8", "*.ch8"));

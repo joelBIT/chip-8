@@ -3,8 +3,9 @@ package joelbits.emu.cpu;
 import java.util.List;
 import java.util.Stack;
 
+import javafx.scene.input.KeyCode;
 import joelbits.emu.cpu.registers.Register;
-import joelbits.emu.input.Keyboard;
+import joelbits.emu.input.Input;
 import joelbits.emu.memory.Memory;
 import joelbits.emu.timers.Timer;
 
@@ -16,7 +17,7 @@ import joelbits.emu.timers.Timer;
  */
 public class CPU {
 	private final Memory primaryMemory;
-	private final Keyboard keyboard;
+	private final Input<Integer, KeyCode> keyboard;
 	private final Stack<Integer> stack = new Stack<Integer>();
 	private final List<Register<Integer>> dataRegisters;
 	private final Register<Integer> instructionRegister;
@@ -35,7 +36,7 @@ public class CPU {
 	private int address;
 	private int lowestByte;
 	
-	public CPU(Memory primaryMemory, Keyboard keyboard, List<Register<Integer>> dataRegisters, Register<Integer> instructionRegister, Register<Integer> programCounter, Register<Integer> indexRegister, Timer<Integer> delayTimer, Timer<Integer> soundTimer, ALU alu, GPU gpu) {
+	public CPU(Memory primaryMemory, Input<Integer, KeyCode> keyboard, List<Register<Integer>> dataRegisters, Register<Integer> instructionRegister, Register<Integer> programCounter, Register<Integer> indexRegister, Timer<Integer> delayTimer, Timer<Integer> soundTimer, ALU alu, GPU gpu) {
 		this.primaryMemory = primaryMemory;
 		this.keyboard = keyboard;
 		this.dataRegisters = dataRegisters;
@@ -152,19 +153,19 @@ public class CPU {
 				break;
 			case "E000":
 				if (leastSignificantByte.equals("9E")) {
-					alu.skipNextIfEqual(dataRegisters.get(registerLocationX), keyboard.getCurrentlyPressedKey());
+					alu.skipNextIfEqual(dataRegisters.get(registerLocationX), keyboard.currentlyPressed());
 				} else if (leastSignificantByte.equals("A1")) {
-					alu.skipNextIfNotEqual(dataRegisters.get(registerLocationX), keyboard.getCurrentlyPressedKey());
+					alu.skipNextIfNotEqual(dataRegisters.get(registerLocationX), keyboard.currentlyPressed());
 				}
 				break;
 			case "F000":
 				if (leastSignificantNibble.equals("7")) {
 					alu.load(dataRegisters.get(registerLocationX), delayTimer.currentValue());
 				} else if (leastSignificantNibble.equals("A")) {
-					while (keyboard.getCurrentlyPressedKey() == 0) {
+					while (keyboard.currentlyPressed().equals(0)) {
 						;
 					}
-					alu.load(dataRegisters.get(registerLocationX), keyboard.getCurrentlyPressedKey());
+					alu.load(dataRegisters.get(registerLocationX), keyboard.currentlyPressed());
 				} else if (leastSignificantByte.equals("15")) {
 					delayTimer.setValue(dataRegisters.get(registerLocationX).read());
 					programCounter.write(programCounter.read() + 2);

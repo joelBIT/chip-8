@@ -89,7 +89,7 @@ public class TestGPU {
 		assertDirtyBuffer(dirtyBuffer, addresses);
 		assertDisplayBuffer(displayBuffer, addresses, -1);
 
-		assertEquals(0, dataRegisters.get(0xF).read().intValue());
+		assertTrue(dataRegisters.get(0xF).read().equals(0));
 		assertTrue(drawFlag.isActive());
 	}
 	
@@ -130,7 +130,7 @@ public class TestGPU {
 		assertDirtyBuffer(dirtyBuffer, addresses);
 		assertDisplayBuffer(displayBuffer, addresses, COLLISION_ADDRESS);
 
-		assertEquals(1, dataRegisters.get(0xF).read().intValue());
+		assertTrue(dataRegisters.get(0xF).read().equals(1));
 		assertTrue(drawFlag.isActive());
 	}
 }

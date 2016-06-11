@@ -18,23 +18,23 @@ public class TestKeyboard {
 	
 	@Test
 	public void sameKeyShouldBeTheCurrentlyPressedKey() {
-		target.pressKey(KeyCode.R);
+		target.press(KeyCode.R);
 		
-		assertEquals(8, target.getCurrentlyPressedKey());
+		assertEquals(8, target.currentlyPressed().intValue());
 	}
 	
 	@Test
 	public void returnZeroSinceTheCurrentlyPressedKeyIsNotValid() {
-		target.pressKey(KeyCode.L);
+		target.press(KeyCode.L);
 		
-		assertEquals(0, target.getCurrentlyPressedKey());
+		assertEquals(0, target.currentlyPressed().intValue());
 	}
 	
 	@Test
 	public void returnZeroWhenKeyReleased() {
-		target.pressKey(KeyCode.R);
-		target.releasePressedKey();
+		target.press(KeyCode.R);
+		target.releasePressed();
 		
-		assertEquals(0, target.getCurrentlyPressedKey());
+		assertEquals(0, target.currentlyPressed().intValue());
 	}
 }
