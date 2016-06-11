@@ -1,6 +1,6 @@
 package joelbits.emu;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
@@ -9,6 +9,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -42,6 +43,7 @@ public class TestCPU {
 	private List<Register<Integer>> dataRegisters;
 	private Timer<Integer> delayTimer;
 	private Timer<Integer> soundTimer;
+	private Stack<Integer> stack;
 	private Register<Integer> instructionRegister;
 	private Register<Integer> programCounter;
 	private Register<Integer> indexRegister;
@@ -70,10 +72,11 @@ public class TestCPU {
 		indexRegister = IndexRegister.getInstance();
 		primaryMemory = new RAM(4096);
 		keyboard = new Keyboard();
+		stack = new Stack<Integer>();
 		
 		initMocks(this);
 		
-		target = new CPU(primaryMemory, keyboard, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, alu, gpu);
+		target = new CPU(stack, primaryMemory, keyboard, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, alu, gpu);
 		target.initialize(address, instruction, index, delayTime, soundTime, fontset);
 		
 	}
@@ -111,13 +114,13 @@ public class TestCPU {
 	@Test
 	public void popTopOfStackAddressIntoProgramCounter() {
 		executeOpCode(0x2567);
-		assertEquals(address, target.readStackTopValue());
+		assertEquals(address, stack.peek().intValue());
 		
 		writeToMemory(0x567, 0x0);
 		writeToMemory(0x568, 0xEE);
 		executeOpCode(0x00EE);
 		
-		assertEquals(-1, target.readStackTopValue());
+		assertTrue(stack.empty());
 		assertEquals(address+2 , programCounter.read().intValue());
 	}
 	
@@ -143,7 +146,7 @@ public class TestCPU {
 	public void pushProgramCounterValueOntoStack() {
 		executeOpCode(0x2567);
 		
-		assertEquals(address, target.readStackTopValue());
+		assertEquals(address, stack.peek().intValue());
 		assertEquals(0x567, programCounter.read().intValue());
 	}
 	

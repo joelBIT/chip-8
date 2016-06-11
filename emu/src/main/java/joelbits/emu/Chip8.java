@@ -8,6 +8,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Stack;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
@@ -152,7 +153,7 @@ public class Chip8 extends Application {
 		sound = new Beep();
 		
 		gpu = new GPU(displayBuffer, dirtyBuffer, new Screen<Integer>(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SIZE), graphicsContext, drawFlag, clearFlag);
-		cpu = new CPU(new RAM(4096), keyboard, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, alu, gpu);
+		cpu = new CPU(new Stack<Integer>(), new RAM(4096), keyboard, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, alu, gpu);
 	}
 	
 	private void terminateApplication() {
@@ -234,7 +235,6 @@ public class Chip8 extends Application {
 	
 	private void startGame(URI gamePath) {
 		cpu.initialize(0x200, 0x0, 0x0, 0x0, 0x0, fontset);
-		cpu.resetDataRegisters();
 		loadGame(gamePath);
 		if (!running) {
 			Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new InstructionCycle(), 0, 17, TimeUnit.MILLISECONDS);

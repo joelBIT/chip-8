@@ -18,7 +18,7 @@ import joelbits.emu.timers.Timer;
 public class CPU {
 	private final Memory primaryMemory;
 	private final Input<Integer, KeyCode> keyboard;
-	private final Stack<Integer> stack = new Stack<Integer>();
+	private final Stack<Integer> stack;
 	private final List<Register<Integer>> dataRegisters;
 	private final Register<Integer> instructionRegister;
 	private final Register<Integer> programCounter;
@@ -36,7 +36,8 @@ public class CPU {
 	private int address;
 	private int lowestByte;
 	
-	public CPU(Memory primaryMemory, Input<Integer, KeyCode> keyboard, List<Register<Integer>> dataRegisters, Register<Integer> instructionRegister, Register<Integer> programCounter, Register<Integer> indexRegister, Timer<Integer> delayTimer, Timer<Integer> soundTimer, ALU alu, GPU gpu) {
+	public CPU(Stack<Integer> stack, Memory primaryMemory, Input<Integer, KeyCode> keyboard, List<Register<Integer>> dataRegisters, Register<Integer> instructionRegister, Register<Integer> programCounter, Register<Integer> indexRegister, Timer<Integer> delayTimer, Timer<Integer> soundTimer, ALU alu, GPU gpu) {
+		this.stack = stack;
 		this.primaryMemory = primaryMemory;
 		this.keyboard = keyboard;
 		this.dataRegisters = dataRegisters;
@@ -64,15 +65,16 @@ public class CPU {
 		}
 	}
 	
-	public void resetDataRegisters() {
-		for (int i = 0; i < dataRegisters.size(); i++) {
-			dataRegisters.get(i).write(0);
-		}
-	}
-	
 	public void loadROM(byte[] ROM, int startLocation) {
 		for (int i = 0, location = startLocation; i < ROM.length; i++, location++) {
 			primaryMemory.write(location, Byte.toUnsignedInt(ROM[i]));
+		}
+		resetDataRegisters();
+	}
+	
+	private void resetDataRegisters() {
+		for (int i = 0; i < dataRegisters.size(); i++) {
+			dataRegisters.get(i).write(0);
 		}
 	}
 	
@@ -224,9 +226,5 @@ public class CPU {
 		for (int i = 0; i <= registerBound; i++) {
 			dataRegisters.get(i).write(primaryMemory.read(indexRegister.read() + i));
 		}
-	}
-	
-	public int readStackTopValue() {
-		return stack.isEmpty() ? -1 : stack.peek();
 	}
 }
