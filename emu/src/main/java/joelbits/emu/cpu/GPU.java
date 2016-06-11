@@ -5,7 +5,6 @@ import java.util.List;
 import javafx.scene.canvas.GraphicsContext;
 import joelbits.emu.cpu.registers.Register;
 import joelbits.emu.flags.Flag;
-import joelbits.emu.memory.BufferFactory;
 import joelbits.emu.memory.Memory;
 import joelbits.emu.output.Screen;
 
@@ -13,17 +12,17 @@ public class GPU {
 	private final Memory displayBuffer;
 	private final Memory dirtyBuffer;
 	private final Screen<Integer> screen;
+	private final GraphicsContext graphicsContext;
 	private final Flag drawFlag;
 	private final Flag clearFlag;
-	private final GraphicsContext graphicsContext;
 	
-	public GPU(Screen<Integer> screen, GraphicsContext graphicsContext, Flag drawFlag, Flag clearFlag) {
+	public GPU(Memory displayBuffer, Memory dirtyBuffer, Screen<Integer> screen, GraphicsContext graphicsContext, Flag drawFlag, Flag clearFlag) {
+		this.displayBuffer = displayBuffer;
+		this.dirtyBuffer = dirtyBuffer;
 		this.screen = screen;
 		this.graphicsContext = graphicsContext;
 		this.drawFlag = drawFlag;
 		this.clearFlag = clearFlag;
-		dirtyBuffer = BufferFactory.createDirtyBuffer();
-		displayBuffer = BufferFactory.createDisplayBuffer(screen.width(), screen.height());
 	}
 	
 	public void drawScreen() {

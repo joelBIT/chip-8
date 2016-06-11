@@ -1,7 +1,6 @@
 package joelbits.emu;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
@@ -35,6 +34,8 @@ import joelbits.emu.timers.Timer;
 public class TestCPU {
 	@Mock
 	private GPU gpu;
+	@Mock
+	private ALU alu;
 	
 	private CPU target;
 	private Memory memory;
@@ -45,7 +46,6 @@ public class TestCPU {
 	private Register<Integer> instructionRegister;
 	private Register<Integer> programCounter;
 	private Register<Integer> indexRegister;
-	private RandomNumberGenerator randomNumberGenerator;
 	
 	private final int FIT_8BIT_REGISTER = 0xFF;
 	private final int FIT_16BIT_REGISTER = 0xFFFF;
@@ -69,12 +69,11 @@ public class TestCPU {
 		instructionRegister = InstructionRegister.getInstance();
 		programCounter = ProgramCounter.getInstance();
 		indexRegister = IndexRegister.getInstance();
-		randomNumberGenerator = new RandomNumberGenerator();
 		expansionBus = new ExpansionBus<Integer>(new Keyboard(), new Beep());
 		
 		initMocks(this);
 		
-		target = new CPU(expansionBus, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, new ALU(programCounter, dataRegisters.get(0xF), randomNumberGenerator), gpu);
+		target = new CPU(expansionBus, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, alu, gpu);
 		target.initialize(address, instruction, index, delayTime, soundTime, fontset);
 		memory = target.getPrimaryMemory();
 	}
@@ -101,10 +100,6 @@ public class TestCPU {
 	
 	private void writeToMemory(int location, int data) {
 		memory.write(location, data);
-	}
-	
-	private int convertToUnsignedInt(int value) {
-		return value < 0 ? value + 65536 : value;
 	}
 	
 	/**
@@ -158,22 +153,10 @@ public class TestCPU {
 	 * Skip next instruction if Vx = kk. The interpreter compares register Vx to kk, and if they are equal, increments the program counter by 2.
 	 */
 	@Test
-	public void skipNextInstructionSinceDataRegisterValueAndLowestByteEqual() {
+	public void skipNextInstructionIfEqual() {
 		executeOpCode(0x3421);
 
-		assertEquals(address + 4, programCounter.read().intValue());
-	}
-	
-	/**
-	 * 3xkk - SE Vx, byte
-	 * 
-	 * Skip next instruction if Vx = kk. The interpreter compares register Vx to kk, and if they are equal, increments the program counter by 2.
-	 */
-	@Test
-	public void doNotSkipNextInstructionSinceDataRegisterValueAndLowestByteNotEqual() {
-		executeOpCode(0x339E);
-		
-		assertEquals(address + 2, programCounter.read().intValue());
+		verify(alu, times(1)).skipNextIfEqual(eq(dataRegisters.get(0x4)), eq(0x21));
 	}
 	
 	/**
@@ -186,33 +169,7 @@ public class TestCPU {
 	public void skipNextInstructionSinceDataRegisterValueAndLowestByteNotEqual() {
 		executeOpCode(0x439E);
 		
-		assertEquals(address + 4, programCounter.read().intValue());
-	}
-	
-	/**
-	 * 4xkk - SNE Vx, byte
-	 * 
-	 * Skip next instruction if Vx != kk. The interpreter compares register Vx to kk, and if they are not equal, increments the 
-	 * program counter by 2.
-	 */
-	@Test
-	public void doNotSkipNextInstructionSinceDataRegisterValueAndLowestByteAreEqual() {
-		executeOpCode(0x4421);
-
-		assertEquals(address + 2, programCounter.read().intValue());
-	}
-	
-	/**
-	 * 5xy0 - SE Vx, Vy
-	 * 
-	 * Skip next instruction if Vx = Vy. The interpreter compares register Vx to register Vy, and if they are equal, increments the program
-	 * counter by 2.
-	 */
-	@Test
-	public void skipNextInstructionSinceDataRegisterValuesEqual() {
-		executeOpCode(0x5460);
-		
-		assertEquals(address + 4, programCounter.read().intValue());
+		verify(alu, times(1)).skipNextIfNotEqual(eq(dataRegisters.get(0x3)), eq(0x9E));
 	}
 	
 	/**
@@ -225,7 +182,7 @@ public class TestCPU {
 	public void doNotSkipNextInstructionSinceDataRegisterValuesNotEqual() {
 		executeOpCode(0x5180);
 		
-		assertEquals(address + 2, programCounter.read().intValue());
+		verify(alu, times(1)).skipNextIfEqual(eq(dataRegisters.get(0x1)), eq(dataRegisters.get(0x8).read()));
 	}
 	
 	/**
@@ -237,7 +194,7 @@ public class TestCPU {
 	public void storeLowestByteIntoDataRegister() {
 		executeOpCode(0x63DA);
 		
-		assertEquals(0xDA, dataRegisters.get(0x3).read().intValue());
+		verify(alu, times(1)).load(eq(dataRegisters.get(0x3)), eq(0xDA));
 	}
 	
 	/**
@@ -249,7 +206,7 @@ public class TestCPU {
 	public void addsLowestByteToDataRegister() {
 		executeOpCode(0x7398);
 		
-		assertEquals((dataRegisterValues[0x3] + 0x98) & FIT_8BIT_REGISTER, dataRegisters.get(0x3).read().intValue());
+		verify(alu, times(1)).add(eq(dataRegisters.get(0x3)), eq(0x98));
 	}
 	
 	/**
@@ -261,7 +218,7 @@ public class TestCPU {
 	public void storeDataRegisterValueInAnotherDataRegister() {
 		executeOpCode(0x8DC0);
 		
-		assertEquals(dataRegisters.get(0xC).read().intValue(), dataRegisters.get(0xD).read().intValue());
+		verify(alu, times(1)).load(eq(dataRegisters.get(0xD)), eq(dataRegisters.get(0xC).read()));
 	}
 	
 	/**
@@ -271,10 +228,9 @@ public class TestCPU {
 	 */
 	@Test
 	public void storeBitwiseORedDataRegisterValuesInDataRegister() {
-		int result = dataRegisters.get(0x3).read() | dataRegisters.get(0x4).read();
 		executeOpCode(0x8341);
 		
-		assertEquals(result, dataRegisters.get(0x3).read().intValue());
+		verify(alu, times(1)).bitwiseOR(eq(dataRegisters.get(0x3)), eq(dataRegisters.get(0x4).read()));
 	}
 	
 	/**
@@ -284,10 +240,9 @@ public class TestCPU {
 	 */
 	@Test
 	public void storeBitwiseANDedDataRegisterValuesInDataRegister() {
-		int result = dataRegisterValues[0x3] & dataRegisterValues[0x4];
 		executeOpCode(0x8342);
 		
-		assertEquals(result, dataRegisters.get(0x3).read().intValue());
+		verify(alu, times(1)).bitwiseAND(eq(dataRegisters.get(0x3)), eq(dataRegisters.get(0x4).read()));
 	}
 	
 	/**
@@ -297,10 +252,9 @@ public class TestCPU {
 	 */
 	@Test
 	public void storeBitwiseXORedDataRegisterValuesInDataRegister() {
-		int result = dataRegisters.get(0xD).read() ^ dataRegisters.get(0x5).read();
 		executeOpCode(0x85D3);
 		
-		assertEquals(result, dataRegisters.get(0x5).read().intValue());
+		verify(alu, times(1)).bitwiseXOR(eq(dataRegisters.get(0x5)), eq(dataRegisters.get(0xD).read()));
 	}
 	
 	/**
@@ -310,39 +264,10 @@ public class TestCPU {
 	 * set to 1, otherwise 0. Only the lowest 8 bits of the result are kept, and stored in Vx.
 	 */
 	@Test
-	public void sumDataRegisterValuesAndSetCarryBecauseSumGreaterThanEightBits() {
-		executeOpCode(0x8134);
-		
-		assertEquals(1, dataRegisters.get(0xF).read().intValue());
-		assertEquals((dataRegisterValues[0x1] + dataRegisterValues[0x3]) & FIT_8BIT_REGISTER, dataRegisters.get(0x1).read().intValue());
-	}
-	
-	/**
-	 * 8xy4 - ADD Vx, Vy
-	 * 
-	 * Set Vx = Vx + Vy, set VF = carry. The values of Vx and Vy are added together. If the result is greater than 8 bits (i.e., > 255,) VF is
-	 * set to 1, otherwise 0. Only the lowest 8 bits of the result are kept, and stored in Vx.
-	 */
-	@Test
-	public void sumDataRegisterValuesAndDoNotSetCarryBecauseSumLessThanEightBits() {
+	public void performAdditionWithCarry() {
 		executeOpCode(0x8424);
 		
-		assertEquals(0, dataRegisters.get(0xF).read().intValue());
-		assertEquals((dataRegisterValues[0x4] + dataRegisterValues[0x2]) & FIT_8BIT_REGISTER, dataRegisters.get(0x4).read().intValue());
-	}
-	
-	/**
-	 * 8xy5 - SUB Vx, Vy
-	 * 
-	 * Set Vx = Vx - Vy, set VF = NOT borrow. If Vx > Vy, then VF is set to 1, otherwise 0. Then Vy is subtracted from Vx, and
-	 * the results stored in Vx.
-	 */
-	@Test
-	public void doNotSetBorrowSinceFirstDataRegisterLessThanSecondDataRegister() {
-		executeOpCode(0x8235);
-		
-		assertEquals(0, dataRegisters.get(0xF).read().intValue());
-		assertEquals((convertToUnsignedInt(dataRegisterValues[0x2] - dataRegisterValues[0x3]) & FIT_8BIT_REGISTER), dataRegisters.get(0x2).read().intValue());
+		verify(alu, times(1)).addWithCarry(eq(dataRegisters.get(0x4)), eq(dataRegisters.get(0x2).read()), eq(FIT_8BIT_REGISTER));
 	}
 	
 	/**
@@ -355,8 +280,7 @@ public class TestCPU {
 	public void setBorrowSinceFirstDataRegisterLargerThanSecondDataRegister() {
 		executeOpCode(0x8325);
 		
-		assertEquals(1, dataRegisters.get(0xF).read().intValue());
-		assertEquals((dataRegisterValues[0x3] - dataRegisterValues[0x2]) & FIT_8BIT_REGISTER, dataRegisters.get(0x3).read().intValue());
+		verify(alu, times(1)).subtractWithBorrow(eq(dataRegisters.get(0x3)), eq(dataRegisters.get(0x2).read()));
 	}
 	
 	/**
@@ -365,38 +289,10 @@ public class TestCPU {
 	 * Set Vx = Vx SHR 1. If the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0. Then Vx is divided by 2.
 	 */
 	@Test
-	public void setCarryAndShiftRight() {
-		executeOpCode(0x8456);
-		
-		assertEquals(1, dataRegisters.get(0xF).read().intValue());
-		assertEquals(dataRegisterValues[0x4] >> 1, dataRegisters.get(0x4).read().intValue());
-	}
-	
-	/**
-	 * 8xy6 - SHR Vx {, Vy}
-	 * 
-	 * Set Vx = Vx SHR 1. If the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0. Then Vx is divided by 2.
-	 */
-	@Test
-	public void doNotSetCarryAndShiftRight() {
+	public void shiftRight() {
 		executeOpCode(0x8AB6);
 		
-		assertEquals(0, dataRegisters.get(0xF).read().intValue());
-		assertEquals(dataRegisterValues[0xA] >> 1, dataRegisters.get(0xA).read().intValue());
-	}
-	
-	/**
-	 * 8xy7 - SUBN Vx, Vy
-	 * 
-	 * Set Vx = Vy - Vx, set VF = NOT borrow. If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy, and 
-	 * the results stored in Vx.
-	 */
-	@Test
-	public void setBorrowAndSubtractFirstDataRegisterValueFromSecondDataRegister() {
-		executeOpCode(0x8017);
-		
-		assertEquals(1, dataRegisters.get(0xF).read().intValue());
-		assertEquals(convertToUnsignedInt(dataRegisterValues[0x1] - dataRegisterValues[0x0]) & FIT_8BIT_REGISTER, dataRegisters.get(0x0).read().intValue());
+		verify(alu, times(1)).rightShiftWithCarry(eq(dataRegisters.get(0xA)));
 	}
 	
 	/**
@@ -409,8 +305,7 @@ public class TestCPU {
 	public void doNotSetBorrowAndSubtractFirstDataRegisterValueFromSecondDataRegister() {
 		executeOpCode(0x8107);
 		
-		assertEquals(0, dataRegisters.get(0xF).read().intValue());
-		assertEquals(convertToUnsignedInt(dataRegisterValues[0x0] - dataRegisterValues[0x1]) & FIT_8BIT_REGISTER, dataRegisters.get(0x1).read().intValue());
+		verify(alu, times(1)).subtractWithNegatedBorrow(eq(dataRegisters.get(0x1)), eq(dataRegisters.get(0x0).read()));
 	}
 	
 	/**
@@ -419,24 +314,10 @@ public class TestCPU {
 	 * Set Vx = Vx SHL 1. If the most-significant bit of Vx is 1, then VF is set to 1, otherwise to 0. Then Vx is multiplied by 2.
 	 */
 	@Test
-	public void setDataRegisterToZeroSinceMostSignificantBitIsNotOne() {
-		executeOpCode(0x8ABE);
-		
-		assertEquals(0, dataRegisters.get(0xF).read().intValue());
-		assertEquals((dataRegisterValues[0xA] << 1) & FIT_8BIT_REGISTER, dataRegisters.get(0xA).read().intValue());
-	}
-	
-	/**
-	 * 8xyE - SHL Vx {, Vy}
-	 * 
-	 * Set Vx = Vx SHL 1. If the most-significant bit of Vx is 1, then VF is set to 1, otherwise to 0. Then Vx is multiplied by 2.
-	 */
-	@Test
-	public void setDataRegisterToOneSinceMostSignificantBitIsOne() {
+	public void leftShift() {
 		executeOpCode(0x835E);
-		
-		assertEquals(1, dataRegisters.get(0xF).read().intValue());
-		assertEquals((dataRegisterValues[0x3] << 1) & FIT_8BIT_REGISTER, dataRegisters.get(0x3).read().intValue());
+
+		verify(alu, times(1)).leftShiftWithCarry(eq(dataRegisters.get(0x3)));
 	}
 	
 	/**
@@ -445,22 +326,10 @@ public class TestCPU {
 	 * Skip next instruction if Vx != Vy. The values of Vx and Vy are compared, and if they are not equal, the program counter is increased by 2.
 	 */
 	@Test
-	public void skipNextInstructionSinceDataRegisterValuesNotEqual() {
+	public void skipNextInstructionIfDataRegisterValuesNotEqual() {
 		executeOpCode(0x95C0);
 		
-		assertEquals(address + 4, programCounter.read().intValue());
-	}
-	
-	/**
-	 * 9xy0 - SNE Vx, Vy
-	 * 
-	 * Skip next instruction if Vx != Vy. The values of Vx and Vy are compared, and if they are not equal, the program counter is increased by 2.
-	 */
-	@Test
-	public void doNotSkipNextInstructionSinceDataRegisterValuesAreEqual() {
-		executeOpCode(0x9460);
-		
-		assertEquals(address + 2, programCounter.read().intValue());
+		verify(alu, times(1)).skipNextIfNotEqual(eq(dataRegisters.get(0x5)), eq(dataRegisters.get(0xC).read()));
 	}
 	
 	/**
@@ -472,7 +341,7 @@ public class TestCPU {
 	public void storeAddressInIndexRegister() {
 		executeOpCode(0xAEBA);
 		
-		assertEquals(0xEBA, indexRegister.read().intValue());
+		verify(alu, times(1)).load(eq(indexRegister), eq(0xEBA));
 	}
 	
 	/**
@@ -494,10 +363,10 @@ public class TestCPU {
 	 * The results are stored in Vx.
 	 */
 	@Test
-	public void storeRandomizedValueInDataRegister() {
+	public void performAdditionUsingRandomNumber() {
 		executeOpCode(0xC023);
 		
-		assertEquals(randomNumberGenerator.value() & 0x23, dataRegisters.get(0x0).read().intValue());
+		verify(alu, times(1)).addWithRandom(eq(dataRegisters.get(0x0)), eq(0x23));
 	}
 	
 	/**
@@ -519,21 +388,6 @@ public class TestCPU {
 	 * Ex9E - SKP Vx
 	 * 
 	 * Skip next instruction if key with the value of Vx is pressed. Checks the keyboard, and if the key corresponding to the
-	 * value of Vx is currently in the down position, the program counter is increased by 2.
-	 */
-	@Test
-	public void doNotSkipNextInstructionBecauseKeyEqualToDataRegisterValueIsNotPressed() {
-		expansionBus.getKeyboard().pressKey(KeyCode.R);
-		executeOpCode(0xEA9E);
-		
-		assertFalse(expansionBus.getKeyboard().getCurrentlyPressedKey() == dataRegisters.get(0xA).read().intValue());
-		assertEquals(address + 2, programCounter.read().intValue());
-	}
-	
-	/**
-	 * Ex9E - SKP Vx
-	 * 
-	 * Skip next instruction if key with the value of Vx is pressed. Checks the keyboard, and if the key corresponding to the
 	 * value of Vx is currently in the down position, the program counter is increased by 4.
 	 */
 	@Test
@@ -541,23 +395,7 @@ public class TestCPU {
 		expansionBus.getKeyboard().pressKey(KeyCode.R);
 		executeOpCode(0xED9E);
 		
-		assertEquals(expansionBus.getKeyboard().getCurrentlyPressedKey(), dataRegisters.get(0xD).read().intValue());
-		assertEquals(address + 4, programCounter.read().intValue());
-	}
-	
-	/**
-	 * ExA1 - SKNP Vx
-	 * 
-	 * Skip next instruction if key with the value of Vx is not pressed. Checks the keyboard, and if the key corresponding to 
-	 * the value of Vx is currently in the up position, the program counter is increased by 4.
-	 */
-	@Test
-	public void skipNextInstructionBecauseKeyEqualToDataRegisterValueIsNotPressed() {
-		expansionBus.getKeyboard().pressKey(KeyCode.R);
-		executeOpCode(0xEAA1);
-		
-		assertFalse(expansionBus.getKeyboard().getCurrentlyPressedKey() == dataRegisters.get(0xA).read().intValue());
-		assertEquals(address + 4, programCounter.read().intValue());
+		verify(alu, times(1)).skipNextIfEqual(eq(dataRegisters.get(0xD)), eq(expansionBus.getKeyboard().getCurrentlyPressedKey()));
 	}
 	
 	/**
@@ -571,8 +409,7 @@ public class TestCPU {
 		expansionBus.getKeyboard().pressKey(KeyCode.R);
 		executeOpCode(0xEDA1);
 		
-		assertEquals(expansionBus.getKeyboard().getCurrentlyPressedKey(), dataRegisters.get(0xD).read().intValue());
-		assertEquals(address + 2, programCounter.read().intValue());
+		verify(alu, times(1)).skipNextIfNotEqual(eq(dataRegisters.get(0xD)), eq(expansionBus.getKeyboard().getCurrentlyPressedKey()));
 	}
 	
 	/**
@@ -584,7 +421,7 @@ public class TestCPU {
 	public void storeDelayTimerValueInDataRegister() {
 		executeOpCode(0xF207);
 		
-		assertEquals(delayTimer.currentValue(), dataRegisters.get(0x2).read());
+		verify(alu, times(1)).load(eq(dataRegisters.get(0x2)), eq(delayTimer.currentValue()));
 	}
 	
 	/**
@@ -598,7 +435,7 @@ public class TestCPU {
 		expansionBus.getKeyboard().pressKey(KeyCode.A);
 		executeOpCode(0xF70A);
 		
-		assertEquals(expansionBus.getKeyboard().getCurrentlyPressedKey(), dataRegisters.get(0x7).read().intValue());
+		verify(alu, times(1)).load(eq(dataRegisters.get(0x7)), eq(expansionBus.getKeyboard().getCurrentlyPressedKey()));
 	}
 	
 	/**
@@ -647,27 +484,12 @@ public class TestCPU {
 	 * than 0xFFF, then data register Vf should be set to 1;
 	 */
 	@Test
-	public void storeIndexRegisterPlusDataRegisterValueInIndexRegisterAndSetDataRegisterToZero() {
-		executeOpCode(0xFD1E);
-		
-		assertEquals(0, dataRegisters.get(0xF).read().intValue());
-		assertEquals((index + dataRegisterValues[0xD]) & FIT_16BIT_REGISTER, indexRegister.read().intValue());
-	}
-	
-	/**
-	 * Fx1E - ADD I, Vx
-	 * 
-	 * Set I = I + Vx. The values of I and Vx are added, and the result is stored in I. If the result is larger
-	 * than 0xFFF, then data register Vf should be set to 1;
-	 */
-	@Test
 	public void storeIndexRegisterPlusDataRegisterValueInIndexRegisterAndSetDataRegisterToOne() {
 		index = 0xFFF;
 		target.initialize(address, instruction, index, delayTime, soundTime, fontset);
 		executeOpCode(0xFD1E);
 		
-		assertEquals(1, dataRegisters.get(0xF).read().intValue());
-		assertEquals((index + dataRegisterValues[0xD]) & FIT_16BIT_REGISTER, indexRegister.read().intValue());
+		verify(alu, times(1)).addWithCarry(eq(indexRegister), eq(dataRegisters.get(0xD).read()), eq(index));
 	}
 	
 	/**
@@ -680,7 +502,7 @@ public class TestCPU {
 	public void storeSpriteLocationInIndexRegister() {
 		executeOpCode(0xFD29);
 		
-		assertEquals(dataRegisters.get(0xD).read()*5 & FIT_16BIT_REGISTER, indexRegister.read().intValue());
+		verify(alu, times(1)).load(eq(indexRegister), eq(dataRegisters.get(0xD).read()*5 & FIT_16BIT_REGISTER));
 	}
 	
 	/**

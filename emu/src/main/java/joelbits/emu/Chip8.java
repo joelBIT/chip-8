@@ -42,6 +42,8 @@ import joelbits.emu.flags.ClearFlag;
 import joelbits.emu.flags.DrawFlag;
 import joelbits.emu.flags.Flag;
 import joelbits.emu.input.Keyboard;
+import joelbits.emu.memory.BufferFactory;
+import joelbits.emu.memory.Memory;
 import joelbits.emu.output.Beep;
 import joelbits.emu.output.Screen;
 import joelbits.emu.timers.DelayTimer;
@@ -66,6 +68,9 @@ public class Chip8 extends Application {
 	private Flag drawFlag;
 	private Flag clearFlag;
 	private int GAME_VELOCITY = 10;
+	private final int SCREEN_WIDTH = 64;
+	private final int SCREEN_HEIGHT = 32;
+	private final int PIXEL_SIZE = 14;
 	private URI gamePath;
 	private boolean running;
 	private boolean paused;
@@ -132,6 +137,8 @@ public class Chip8 extends Application {
 		Register<Integer> instructionRegister = InstructionRegister.getInstance();
 		Register<Integer> programCounter = ProgramCounter.getInstance();
 		Register<Integer> indexRegister = IndexRegister.getInstance();
+		Memory displayBuffer = BufferFactory.createDisplayBuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
+		Memory dirtyBuffer = BufferFactory.createDirtyBuffer();
 		ALU alu = new ALU(programCounter, dataRegisters.get(0xF), new RandomNumberGenerator());
 		
 		delayTimer = new DelayTimer<Integer>();
@@ -139,7 +146,8 @@ public class Chip8 extends Application {
 		clearFlag = new ClearFlag();
 		drawFlag = new DrawFlag();
 		expansionBus = initializeExpansionBus();
-		gpu = new GPU(new Screen<Integer>(64, 32, 14), graphicsContext, drawFlag, clearFlag);
+		
+		gpu = new GPU(displayBuffer, dirtyBuffer, new Screen<Integer>(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SIZE), graphicsContext, drawFlag, clearFlag);
 		cpu = new CPU(expansionBus, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, alu, gpu);
 	}
 	

@@ -17,7 +17,7 @@ public class ALU {
 	}
 	
 	public void load(Register<Integer> register, int value) {
-		register.write(value);
+		register.write(value & FIT_8BIT_REGISTER);
 		incrementProgramCounter(programCounter);
 	}
 	
@@ -52,17 +52,17 @@ public class ALU {
 	}
 	
 	public void bitwiseOR(Register<Integer> register, int value) {
-		register.write(register.read() | value);
+		register.write((register.read() | value) & FIT_8BIT_REGISTER);
 		incrementProgramCounter(programCounter);
 	}
 	
 	public void bitwiseAND(Register<Integer> register, int value) {
-		register.write(register.read() & value);
+		register.write((register.read() & value) & FIT_8BIT_REGISTER);
 		incrementProgramCounter(programCounter);
 	}
 	
 	public void bitwiseXOR(Register<Integer> register, int value) {
-		register.write(register.read() ^ value);
+		register.write((register.read() ^ value) & FIT_8BIT_REGISTER);
 		incrementProgramCounter(programCounter);
 	}
 	
