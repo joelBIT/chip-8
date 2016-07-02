@@ -9,7 +9,7 @@ import joelbits.emu.memory.Memory;
 import joelbits.emu.memory.RAM;
 
 public class TestRAM {
-private Memory target;
+	private Memory target;
 	
 	@Before
 	public void setUp() {

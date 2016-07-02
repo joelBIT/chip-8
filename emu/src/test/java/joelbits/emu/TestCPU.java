@@ -114,14 +114,14 @@ public class TestCPU {
 	@Test
 	public void popTopOfStackAddressIntoProgramCounter() {
 		executeOpCode(0x2567);
-		assertEquals(address, stack.peek().intValue());
+		assertTrue(stack.peek().equals(address));
 		
 		writeToMemory(0x567, 0x0);
 		writeToMemory(0x568, 0xEE);
 		executeOpCode(0x00EE);
 		
 		assertTrue(stack.empty());
-		assertEquals(address+2 , programCounter.read().intValue());
+		assertTrue(programCounter.read().equals(address+2));
 	}
 	
 	/**
@@ -133,7 +133,7 @@ public class TestCPU {
 	public void storeAddressInProgramCounter() {
 		executeOpCode(0x1AB5);
 		
-		assertEquals(0xAB5, programCounter.read().intValue());
+		assertTrue(programCounter.read().equals(0xAB5));
 	}
 	
 	/**
@@ -146,8 +146,8 @@ public class TestCPU {
 	public void pushProgramCounterValueOntoStack() {
 		executeOpCode(0x2567);
 		
-		assertEquals(address, stack.peek().intValue());
-		assertEquals(0x567, programCounter.read().intValue());
+		assertTrue(stack.peek().equals(address));
+		assertTrue(programCounter.read().equals(0x567));
 	}
 	
 	/**
@@ -356,7 +356,7 @@ public class TestCPU {
 	public void setProgramCounterToAddressPlusDataRegisterValue() {
 		executeOpCode(0xB348);
 
-		assertEquals(0x348 + dataRegisters.get(0).read(), programCounter.read().intValue());
+		assertTrue(programCounter.read().equals(0x348 + dataRegisters.get(0).read()));
 	}
 	
 	/**
@@ -476,8 +476,8 @@ public class TestCPU {
 	public void setSoundTimerEqualToTwoSinceDataRegisterValueIsOne() {
 		executeOpCode(0xFE18);
 		
-		assertEquals(1, dataRegisters.get(0xE).read().intValue());
-		assertEquals(2, soundTimer.currentValue().intValue());
+		assertTrue(dataRegisters.get(0xE).read().equals(1));
+		assertTrue(soundTimer.currentValue().equals(2));
 	}
 	
 	/**
@@ -535,7 +535,7 @@ public class TestCPU {
 		executeOpCode(0xF755);
 
 		for (int i = 0; i < 8; i++) {
-			assertEquals(dataRegisters.get(i).read().intValue(), primaryMemory.read(index+i));
+			assertTrue(dataRegisters.get(i).read().equals(primaryMemory.read(index+i)));
 		}
 	}
 	
