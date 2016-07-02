@@ -25,8 +25,8 @@ public class CPU {
 	private final Register<Integer> indexRegister;
 	private final ALU alu;
 	private final GPU gpu;
-	private Timer<Integer> delayTimer;
-	private Timer<Integer> soundTimer;
+	private final Timer<Integer> delayTimer;
+	private final Timer<Integer> soundTimer;
 	
 	private final int FIT_8BIT_REGISTER = 0xFF;
 	private final int FIT_16BIT_REGISTER = 0xFFFF;
@@ -191,7 +191,7 @@ public class CPU {
 				}
 				break;
 			default:
-				System.out.println("Unknown instruction " + Integer.toHexString(instruction & FIT_16BIT_REGISTER) + " at (all) location " + programCounter.read());
+				System.out.println("Unknown instruction " + Integer.toHexString(instruction & FIT_16BIT_REGISTER) + " at location " + programCounter.read());
 				break;
 		}
 	}

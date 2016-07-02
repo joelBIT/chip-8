@@ -54,31 +54,30 @@ import joelbits.emu.timers.SoundTimer;
 import joelbits.emu.timers.Timer;
 
 /**
- * Last 8 or 16 bits of each int are used to represent an unsigned byte or an unsigned short respectively. A ROM is written to memory starting
- * at location 0x200.
+ * A ROM is written to memory starting at location 0x200 since the CHIP-8 interpreter occupies most of the preceding memory locations.
  * 
  */
 public class Chip8 extends Application {
-	private CPU cpu;
-	private GPU gpu;
-	private Input<Integer, KeyCode> keyboard;
-	private Sound sound;
-	private FileChooser fileChooser;
 	private GraphicsContext graphicsContext;
 	private Stage stage;
-	private BorderPane root;
-	private Timer<Integer> delayTimer;
-	private Timer<Integer> soundTimer;
-	private Flag drawFlag;
-	private Flag clearFlag;
+	private CPU cpu;
+	private GPU gpu;
+	private URI gamePath;
+	private final Timer<Integer> delayTimer = new DelayTimer<Integer>();
+	private final Timer<Integer> soundTimer = new SoundTimer<Integer>();
+	private final Flag drawFlag = new DrawFlag();
+	private final Flag clearFlag = new ClearFlag();
+	private final Input<Integer, KeyCode> keyboard = new Keyboard();
+	private final Sound sound = new Beep();
+	private final BorderPane root = new BorderPane();
+	private final FileChooser fileChooser = new FileChooser();
+	private boolean running;
+	private boolean paused;
 	private int GAME_VELOCITY = 10;
 	private final int SCREEN_WIDTH = 64;
 	private final int SCREEN_HEIGHT = 32;
 	private final int PIXEL_SIZE = 14;
-	private URI gamePath;
-	private boolean running;
-	private boolean paused;
-	protected final static int fontset[] =
+	private final int fontset[] =
 		{ 
 		  0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
 		  0x20, 0x60, 0x20, 0x20, 0x70, // 1
@@ -113,7 +112,6 @@ public class Chip8 extends Application {
 		
 		initializeUnits();
 		
-		root = new BorderPane();
 		root.setStyle("-fx-background: black;");
 		Scene scene = new Scene(root);
 		stage.setScene(scene);
@@ -123,7 +121,6 @@ public class Chip8 extends Application {
 		scene.setOnKeyPressed(event -> keyboard.press(event.getCode()));
 		scene.setOnKeyReleased(event -> keyboard.releasePressed());
 		
-		fileChooser = new FileChooser();
 		fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("rom", "*.rom"), new FileChooser.ExtensionFilter("ch8", "*.ch8"));
 		
 		root.setTop(createMenuBar());
@@ -138,21 +135,15 @@ public class Chip8 extends Application {
 			dataRegisters.add(i, new DataRegister<Integer>());
 			dataRegisters.get(i).write(0);
 		}
-		Register<Integer> instructionRegister = InstructionRegister.getInstance();
 		Register<Integer> programCounter = ProgramCounter.getInstance();
-		Register<Integer> indexRegister = IndexRegister.getInstance();
-		Memory displayBuffer = BufferFactory.createDisplayBuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
-		Memory dirtyBuffer = BufferFactory.createDirtyBuffer();
 		ALU alu = new ALU(programCounter, dataRegisters.get(0xF), new RandomNumberGenerator());
 		
-		delayTimer = new DelayTimer<Integer>();
-		soundTimer = new SoundTimer<Integer>();
-		clearFlag = new ClearFlag();
-		drawFlag = new DrawFlag();
-		keyboard = new Keyboard();
-		sound = new Beep();
-		
+		Memory displayBuffer = BufferFactory.createDisplayBuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
+		Memory dirtyBuffer = BufferFactory.createDirtyBuffer();
 		gpu = new GPU(displayBuffer, dirtyBuffer, new Screen<Integer>(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SIZE), graphicsContext, drawFlag, clearFlag);
+		
+		Register<Integer> instructionRegister = InstructionRegister.getInstance();
+		Register<Integer> indexRegister = IndexRegister.getInstance();
 		cpu = new CPU(new Stack<Integer>(), new RAM(4096), keyboard, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, alu, gpu);
 	}
 	
@@ -171,9 +162,8 @@ public class Chip8 extends Application {
 			paused = true;
 			File file = fileChooser.showOpenDialog(stage);
 			if (file != null) {
-				gpu.clearScreen();
 				gamePath = file.toURI();
-				startGame(gamePath);
+				resetGame(gamePath);
 			}
 			paused = false;
 		});
@@ -222,15 +212,17 @@ public class Chip8 extends Application {
 		pause.setOnAction(event -> paused = pause.isSelected());
 		MenuItem reset = new MenuItem("Reset");
 		reset.setAccelerator(new KeyCodeCombination(KeyCode.F3));
-		reset.setOnAction(event -> {
-			gpu.clearScreen();
-			startGame(gamePath);
-		});
+		reset.setOnAction(event -> resetGame(gamePath));
 		game.getItems().addAll(pause, reset);
 		
 		MenuBar menuBar = new MenuBar();
 		menuBar.getMenus().addAll(emulator, options, game);
 		return menuBar;
+	}
+	
+	private void resetGame(URI gamePath) {
+		gpu.clearScreen();
+		startGame(gamePath);
 	}
 	
 	private void startGame(URI gamePath) {

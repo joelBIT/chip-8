@@ -1,8 +1,9 @@
 package joelbits.emu.memory;
 
 /**
- *  A display that is basically just an array of pixels that are either in state 0 or 1. The current screen state is
- *  stored in the display buffer.
+ * The current display state is stored in this buffer. Value 1 means that a pixel is visible on the display at the corresponding coordinates,
+ * while value 0 means that there is no visible pixel at the corresponding coordinates. Here visible means that the drawn pixel has a color
+ * different from the background color.
  *
  */
 public class DisplayBuffer implements Memory {

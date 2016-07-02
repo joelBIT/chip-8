@@ -1,9 +1,9 @@
 package joelbits.emu.output;
 
 public class Screen<T> {
-	private T width;
-	private T height;
-	private T pixelSize;
+	private final T width;
+	private final T height;
+	private final T pixelSize;
 	
 	public Screen(T width, T height, T pixelSize) {
 		this.width = width;

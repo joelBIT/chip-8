@@ -4,9 +4,9 @@ import joelbits.emu.RandomNumberGenerator;
 import joelbits.emu.cpu.registers.Register;
 
 public class ALU {
-	private Register<Integer> programCounter;
-	private Register<Integer> dataRegisterVF;
-	private RandomNumberGenerator randomNumberGenerator;
+	private final Register<Integer> programCounter;
+	private final Register<Integer> dataRegisterVF;
+	private final RandomNumberGenerator randomNumberGenerator;
 	private final int FIT_8BIT_REGISTER = 0xFF;
 	private final int FIT_16BIT_REGISTER = 0xFFFF;
 	

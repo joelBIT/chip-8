@@ -3,9 +3,8 @@ package joelbits.emu.memory;
 import joelbits.emu.memory.Memory;
 
 /**
- * A very small main memory where the array represents the 4096 memory locations (0x000 - 0xFFF) that is used by the CHIP-8, where the 
- * CHIP-8 interpreter itself will occupy the first 512 bytes (0x000 to 0x1FF) of the memory space. Last 8 bits of each int are used to 
- * represent an unsigned byte.
+ * A memory where the array represents the 4096 memory locations (0x000 - 0xFFF) that is used by the CHIP-8, where the 
+ * CHIP-8 interpreter itself will occupy the first 512 bytes (0x000 to 0x1FF) of the memory space.
  *
  */
 public class RAM implements Memory {
