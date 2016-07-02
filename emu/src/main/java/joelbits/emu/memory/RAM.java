@@ -7,7 +7,7 @@ import joelbits.emu.memory.Memory;
  * CHIP-8 interpreter itself will occupy the first 512 bytes (0x000 to 0x1FF) of the memory space.
  *
  */
-public class RAM implements Memory {
+public final class RAM implements Memory {
 	private final int[] memory;
 	
 	public RAM(int memoryLocations) {

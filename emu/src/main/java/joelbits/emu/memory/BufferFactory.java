@@ -1,6 +1,6 @@
 package joelbits.emu.memory;
 
-public class BufferFactory {
+public final class BufferFactory {
 	public static Memory createDisplayBuffer(int width, int height) {
 		return new DisplayBuffer(width, height);
 	}

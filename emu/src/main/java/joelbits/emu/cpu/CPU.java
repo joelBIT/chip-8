@@ -15,7 +15,7 @@ import joelbits.emu.timers.Timer;
  * In this CPU implementation components like the control unit (CU) and the arithmetic-logic unit (ALU) are abstracted away.
  *
  */
-public class CPU {
+public final class CPU {
 	private final Memory primaryMemory;
 	private final Input<Integer, KeyCode> keyboard;
 	private final Stack<Integer> stack;

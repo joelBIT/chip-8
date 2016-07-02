@@ -1,6 +1,6 @@
 package joelbits.emu.timers;
 
-public class DelayTimer<T> implements Timer<T> {
+public final class DelayTimer<T> implements Timer<T> {
 	private T value;
 
 	@Override

@@ -1,6 +1,6 @@
 package joelbits.emu.flags;
 
-public class ClearFlag implements Flag {
+public final class ClearFlag implements Flag {
 	private boolean active;
 
 	@Override

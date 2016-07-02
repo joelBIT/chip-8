@@ -8,7 +8,7 @@ import joelbits.emu.flags.Flag;
 import joelbits.emu.memory.Memory;
 import joelbits.emu.output.Screen;
 
-public class GPU {
+public final class GPU {
 	private final Memory displayBuffer;
 	private final Memory dirtyBuffer;
 	private final Screen<Integer> screen;

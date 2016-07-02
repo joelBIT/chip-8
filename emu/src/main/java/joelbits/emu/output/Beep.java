@@ -10,30 +10,25 @@ import javax.sound.sampled.Clip;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.LineUnavailableException;
 
-public class Beep implements Sound {
+public final class Beep implements Sound {
     private final int SAMPLE_RATE = 8000;
     private final int SAMPLE_SIZE_IN_BITS = 8;
     private final int SOUND_FREQUENCY = 880;
     private final int SOUND_VOLUME = 30;
     private final byte[] soundBytes = new byte[SAMPLE_RATE / SAMPLE_SIZE_IN_BITS];
+    private final ByteArrayInputStream byteArrayInputStream;
+    private final AudioFormat audioFormat = new AudioFormat(SAMPLE_RATE, SAMPLE_SIZE_IN_BITS, 1, true, false);
+    private final AudioInputStream audioInputStream;
+    private final DataLine.Info dataLineInfo;
     private Clip beepSound;
-    private ByteArrayInputStream byteArrayInputStream;
-    private AudioFormat audioFormat;
-    private AudioInputStream audioInputStream;
-    private DataLine.Info dataLineInfo;
     private boolean beeping;
     private boolean muted;
 
     public Beep() {
-    	openAudioInputStream();
-    }
-    
-    private void openAudioInputStream() {
     	for (int i = 0; i < SAMPLE_RATE / SAMPLE_SIZE_IN_BITS; i++) {
     		soundBytes[i] = (byte) ((double)SOUND_VOLUME * Math.sin(6.28 * (double)SOUND_FREQUENCY * (i / (double)SAMPLE_RATE)));
     	}
     	byteArrayInputStream = new ByteArrayInputStream(soundBytes);
-    	audioFormat = new AudioFormat(SAMPLE_RATE, SAMPLE_SIZE_IN_BITS, 1, true, false);
     	audioInputStream = new AudioInputStream(byteArrayInputStream, audioFormat, SAMPLE_RATE / SAMPLE_SIZE_IN_BITS);
     	dataLineInfo = new DataLine.Info(Clip.class, audioFormat);
     	try {

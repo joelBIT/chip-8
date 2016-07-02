@@ -8,7 +8,7 @@ import java.util.List;
  *  pixels have to be re-rendered.
  *
  */
-public class DirtyBuffer implements Memory {
+public final class DirtyBuffer implements Memory {
 	private final List<Integer> dirtyBuffer = new ArrayList<>();
 	
 	/**

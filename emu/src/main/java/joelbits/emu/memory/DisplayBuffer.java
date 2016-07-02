@@ -6,7 +6,7 @@ package joelbits.emu.memory;
  * different from the background color.
  *
  */
-public class DisplayBuffer implements Memory {
+public final class DisplayBuffer implements Memory {
 	private final int[] displayBuffer;
 	
 	public DisplayBuffer(int width, int height) {

@@ -57,7 +57,7 @@ import joelbits.emu.timers.Timer;
  * A ROM is written to memory starting at location 0x200 since the CHIP-8 interpreter occupies most of the preceding memory locations.
  * 
  */
-public class Chip8 extends Application {
+public final class Chip8 extends Application {
 	private GraphicsContext graphicsContext;
 	private Stage stage;
 	private CPU cpu;
