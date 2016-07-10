@@ -20,7 +20,7 @@ public final class DirtyBuffer implements Memory {
 	}
 
 	/**
-	 * No data is written to buffer, only memory indices of affected pixels are of interest.
+	 * No data is written to buffer, only memory index of affected pixels are of interest.
 	 */
 	@Override
 	public void write(int index, int data) {

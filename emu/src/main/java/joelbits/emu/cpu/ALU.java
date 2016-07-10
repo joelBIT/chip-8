@@ -3,7 +3,7 @@ package joelbits.emu.cpu;
 import joelbits.emu.RandomNumberGenerator;
 import joelbits.emu.cpu.registers.Register;
 
-public final class ALU {
+public class ALU {
 	private final Register<Integer> programCounter;
 	private final Register<Integer> dataRegisterVF;
 	private final RandomNumberGenerator randomNumberGenerator;
