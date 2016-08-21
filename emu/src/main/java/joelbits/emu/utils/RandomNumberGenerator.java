@@ -1,4 +1,4 @@
-package joelbits.emu;
+package joelbits.emu.utils;
 
 import java.util.Random;
 

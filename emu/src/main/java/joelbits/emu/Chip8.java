@@ -52,6 +52,7 @@ import joelbits.emu.output.Sound;
 import joelbits.emu.timers.DelayTimer;
 import joelbits.emu.timers.SoundTimer;
 import joelbits.emu.timers.Timer;
+import joelbits.emu.utils.RandomNumberGenerator;
 
 /**
  * A ROM is written to memory starting at location 0x200 since the CHIP-8 interpreter occupies most of the preceding memory locations.
@@ -95,7 +96,7 @@ public final class Chip8 extends Application {
 		  0xE0, 0x90, 0x90, 0x90, 0xE0, // D
 		  0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
 		  0xF0, 0x80, 0xF0, 0x80, 0x80  // F
-	};
+		};
 	
 	public static void main(String[] args) {
 		launch(args);
@@ -110,7 +111,8 @@ public final class Chip8 extends Application {
 		graphicsContext = canvas.getGraphicsContext2D();
 		graphicsContext.setFill(Color.WHITE);
 		
-		initializeUnits();
+		gpu = createGPU(graphicsContext, drawFlag, clearFlag);
+		cpu = createCPU(gpu, keyboard, delayTimer, soundTimer);
 		
 		root.setStyle("-fx-background: black;");
 		Scene scene = new Scene(root);
@@ -129,22 +131,29 @@ public final class Chip8 extends Application {
 		stage.show();
 	}
 	
-	private void initializeUnits() {
+	private GPU createGPU(GraphicsContext graphicsContext, Flag drawFlag, Flag clearFlag) {
+		Memory displayBuffer = BufferFactory.createDisplayBuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
+		Memory dirtyBuffer = BufferFactory.createDirtyBuffer();
+		return new GPU(displayBuffer, dirtyBuffer, new Screen<Integer>(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SIZE), graphicsContext, drawFlag, clearFlag);
+	}
+	
+	private CPU createCPU(GPU gpu, Input<Integer, KeyCode> keyboard, Timer<Integer> delayTimer, Timer<Integer> soundTimer) {
+		List<Register<Integer>> dataRegisters = initializeDataRegisters();
+		Register<Integer> programCounter = ProgramCounter.getInstance();
+		ALU alu = new ALU(programCounter, dataRegisters.get(0xF), new RandomNumberGenerator());
+		
+		Register<Integer> instructionRegister = InstructionRegister.getInstance();
+		Register<Integer> indexRegister = IndexRegister.getInstance();
+		return new CPU(new Stack<Integer>(), new RAM(4096), keyboard, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, alu, gpu);
+	}
+
+	private List<Register<Integer>> initializeDataRegisters() {
 		List<Register<Integer>> dataRegisters = new ArrayList<>();
 		for (int i = 0; i <= 0xF; i++) {
 			dataRegisters.add(i, new DataRegister<Integer>());
 			dataRegisters.get(i).write(0);
 		}
-		Register<Integer> programCounter = ProgramCounter.getInstance();
-		ALU alu = new ALU(programCounter, dataRegisters.get(0xF), new RandomNumberGenerator());
-		
-		Memory displayBuffer = BufferFactory.createDisplayBuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
-		Memory dirtyBuffer = BufferFactory.createDirtyBuffer();
-		gpu = new GPU(displayBuffer, dirtyBuffer, new Screen<Integer>(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SIZE), graphicsContext, drawFlag, clearFlag);
-		
-		Register<Integer> instructionRegister = InstructionRegister.getInstance();
-		Register<Integer> indexRegister = IndexRegister.getInstance();
-		cpu = new CPU(new Stack<Integer>(), new RAM(4096), keyboard, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, alu, gpu);
+		return dataRegisters;
 	}
 	
 	private void terminateApplication() {
@@ -153,71 +162,111 @@ public final class Chip8 extends Application {
 	}
 	
 	private MenuBar createMenuBar() {
-		Menu emulator = new Menu("Interpreter");
-		emulator.setOnShowing(event -> paused = true);
-		emulator.setOnHidden(event -> paused = false);
+		Menu interpreter = createInterpreterMenu();
+		Menu options = createOptionsMenu();
+		Menu game = createGameMenu();
+		
+		MenuBar menuBar = new MenuBar();
+		menuBar.getMenus().addAll(interpreter, options, game);
+		return menuBar;
+	}
+	
+	private void setPaused(boolean paused) {
+		this.paused = paused;
+	}
+	
+	private Menu createInterpreterMenu() {
+		Menu interpreter = new Menu("Interpreter");
+		interpreter.setOnShowing(event -> setPaused(true));
+		interpreter.setOnHidden(event -> setPaused(false));
+		
 		MenuItem open = new MenuItem("Open");
 		open.setAccelerator(new KeyCodeCombination(KeyCode.O, KeyCombination.CONTROL_DOWN));
 		open.setOnAction(event -> {
-			paused = true;
-			File file = fileChooser.showOpenDialog(stage);
-			if (file != null) {
-				gamePath = file.toURI();
-				resetGame(gamePath);
-			}
-			paused = false;
+			setPaused(true);
+			openROM();
+			setPaused(false);
 		});
 		
 		MenuItem exit = new MenuItem("Exit");
 		exit.setAccelerator(new KeyCodeCombination(KeyCode.Q, KeyCombination.CONTROL_DOWN));
 		exit.setOnAction(event -> terminateApplication());
-		SeparatorMenuItem separatorMenuItem = new SeparatorMenuItem();
-		emulator.getItems().addAll(open, separatorMenuItem, exit);
 		
+		SeparatorMenuItem separatorMenuItem = new SeparatorMenuItem();
+		interpreter.getItems().addAll(open, separatorMenuItem, exit);
+		return interpreter;
+	}
+	
+	private void openROM() {
+		File file = fileChooser.showOpenDialog(stage);
+		if (file != null) {
+			gamePath = file.toURI();
+			resetGame(gamePath);
+		}
+	}
+	
+	private Menu createOptionsMenu() {
 		Menu options = new Menu("Options");
-		options.setOnShowing(event -> paused = true);
-		options.setOnHidden(event -> paused = false);
+		options.setOnShowing(event -> setPaused(true));
+		options.setOnHidden(event -> setPaused(false));
+		
 		CheckMenuItem muteSound = new CheckMenuItem("Mute Sound");
 		muteSound.setAccelerator(new KeyCodeCombination(KeyCode.F4));
-		muteSound.setOnAction(event -> {
-			if (muteSound.isSelected()) {
-				sound.mute();
-			} else {
-				sound.unmute();
-			}
-		});
+		muteSound.setOnAction(event -> { toggleMute(muteSound); });
+		
 		MenuItem velocity = new MenuItem("Change velocity");
 		velocity.setAccelerator(new KeyCodeCombination(KeyCode.F5));
 		velocity.setOnAction(event -> {
-			paused = true;
-			TextInputDialog dialog = new TextInputDialog(String.valueOf(GAME_VELOCITY));
-			dialog.setTitle("Change game velocity");
-			dialog.setHeaderText("Game velocity");
-			dialog.setContentText("Set game velocity (default 10):");
-
-			Optional<String> result = dialog.showAndWait();
-			if (result.isPresent()) {
-				GAME_VELOCITY = Integer.parseInt(result.get());
-			}
-			paused = false;
+			setPaused(true);
+			changeGameVelocity();
+			setPaused(false);
 		});
-		separatorMenuItem = new SeparatorMenuItem();
-		options.getItems().addAll(muteSound, separatorMenuItem, velocity);
 		
+		SeparatorMenuItem separatorMenuItem = new SeparatorMenuItem();
+		options.getItems().addAll(muteSound, separatorMenuItem, velocity);
+		return options;
+	}
+	
+	private void toggleMute(CheckMenuItem muteSound) {
+		if (muteSound.isSelected()) {
+			sound.mute();
+		} else {
+			sound.unmute();
+		}
+	}
+	
+	private void changeGameVelocity() {
+		TextInputDialog dialog = createVelocityDialog();
+
+		Optional<String> result = dialog.showAndWait();
+		if (result.isPresent()) {
+			GAME_VELOCITY = Integer.parseInt(result.get());
+		}
+	}
+
+	private TextInputDialog createVelocityDialog() {
+		TextInputDialog dialog = new TextInputDialog(String.valueOf(GAME_VELOCITY));
+		dialog.setTitle("Change game velocity");
+		dialog.setHeaderText("Game velocity");
+		dialog.setContentText("Set game velocity (default 10):");
+		return dialog;
+	}
+	
+	private Menu createGameMenu() {
 		Menu game = new Menu("Game");
-		game.setOnShowing(event -> paused = true);
-		game.setOnHidden(event -> paused = false);
+		game.setOnShowing(event -> setPaused(true));
+		game.setOnHidden(event -> setPaused(false));
+		
 		CheckMenuItem pause = new CheckMenuItem("Pause");
 		pause.setAccelerator(new KeyCodeCombination(KeyCode.F2));
-		pause.setOnAction(event -> paused = pause.isSelected());
+		pause.setOnAction(event -> setPaused(pause.isSelected()));
+		
 		MenuItem reset = new MenuItem("Reset");
 		reset.setAccelerator(new KeyCodeCombination(KeyCode.F3));
 		reset.setOnAction(event -> resetGame(gamePath));
-		game.getItems().addAll(pause, reset);
 		
-		MenuBar menuBar = new MenuBar();
-		menuBar.getMenus().addAll(emulator, options, game);
-		return menuBar;
+		game.getItems().addAll(pause, reset);
+		return game;
 	}
 	
 	private void resetGame(URI gamePath) {
@@ -243,11 +292,15 @@ public final class Chip8 extends Application {
 		}
 	}
 	
+	private boolean isPaused() {
+		return paused;
+	}
+	
 	class InstructionCycle implements Runnable {
 
 		@Override
 		public void run() {
-			if (!paused) {
+			if (!isPaused()) {
 	 			if (delayTimer.currentValue() > 0) {
 	 				decrementDelayTimer();
 	 			}

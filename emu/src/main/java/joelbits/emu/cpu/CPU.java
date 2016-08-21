@@ -75,8 +75,8 @@ public final class CPU {
 	}
 	
 	private void resetDataRegisters() {
-		for (int i = 0; i < dataRegisters.size(); i++) {
-			dataRegisters.get(i).write(0);
+		for (Register<Integer> register : dataRegisters) {
+			register.write(0);
 		}
 	}
 	

@@ -48,12 +48,12 @@ public enum Instructions {
 				return instruction;
 			}
 		}
-		throw new IllegalArgumentException("Not a valid opcode");
+		throw new IllegalArgumentException(opcode + " is not a valid opcode");
 	}
 	
 	private static boolean isEqual(String instruction, String opcode) {
 		if (instruction.length() != opcode.length()) {
-			throw new IllegalArgumentException("The opcodes differ in length");
+			throw new IllegalArgumentException(instruction + " and " + opcode + " differs in length");
 		}
 		for (int i = 0; i < opcode.length(); i++) {
 			char instructionChar = instruction.charAt(i);

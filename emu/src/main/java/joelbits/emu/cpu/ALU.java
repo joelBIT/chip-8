@@ -1,7 +1,7 @@
 package joelbits.emu.cpu;
 
-import joelbits.emu.RandomNumberGenerator;
 import joelbits.emu.cpu.registers.Register;
+import joelbits.emu.utils.RandomNumberGenerator;
 
 public class ALU {
 	private final Register<Integer> programCounter;
