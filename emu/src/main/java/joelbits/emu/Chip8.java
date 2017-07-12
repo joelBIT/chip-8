@@ -3,17 +3,13 @@ package joelbits.emu;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Stack;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -22,14 +18,13 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
-import javafx.scene.control.TextInputDialog;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
-import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import joelbits.emu.components.TextInputDialogComponent;
 import joelbits.emu.cpu.ALU;
 import joelbits.emu.cpu.CPU;
 import joelbits.emu.cpu.GPU;
@@ -46,11 +41,13 @@ import joelbits.emu.input.Keyboard;
 import joelbits.emu.memory.BufferFactory;
 import joelbits.emu.memory.Memory;
 import joelbits.emu.memory.RAM;
-import joelbits.emu.output.Sound;
 import joelbits.emu.output.Screen;
+import joelbits.emu.output.Sound;
 import joelbits.emu.timers.DelayTimer;
 import joelbits.emu.timers.SoundTimer;
 import joelbits.emu.timers.Timer;
+import joelbits.emu.utils.ROMFileChooser;
+import joelbits.emu.utils.Chip8Util;
 import joelbits.emu.utils.RandomNumberGenerator;
 
 /**
@@ -62,7 +59,6 @@ public final class Chip8 extends Application {
 	private Stage stage;
 	private CPU cpu;
 	private GPU gpu;
-	private URI gamePath;
 	private final Timer<Integer> delayTimer = new DelayTimer<Integer>();
 	private final Timer<Integer> soundTimer = new SoundTimer<Integer>();
 	private final Flag drawFlag = new DrawFlag();
@@ -70,32 +66,9 @@ public final class Chip8 extends Application {
 	private final Input<Integer, KeyCode> keyboard = new Keyboard();
 	private final Sound sound = new Sound();
 	private final BorderPane root = new BorderPane();
-	private final FileChooser fileChooser = new FileChooser();
-	private boolean running;
-	private boolean paused;
-	private int GAME_VELOCITY = 10;
-	private final int SCREEN_WIDTH = 64;
-	private final int SCREEN_HEIGHT = 32;
-	private final int PIXEL_SIZE = 14;
-	private final int fontset[] =
-		{ 
-		  0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
-		  0x20, 0x60, 0x20, 0x20, 0x70, // 1
-		  0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
-		  0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
-		  0x90, 0x90, 0xF0, 0x10, 0x10, // 4
-		  0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
-		  0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
-		  0xF0, 0x10, 0x20, 0x40, 0x40, // 7
-		  0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
-		  0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
-		  0xF0, 0x90, 0xF0, 0x90, 0x90, // A
-		  0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
-		  0xF0, 0x80, 0x80, 0x80, 0xF0, // C
-		  0xE0, 0x90, 0x90, 0x90, 0xE0, // D
-		  0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
-		  0xF0, 0x80, 0xF0, 0x80, 0x80  // F
-		};
+	private final GameSettings settings = new GameSettings();
+	private final Chip8Util chip8Util = new Chip8Util();
+	private final TextInputDialogComponent velocityDialog = new TextInputDialogComponent(settings);
 	
 	public static void main(String[] args) {
 		launch(args);
@@ -117,12 +90,10 @@ public final class Chip8 extends Application {
 		Scene scene = new Scene(root);
 		stage.setScene(scene);
 		stage.setResizable(false);
-		stage.setOnCloseRequest(event -> terminateApplication());
+		stage.setOnCloseRequest(event -> chip8Util.terminateApplication());
 		
 		scene.setOnKeyPressed(event -> keyboard.press(event.getCode()));
 		scene.setOnKeyReleased(event -> keyboard.releasePressed());
-		
-		fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("rom", "*.rom"), new FileChooser.ExtensionFilter("ch8", "*.ch8"));
 		
 		root.setTop(createMenuBar());
 		root.setBottom(canvas);
@@ -131,9 +102,9 @@ public final class Chip8 extends Application {
 	}
 	
 	private GPU createGPU(GraphicsContext graphicsContext, Flag drawFlag, Flag clearFlag) {
-		Memory displayBuffer = BufferFactory.createDisplayBuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
+		Memory displayBuffer = BufferFactory.createDisplayBuffer(chip8Util.getScreenWidth(), chip8Util.getScreenHeight());
 		Memory dirtyBuffer = BufferFactory.createDirtyBuffer();
-		return new GPU(displayBuffer, dirtyBuffer, new Screen<Integer>(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SIZE), graphicsContext, drawFlag, clearFlag);
+		return new GPU(displayBuffer, dirtyBuffer, new Screen<Integer>(chip8Util.getScreenWidth(), chip8Util.getScreenHeight(), chip8Util.getPixelSize()), graphicsContext, drawFlag, clearFlag);
 	}
 	
 	private CPU createCPU(GPU gpu, Input<Integer, KeyCode> keyboard, Timer<Integer> delayTimer, Timer<Integer> soundTimer) {
@@ -155,11 +126,6 @@ public final class Chip8 extends Application {
 		return dataRegisters;
 	}
 	
-	private void terminateApplication() {
-	    Platform.exit();
-	    System.exit(0);
-	}
-	
 	private MenuBar createMenuBar() {
 		Menu interpreter = createInterpreterMenu();
 		Menu options = createOptionsMenu();
@@ -170,26 +136,22 @@ public final class Chip8 extends Application {
 		return menuBar;
 	}
 	
-	private void setPaused(boolean paused) {
-		this.paused = paused;
-	}
-	
 	private Menu createInterpreterMenu() {
 		Menu interpreter = new Menu("Interpreter");
-		interpreter.setOnShowing(event -> setPaused(true));
-		interpreter.setOnHidden(event -> setPaused(false));
+		interpreter.setOnShowing(event -> settings.setPaused(true));
+		interpreter.setOnHidden(event -> settings.setPaused(false));
 		
 		MenuItem open = new MenuItem("Open");
 		open.setAccelerator(new KeyCodeCombination(KeyCode.O, KeyCombination.CONTROL_DOWN));
 		open.setOnAction(event -> {
-			setPaused(true);
+			settings.setPaused(true);
 			openROM();
-			setPaused(false);
+			settings.setPaused(false);
 		});
 		
 		MenuItem exit = new MenuItem("Exit");
 		exit.setAccelerator(new KeyCodeCombination(KeyCode.Q, KeyCombination.CONTROL_DOWN));
-		exit.setOnAction(event -> terminateApplication());
+		exit.setOnAction(event -> chip8Util.terminateApplication());
 		
 		SeparatorMenuItem separatorMenuItem = new SeparatorMenuItem();
 		interpreter.getItems().addAll(open, separatorMenuItem, exit);
@@ -197,17 +159,17 @@ public final class Chip8 extends Application {
 	}
 	
 	private void openROM() {
-		File file = fileChooser.showOpenDialog(stage);
+		File file = new ROMFileChooser().showOpenDialog(stage);
 		if (file != null) {
-			gamePath = file.toURI();
-			resetGame(gamePath);
+			settings.setGamePath(file.toURI());
+			resetGame();
 		}
 	}
 	
 	private Menu createOptionsMenu() {
 		Menu options = new Menu("Options");
-		options.setOnShowing(event -> setPaused(true));
-		options.setOnHidden(event -> setPaused(false));
+		options.setOnShowing(event -> settings.setPaused(true));
+		options.setOnHidden(event -> settings.setPaused(false));
 		
 		CheckMenuItem muteSound = new CheckMenuItem("Mute Sound");
 		muteSound.setAccelerator(new KeyCodeCombination(KeyCode.F4));
@@ -216,9 +178,9 @@ public final class Chip8 extends Application {
 		MenuItem velocity = new MenuItem("Change velocity");
 		velocity.setAccelerator(new KeyCodeCombination(KeyCode.F5));
 		velocity.setOnAction(event -> {
-			setPaused(true);
-			changeGameVelocity();
-			setPaused(false);
+			settings.setPaused(true);
+			velocityDialog.changeGameVelocity();
+			settings.setPaused(false);
 		});
 		
 		SeparatorMenuItem separatorMenuItem = new SeparatorMenuItem();
@@ -234,72 +196,50 @@ public final class Chip8 extends Application {
 		}
 	}
 	
-	private void changeGameVelocity() {
-		TextInputDialog dialog = createVelocityDialog();
-
-		Optional<String> result = dialog.showAndWait();
-		if (result.isPresent()) {
-			GAME_VELOCITY = Integer.parseInt(result.get());
-		}
-	}
-
-	private TextInputDialog createVelocityDialog() {
-		TextInputDialog dialog = new TextInputDialog(String.valueOf(GAME_VELOCITY));
-		dialog.setTitle("Change game velocity");
-		dialog.setHeaderText("Game velocity");
-		dialog.setContentText("Set game velocity (default 10):");
-		return dialog;
-	}
-	
 	private Menu createGameMenu() {
 		Menu game = new Menu("Game");
-		game.setOnShowing(event -> setPaused(true));
-		game.setOnHidden(event -> setPaused(false));
+		game.setOnShowing(event -> settings.setPaused(true));
+		game.setOnHidden(event -> settings.setPaused(false));
 		
 		CheckMenuItem pause = new CheckMenuItem("Pause");
 		pause.setAccelerator(new KeyCodeCombination(KeyCode.F2));
-		pause.setOnAction(event -> setPaused(pause.isSelected()));
+		pause.setOnAction(event -> settings.setPaused(pause.isSelected()));
 		
 		MenuItem reset = new MenuItem("Reset");
 		reset.setAccelerator(new KeyCodeCombination(KeyCode.F3));
-		reset.setOnAction(event -> resetGame(gamePath));
+		reset.setOnAction(event -> resetGame());
 		
 		game.getItems().addAll(pause, reset);
 		return game;
 	}
 	
-	private void resetGame(URI gamePath) {
+	private void resetGame() {
 		gpu.clearScreen();
-		startGame(gamePath);
+		startGame(settings.getGamePath());
 	}
 	
 	private void startGame(URI gamePath) {
-		cpu.initialize(0x200, 0x0, 0x0, 0x0, 0x0, fontset);
-		loadGame(gamePath);
-		if (!running) {
+		cpu.initialize(0x200, 0x0, 0x0, 0x0, 0x0, chip8Util.getFontSet());
+		loadGame();
+		if (!settings.isRunning()) {
 			Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new InstructionCycle(), 0, 17, TimeUnit.MILLISECONDS);
-			running = true;
+			settings.setRunning(true);
 		}
 	}
 	
-	private void loadGame(URI gamePath) {
+	private void loadGame() {
 		try {
-			byte[] ROM = Files.readAllBytes(Paths.get(gamePath));
-			cpu.loadROM(ROM, 0x200);
+			cpu.loadROM(chip8Util.readROM(settings.getGamePath()), 0x200);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	}
-	
-	private boolean isPaused() {
-		return paused;
 	}
 	
 	class InstructionCycle implements Runnable {
 
 		@Override
 		public void run() {
-			if (!isPaused()) {
+			if (!settings.isPaused()) {
 	 			if (delayTimer.currentValue() > 0) {
 	 				decrementDelayTimer();
 	 			}
@@ -312,7 +252,7 @@ public final class Chip8 extends Application {
 	 				}
 	 			}
 	 			
-	 			for (int i = 0; i < GAME_VELOCITY; i++) {
+	 			for (int i = 0; i < settings.getVelocity(); i++) {
 	 				if (clearFlag.isActive()) {
 	 	 				gpu.clearScreen();
 	 	 				clearFlag.toggle();

@@ -14,9 +14,7 @@ import joelbits.emu.timers.Timer;
  * There are 16 data registers named from V0 to VF. The carry flag (VF) is set
  * to 1 if any screen pixels are flipped from set to unset when a sprite is
  * drawn and set to 0 otherwise. Last 8 bits of each register are used to
- * represent an unsigned byte. In this CPU implementation components like the
- * control unit (CU) and the arithmetic-logic unit (ALU) are abstracted away.
- *
+ * represent an unsigned byte.
  */
 public final class CPU {
 	private final Memory primaryMemory;

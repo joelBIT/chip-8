@@ -13,26 +13,28 @@ import javax.sound.sampled.LineUnavailableException;
 public final class Sound implements Startable, Mutable {
     private final int SAMPLE_RATE = 8000;
     private final int SAMPLE_SIZE_IN_BITS = 8;
-    private final byte[] soundBytes;
     private final AudioFormat audioFormat;
     private Clip beepSound;
     private boolean beeping;
     private boolean muted;
 
     public Sound() {
-    	soundBytes = initializeSoundBytes();
     	audioFormat = new AudioFormat(SAMPLE_RATE, SAMPLE_SIZE_IN_BITS, 1, true, false);
     	
     	try {
     		beepSound = (Clip) AudioSystem.getLine(new DataLine.Info(Clip.class, audioFormat));
-        	beepSound.open(initializeAudioInputStream());
+        	beepSound.open(createAudioInputStream());
         } catch (LineUnavailableException | IOException e) {
         	e.printStackTrace();
         	beepSound.close();
         }
     }
     
-    private byte[] initializeSoundBytes() {
+	private AudioInputStream createAudioInputStream() {
+		return new AudioInputStream(new ByteArrayInputStream(soundBytes()), audioFormat, SAMPLE_RATE / SAMPLE_SIZE_IN_BITS);
+	}
+	
+    private byte[] soundBytes() {
     	final int SOUND_FREQUENCY = 880;
     	final int SOUND_VOLUME = 30;
     	
@@ -43,12 +45,6 @@ public final class Sound implements Startable, Mutable {
     	
     	return soundBytes;
     }
-	
-	private AudioInputStream initializeAudioInputStream() {
-		ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(soundBytes);
-		return new AudioInputStream(byteArrayInputStream, audioFormat, SAMPLE_RATE / SAMPLE_SIZE_IN_BITS);
-
-	}
 
     @Override
     public void start() {
