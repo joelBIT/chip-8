@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.Stack;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -18,12 +20,15 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import joelbits.emu.components.FileChooserComponent;
 import joelbits.emu.components.TextInputDialogComponent;
 import joelbits.emu.cpu.ALU;
 import joelbits.emu.cpu.CPU;
@@ -46,7 +51,6 @@ import joelbits.emu.output.Sound;
 import joelbits.emu.timers.DelayTimer;
 import joelbits.emu.timers.SoundTimer;
 import joelbits.emu.timers.Timer;
-import joelbits.emu.utils.ROMFileChooser;
 import joelbits.emu.utils.Chip8Util;
 import joelbits.emu.utils.RandomNumberGenerator;
 
@@ -68,7 +72,8 @@ public final class Chip8 extends Application {
 	private final BorderPane root = new BorderPane();
 	private final GameSettings settings = new GameSettings();
 	private final Chip8Util chip8Util = new Chip8Util();
-	private final TextInputDialogComponent velocityDialog = new TextInputDialogComponent(settings);
+	private final FileChooserComponent fileChooser = createFileChooser();
+	private final TextInputDialogComponent velocityDialog = createVelocityDialog();
 	
 	public static void main(String[] args) {
 		launch(args);
@@ -99,6 +104,22 @@ public final class Chip8 extends Application {
 		root.setBottom(canvas);
 		
 		stage.show();
+	}
+	
+	private FileChooserComponent createFileChooser() {
+		FileChooserComponent fileChooser = new FileChooserComponent();
+		fileChooser.addExtensions(new ArrayList<>(Arrays.asList(new FileChooser.ExtensionFilter("ch8", "*.ch8"), new FileChooser.ExtensionFilter("rom", "*.rom"))));
+		
+		return fileChooser;
+	}
+	
+	private TextInputDialogComponent createVelocityDialog() {
+		TextInputDialogComponent velocityDialog = new TextInputDialogComponent(new TextInputDialog(String.valueOf(settings.getVelocity())));
+		velocityDialog.setTitle("Change game velocity");
+		velocityDialog.setHeaderText("Game velocity");
+		velocityDialog.setContentText("Set game velocity (default 10):");
+		
+		return velocityDialog;
 	}
 	
 	private GPU createGPU(GraphicsContext graphicsContext, Flag drawFlag, Flag clearFlag) {
@@ -159,7 +180,7 @@ public final class Chip8 extends Application {
 	}
 	
 	private void openROM() {
-		File file = new ROMFileChooser().showOpenDialog(stage);
+		File file = fileChooser.showOpenDialog(stage);
 		if (file != null) {
 			settings.setGamePath(file.toURI());
 			resetGame();
@@ -179,7 +200,10 @@ public final class Chip8 extends Application {
 		velocity.setAccelerator(new KeyCodeCombination(KeyCode.F5));
 		velocity.setOnAction(event -> {
 			settings.setPaused(true);
-			velocityDialog.changeGameVelocity();
+			Optional<String> result = velocityDialog.showDialog();
+			if (result.isPresent()) {
+				settings.setVelocity(Integer.parseInt(result.get()));
+			}
 			settings.setPaused(false);
 		});
 		
