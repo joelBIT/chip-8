@@ -12,6 +12,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import javafx.application.Application;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -19,7 +21,6 @@ import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
@@ -107,7 +108,7 @@ public final class Chip8 extends Application {
 	}
 	
 	private FileChooserComponent createFileChooser() {
-		FileChooserComponent fileChooser = new FileChooserComponent();
+		FileChooserComponent fileChooser = new FileChooserComponent(new FileChooser());
 		fileChooser.addExtensions(new ArrayList<>(Arrays.asList(new FileChooser.ExtensionFilter("ch8", "*.ch8"), new FileChooser.ExtensionFilter("rom", "*.rom"))));
 		
 		return fileChooser;
@@ -148,68 +149,65 @@ public final class Chip8 extends Application {
 	}
 	
 	private MenuBar createMenuBar() {
-		Menu interpreter = createInterpreterMenu();
-		Menu options = createOptionsMenu();
-		Menu game = createGameMenu();
-		
 		MenuBar menuBar = new MenuBar();
-		menuBar.getMenus().addAll(interpreter, options, game);
+		menuBar.getMenus().addAll(createInterpreterMenu(), createOptionsMenu(), createGameMenu());
+		
 		return menuBar;
 	}
 	
 	private Menu createInterpreterMenu() {
-		Menu interpreter = new Menu("Interpreter");
-		interpreter.setOnShowing(event -> settings.setPaused(true));
-		interpreter.setOnHidden(event -> settings.setPaused(false));
+		MenuItem open = createMenuItem("Open", new KeyCodeCombination(KeyCode.O, KeyCombination.CONTROL_DOWN), event -> openROM());
+		MenuItem exit = createMenuItem("Exit", new KeyCodeCombination(KeyCode.Q, KeyCombination.CONTROL_DOWN), event -> chip8Util.terminateApplication());
+
+		return createMenu("Interpreter", Arrays.asList(open, exit));
+	}
+	
+	private Menu createMenu(String title, List<MenuItem> menuItems) {
+		Menu menu = new Menu(title);
+		menu.setOnShowing(event -> settings.setPaused(true));
+		menu.setOnHidden(event -> settings.setPaused(false));
+		menu.getItems().addAll(menuItems);
 		
-		MenuItem open = new MenuItem("Open");
-		open.setAccelerator(new KeyCodeCombination(KeyCode.O, KeyCombination.CONTROL_DOWN));
-		open.setOnAction(event -> {
-			settings.setPaused(true);
-			openROM();
-			settings.setPaused(false);
-		});
+		return menu;
+	}
+	
+	private MenuItem createMenuItem(String displayName, KeyCodeCombination keyCombination, EventHandler<ActionEvent> event) {
+		MenuItem menuItem = new MenuItem(displayName);
+		menuItem.setAccelerator(keyCombination);
+		menuItem.setOnAction(event);
 		
-		MenuItem exit = new MenuItem("Exit");
-		exit.setAccelerator(new KeyCodeCombination(KeyCode.Q, KeyCombination.CONTROL_DOWN));
-		exit.setOnAction(event -> chip8Util.terminateApplication());
-		
-		SeparatorMenuItem separatorMenuItem = new SeparatorMenuItem();
-		interpreter.getItems().addAll(open, separatorMenuItem, exit);
-		return interpreter;
+		return menuItem;
 	}
 	
 	private void openROM() {
+		settings.setPaused(true);
 		File file = fileChooser.showOpenDialog(stage);
 		if (file != null) {
 			settings.setGamePath(file.toURI());
 			resetGame();
 		}
+		settings.setPaused(false);
 	}
 	
 	private Menu createOptionsMenu() {
-		Menu options = new Menu("Options");
-		options.setOnShowing(event -> settings.setPaused(true));
-		options.setOnHidden(event -> settings.setPaused(false));
-		
 		CheckMenuItem muteSound = new CheckMenuItem("Mute Sound");
 		muteSound.setAccelerator(new KeyCodeCombination(KeyCode.F4));
-		muteSound.setOnAction(event -> { toggleMute(muteSound); });
+		muteSound.setOnAction(event -> toggleMute(muteSound));
 		
-		MenuItem velocity = new MenuItem("Change velocity");
-		velocity.setAccelerator(new KeyCodeCombination(KeyCode.F5));
-		velocity.setOnAction(event -> {
-			settings.setPaused(true);
-			Optional<String> result = velocityDialog.showDialog();
-			if (result.isPresent()) {
-				settings.setVelocity(Integer.parseInt(result.get()));
-			}
-			settings.setPaused(false);
-		});
+		MenuItem velocity = createMenuItem("Change velocity", new KeyCodeCombination(KeyCode.F5), event -> showDialog());
 		
-		SeparatorMenuItem separatorMenuItem = new SeparatorMenuItem();
-		options.getItems().addAll(muteSound, separatorMenuItem, velocity);
-		return options;
+		return createMenu("Options", Arrays.asList(muteSound, velocity));
+	}
+
+	private void showDialog() {
+		settings.setPaused(true);
+		
+		Optional<String> result = velocityDialog.showDialog();
+		if (result.isPresent()) {
+			settings.setVelocity(Integer.parseInt(result.get()));
+		}
+		
+		settings.setPaused(false);
 	}
 	
 	private void toggleMute(CheckMenuItem muteSound) {
@@ -221,20 +219,13 @@ public final class Chip8 extends Application {
 	}
 	
 	private Menu createGameMenu() {
-		Menu game = new Menu("Game");
-		game.setOnShowing(event -> settings.setPaused(true));
-		game.setOnHidden(event -> settings.setPaused(false));
-		
 		CheckMenuItem pause = new CheckMenuItem("Pause");
 		pause.setAccelerator(new KeyCodeCombination(KeyCode.F2));
 		pause.setOnAction(event -> settings.setPaused(pause.isSelected()));
 		
-		MenuItem reset = new MenuItem("Reset");
-		reset.setAccelerator(new KeyCodeCombination(KeyCode.F3));
-		reset.setOnAction(event -> resetGame());
+		MenuItem reset = createMenuItem("Reset", new KeyCodeCombination(KeyCode.F3), event -> resetGame());
 		
-		game.getItems().addAll(pause, reset);
-		return game;
+		return createMenu("Game", Arrays.asList(pause, reset));
 	}
 	
 	private void resetGame() {
