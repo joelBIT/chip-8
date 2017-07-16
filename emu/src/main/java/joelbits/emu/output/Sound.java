@@ -10,7 +10,11 @@ import javax.sound.sampled.Clip;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.LineUnavailableException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public final class Sound implements Startable, Mutable {
+	private static final Logger log = LoggerFactory.getLogger(Sound.class);
     private final int SAMPLE_RATE = 8000;
     private final int SAMPLE_SIZE_IN_BITS = 8;
     private final AudioFormat audioFormat;
@@ -25,7 +29,7 @@ public final class Sound implements Startable, Mutable {
     		beepSound = (Clip) AudioSystem.getLine(new DataLine.Info(Clip.class, audioFormat));
         	beepSound.open(createAudioInputStream());
         } catch (LineUnavailableException | IOException e) {
-        	e.printStackTrace();
+        	log.error(e.toString(), e);
         	beepSound.close();
         }
     }

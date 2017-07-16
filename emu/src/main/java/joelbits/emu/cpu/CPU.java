@@ -3,8 +3,13 @@ package joelbits.emu.cpu;
 import java.util.List;
 import java.util.Stack;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javafx.scene.input.KeyCode;
 import joelbits.emu.cpu.instructions.Instructions;
+import joelbits.emu.cpu.registers.InstructionRegister;
+import joelbits.emu.cpu.registers.ProgramCounter;
 import joelbits.emu.cpu.registers.Register;
 import joelbits.emu.input.Input;
 import joelbits.emu.memory.Memory;
@@ -17,12 +22,13 @@ import joelbits.emu.timers.Timer;
  * represent an unsigned byte.
  */
 public final class CPU {
+	private static final Logger log = LoggerFactory.getLogger(CPU.class);
 	private final Memory primaryMemory;
 	private final Input<Integer, KeyCode> keyboard;
 	private final Stack<Integer> stack;
 	private final List<Register<Integer>> dataRegisters;
-	private final Register<Integer> instructionRegister;
-	private final Register<Integer> programCounter;
+	private final Register<Integer> instructionRegister = InstructionRegister.getInstance();
+	private final Register<Integer> programCounter = ProgramCounter.getInstance();
 	private final Register<Integer> indexRegister;
 	private final ALU alu;
 	private final GPU gpu;
@@ -41,15 +47,13 @@ public final class CPU {
 		this.primaryMemory = primaryMemory;
 		this.keyboard = keyboard;
 		this.dataRegisters = dataRegisters;
-		this.instructionRegister = instructionRegister;
-		this.programCounter = programCounter;
 		this.indexRegister = indexRegister;
 		this.delayTimer = delayTimer;
 		this.soundTimer = soundTimer;
 		this.alu = alu;
 		this.gpu = gpu;
 	}
-	
+
 	public void initialize(int address, int instruction, int index, int delayTime, int soundTime, int[] data) {
 		programCounter.write(address);
 		delayTimer.setValue(delayTime);
@@ -198,7 +202,7 @@ public final class CPU {
 				programCounter.write(programCounter.read() + 2);
 				break;
 			default:
-				System.out.println("Unknown instruction " + Integer.toHexString(instruction & FIT_16BIT_REGISTER) + " at location " + programCounter.read());
+				log.warn("Unknown instruction " + Integer.toHexString(instruction & FIT_16BIT_REGISTER) + " at location " + programCounter.read());
 				break;
 		}
 	}

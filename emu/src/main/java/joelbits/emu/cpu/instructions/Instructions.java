@@ -1,5 +1,8 @@
 package joelbits.emu.cpu.instructions;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public enum Instructions {
 	CLEAR_THE_DISPLAY("00E0"),
 	RETURN_FROM_SUBROUTINE("00EE"),
@@ -36,6 +39,7 @@ public enum Instructions {
 	STORE_DATA_REGISTERS_IN_MEMORY("Fx55"),
 	LOAD_FROM_MEMORY_TO_DATA_REGISTERS("Fx65");
 	
+	private static final Logger log = LoggerFactory.getLogger(Instructions.class);
 	private final String opcode;
 	
 	Instructions(String opcode) {
@@ -48,11 +52,13 @@ public enum Instructions {
 				return instruction;
 			}
 		}
+		log.error(opcode + " is not a valid opcode");
 		throw new IllegalArgumentException(opcode + " is not a valid opcode");
 	}
 	
 	private static boolean isEqual(String instruction, String opcode) {
 		if (instruction.length() != opcode.length()) {
+			log.error(instruction + " and " + opcode + " differs in length");
 			throw new IllegalArgumentException(instruction + " and " + opcode + " differs in length");
 		}
 		for (int i = 0; i < opcode.length(); i++) {

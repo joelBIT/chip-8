@@ -1,36 +1,27 @@
 package joelbits.emu;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.Stack;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import javafx.application.Application;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
-import javafx.scene.Scene;
-import javafx.scene.canvas.Canvas;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.inject.Guice;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
+import com.google.inject.name.Named;
+
+import javafx.application.Platform;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.CheckMenuItem;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.TextInputDialog;
 import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyCodeCombination;
-import javafx.scene.input.KeyCombination;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.paint.Color;
-import javafx.stage.FileChooser;
-import javafx.stage.Stage;
-import joelbits.emu.components.FileChooserComponent;
-import joelbits.emu.components.TextInputDialogComponent;
 import joelbits.emu.cpu.ALU;
 import joelbits.emu.cpu.CPU;
 import joelbits.emu.cpu.GPU;
@@ -39,18 +30,13 @@ import joelbits.emu.cpu.registers.IndexRegister;
 import joelbits.emu.cpu.registers.InstructionRegister;
 import joelbits.emu.cpu.registers.ProgramCounter;
 import joelbits.emu.cpu.registers.Register;
-import joelbits.emu.flags.ClearFlag;
-import joelbits.emu.flags.DrawFlag;
 import joelbits.emu.flags.Flag;
 import joelbits.emu.input.Input;
-import joelbits.emu.input.Keyboard;
 import joelbits.emu.memory.BufferFactory;
 import joelbits.emu.memory.Memory;
 import joelbits.emu.memory.RAM;
 import joelbits.emu.output.Screen;
 import joelbits.emu.output.Sound;
-import joelbits.emu.timers.DelayTimer;
-import joelbits.emu.timers.SoundTimer;
 import joelbits.emu.timers.Timer;
 import joelbits.emu.utils.Chip8Util;
 import joelbits.emu.utils.RandomNumberGenerator;
@@ -59,84 +45,56 @@ import joelbits.emu.utils.RandomNumberGenerator;
  * A ROM is written to memory starting at location 0x200 since the CHIP-8 interpreter occupies most of the preceding memory locations.
  * 
  */
-public final class Chip8 extends Application {
-	private GraphicsContext graphicsContext;
-	private Stage stage;
-	private CPU cpu;
-	private GPU gpu;
-	private final Timer<Integer> delayTimer = new DelayTimer<Integer>();
-	private final Timer<Integer> soundTimer = new SoundTimer<Integer>();
-	private final Flag drawFlag = new DrawFlag();
-	private final Flag clearFlag = new ClearFlag();
-	private final Input<Integer, KeyCode> keyboard = new Keyboard();
-	private final Sound sound = new Sound();
-	private final BorderPane root = new BorderPane();
-	private final GameSettings settings = new GameSettings();
-	private final Chip8Util chip8Util = new Chip8Util();
-	private final FileChooserComponent fileChooser = createFileChooser();
-	private final TextInputDialogComponent velocityDialog = createVelocityDialog();
+public final class Chip8 {
+	private static final Logger log = LoggerFactory.getLogger(Chip8.class);
+	private final CPU cpu;
+	private final GPU gpu;
+	private final GameSettings settings;
 	
-	public static void main(String[] args) {
-		launch(args);
-	}
-
-	@Override
-	public void start(Stage stage) throws Exception {
-		this.stage = stage;
-		stage.setTitle("Chip-8 interpreter");
+	@Inject
+	private Input<Integer, KeyCode> keyboard;
+	@Inject
+	@Named("clear")
+	private Flag clearFlag;
+	@Inject
+	@Named("draw")
+	private Flag drawFlag;
+	@Inject
+	@Named("sound")
+	private Timer<Integer> soundTimer;
+	@Inject
+	@Named("delay")
+	private Timer<Integer> delayTimer;
+	@Inject
+	private Sound sound;
+	
+	public Chip8(GameSettings settings, GraphicsContext graphicsContext) {
+		Injector injector = Guice.createInjector(new InterpreterModule());
+		injector.injectMembers(this);
 		
-		Canvas canvas = new Canvas(896, 448);
-		graphicsContext = canvas.getGraphicsContext2D();
-		graphicsContext.setFill(Color.WHITE);
+		this.settings = settings;
 		
 		gpu = createGPU(graphicsContext, drawFlag, clearFlag);
-		cpu = createCPU(gpu, keyboard, delayTimer, soundTimer);
-		
-		root.setStyle("-fx-background: black;");
-		Scene scene = new Scene(root);
-		stage.setScene(scene);
-		stage.setResizable(false);
-		stage.setOnCloseRequest(event -> chip8Util.terminateApplication());
-		
-		scene.setOnKeyPressed(event -> keyboard.press(event.getCode()));
-		scene.setOnKeyReleased(event -> keyboard.releasePressed());
-		
-		root.setTop(createMenuBar());
-		root.setBottom(canvas);
-		
-		stage.show();
-	}
-	
-	private FileChooserComponent createFileChooser() {
-		FileChooserComponent fileChooser = new FileChooserComponent(new FileChooser());
-		fileChooser.addExtensions(new ArrayList<>(Arrays.asList(new FileChooser.ExtensionFilter("ch8", "*.ch8"), new FileChooser.ExtensionFilter("rom", "*.rom"))));
-		
-		return fileChooser;
-	}
-	
-	private TextInputDialogComponent createVelocityDialog() {
-		TextInputDialogComponent velocityDialog = new TextInputDialogComponent(new TextInputDialog(String.valueOf(settings.getVelocity())));
-		velocityDialog.setTitle("Change game velocity");
-		velocityDialog.setHeaderText("Game velocity");
-		velocityDialog.setContentText("Set game velocity (default 10):");
-		
-		return velocityDialog;
+		cpu = createCPU(gpu, delayTimer, soundTimer);
 	}
 	
 	private GPU createGPU(GraphicsContext graphicsContext, Flag drawFlag, Flag clearFlag) {
-		Memory displayBuffer = BufferFactory.createDisplayBuffer(chip8Util.getScreenWidth(), chip8Util.getScreenHeight());
+		InterpreterConfig config = new InterpreterConfig();
+		Memory displayBuffer = BufferFactory.createDisplayBuffer(config.screenWidth(), config.screenHeight());
 		Memory dirtyBuffer = BufferFactory.createDirtyBuffer();
-		return new GPU(displayBuffer, dirtyBuffer, new Screen<Integer>(chip8Util.getScreenWidth(), chip8Util.getScreenHeight(), chip8Util.getPixelSize()), graphicsContext, drawFlag, clearFlag);
+		Screen<Integer> screen = new Screen<Integer>(config.screenWidth(), config.screenHeight(), config.pixelSize());
+		
+		return new GPU(displayBuffer, dirtyBuffer, screen, graphicsContext, drawFlag, clearFlag);
 	}
 	
-	private CPU createCPU(GPU gpu, Input<Integer, KeyCode> keyboard, Timer<Integer> delayTimer, Timer<Integer> soundTimer) {
+	private CPU createCPU(GPU gpu, Timer<Integer> delayTimer, Timer<Integer> soundTimer) {
 		List<Register<Integer>> dataRegisters = initializeDataRegisters();
 		Register<Integer> programCounter = ProgramCounter.getInstance();
 		ALU alu = new ALU(programCounter, dataRegisters.get(0xF), new RandomNumberGenerator());
 		
 		Register<Integer> instructionRegister = InstructionRegister.getInstance();
 		Register<Integer> indexRegister = IndexRegister.getInstance();
-		return new CPU(new Stack<Integer>(), new RAM(4096), keyboard, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, alu, gpu);
+		return new CPU(new Stack<Integer>(), new RAM(), keyboard, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, alu, gpu);
 	}
 
 	private List<Register<Integer>> initializeDataRegisters() {
@@ -148,93 +106,17 @@ public final class Chip8 extends Application {
 		return dataRegisters;
 	}
 	
-	private MenuBar createMenuBar() {
-		MenuBar menuBar = new MenuBar();
-		menuBar.getMenus().addAll(createInterpreterMenu(), createOptionsMenu(), createGameMenu());
-		
-		return menuBar;
+	public Input<Integer, KeyCode> keyboard() {
+		return keyboard;
 	}
 	
-	private Menu createInterpreterMenu() {
-		MenuItem open = createMenuItem("Open", new KeyCodeCombination(KeyCode.O, KeyCombination.CONTROL_DOWN), event -> openROM());
-		MenuItem exit = createMenuItem("Exit", new KeyCodeCombination(KeyCode.Q, KeyCombination.CONTROL_DOWN), event -> chip8Util.terminateApplication());
-
-		return createMenu("Interpreter", Arrays.asList(open, exit));
-	}
-	
-	private Menu createMenu(String title, List<MenuItem> menuItems) {
-		Menu menu = new Menu(title);
-		menu.setOnShowing(event -> settings.setPaused(true));
-		menu.setOnHidden(event -> settings.setPaused(false));
-		menu.getItems().addAll(menuItems);
-		
-		return menu;
-	}
-	
-	private MenuItem createMenuItem(String displayName, KeyCodeCombination keyCombination, EventHandler<ActionEvent> event) {
-		MenuItem menuItem = new MenuItem(displayName);
-		menuItem.setAccelerator(keyCombination);
-		menuItem.setOnAction(event);
-		
-		return menuItem;
-	}
-	
-	private void openROM() {
-		settings.setPaused(true);
-		File file = fileChooser.showOpenDialog(stage);
-		if (file != null) {
-			settings.setGamePath(file.toURI());
-			resetGame();
-		}
-		settings.setPaused(false);
-	}
-	
-	private Menu createOptionsMenu() {
-		CheckMenuItem muteSound = new CheckMenuItem("Mute Sound");
-		muteSound.setAccelerator(new KeyCodeCombination(KeyCode.F4));
-		muteSound.setOnAction(event -> toggleMute(muteSound));
-		
-		MenuItem velocity = createMenuItem("Change velocity", new KeyCodeCombination(KeyCode.F5), event -> showDialog());
-		
-		return createMenu("Options", Arrays.asList(muteSound, velocity));
-	}
-
-	private void showDialog() {
-		settings.setPaused(true);
-		
-		Optional<String> result = velocityDialog.showDialog();
-		if (result.isPresent()) {
-			settings.setVelocity(Integer.parseInt(result.get()));
-		}
-		
-		settings.setPaused(false);
-	}
-	
-	private void toggleMute(CheckMenuItem muteSound) {
-		if (muteSound.isSelected()) {
-			sound.mute();
-		} else {
-			sound.unmute();
-		}
-	}
-	
-	private Menu createGameMenu() {
-		CheckMenuItem pause = new CheckMenuItem("Pause");
-		pause.setAccelerator(new KeyCodeCombination(KeyCode.F2));
-		pause.setOnAction(event -> settings.setPaused(pause.isSelected()));
-		
-		MenuItem reset = createMenuItem("Reset", new KeyCodeCombination(KeyCode.F3), event -> resetGame());
-		
-		return createMenu("Game", Arrays.asList(pause, reset));
-	}
-	
-	private void resetGame() {
+	public void resetGame() {
 		gpu.clearScreen();
 		startGame(settings.getGamePath());
 	}
 	
-	private void startGame(URI gamePath) {
-		cpu.initialize(0x200, 0x0, 0x0, 0x0, 0x0, chip8Util.getFontSet());
+	public void startGame(URI gamePath) {
+		cpu.initialize(0x200, 0x0, 0x0, 0x0, 0x0, Chip8Util.fontset);
 		loadGame();
 		if (!settings.isRunning()) {
 			Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new InstructionCycle(), 0, 17, TimeUnit.MILLISECONDS);
@@ -244,10 +126,27 @@ public final class Chip8 extends Application {
 	
 	private void loadGame() {
 		try {
-			cpu.loadROM(chip8Util.readROM(settings.getGamePath()), 0x200);
+			cpu.loadROM(readROM(settings.getGamePath()), 0x200);
 		} catch (IOException e) {
-			e.printStackTrace();
+			log.error(e.toString(), e);
 		}
+	}
+	
+	private byte[] readROM(URI gamePath) throws IOException {
+		return Files.readAllBytes(Paths.get(gamePath));
+	}
+	
+	public void toggleMute(CheckMenuItem muteSound) {
+		if (muteSound.isSelected()) {
+			sound.mute();
+		} else {
+			sound.unmute();
+		}
+	}
+	
+	public void terminateApplication() {
+	    Platform.exit();
+	    System.exit(0);
 	}
 	
 	class InstructionCycle implements Runnable {

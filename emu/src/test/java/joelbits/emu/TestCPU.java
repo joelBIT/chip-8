@@ -70,7 +70,7 @@ public class TestCPU {
 		instructionRegister = InstructionRegister.getInstance();
 		programCounter = ProgramCounter.getInstance();
 		indexRegister = IndexRegister.getInstance();
-		primaryMemory = new RAM(4096);
+		primaryMemory = new RAM();
 		keyboard = new Keyboard();
 		stack = new Stack<Integer>();
 		

@@ -13,7 +13,7 @@ public class TestRAM {
 	
 	@Before
 	public void setUp() {
-		target = new RAM(4096);
+		target = new RAM();
 	}
 	
 	@Test

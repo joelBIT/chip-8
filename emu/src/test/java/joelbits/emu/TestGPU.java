@@ -51,7 +51,7 @@ public class TestGPU {
 		screen = new Screen<Integer>(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SIZE);
 		displayBuffer = BufferFactory.createDisplayBuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
 		dirtyBuffer = BufferFactory.createDirtyBuffer();
-		primaryMemory = new RAM(4096);
+		primaryMemory = new RAM();
 		canvas = new Canvas(SCREEN_WIDTH, SCREEN_HEIGHT);
 		graphicsContext = canvas.getGraphicsContext2D();
 		

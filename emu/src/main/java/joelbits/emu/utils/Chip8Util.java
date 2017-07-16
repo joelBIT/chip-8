@@ -1,17 +1,7 @@
 package joelbits.emu.utils;
 
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-
-import javafx.application.Platform;
-
 public class Chip8Util {
-	private final int SCREEN_WIDTH = 64;
-	private final int SCREEN_HEIGHT = 32;
-	private final int PIXEL_SIZE = 14;
-	private final int fontset[] =
+	public final static int fontset[] =
 		{ 
 		  0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
 		  0x20, 0x60, 0x20, 0x20, 0x70, // 1
@@ -30,29 +20,4 @@ public class Chip8Util {
 		  0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
 		  0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 		};
-	
-	public int getScreenWidth() {
-		return SCREEN_WIDTH;
-	}
-	
-	public int getScreenHeight() {
-		return SCREEN_HEIGHT;
-	}
-	
-	public int getPixelSize() {
-		return PIXEL_SIZE;
-	}
-	
-	public int[] getFontSet() {
-		return fontset;
-	}
-	
-	public void terminateApplication() {
-	    Platform.exit();
-	    System.exit(0);
-	}
-	
-	public byte[] readROM(URI gamePath) throws IOException {
-		return Files.readAllBytes(Paths.get(gamePath));
-	}
 }

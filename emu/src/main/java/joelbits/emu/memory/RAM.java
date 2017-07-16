@@ -10,8 +10,8 @@ import joelbits.emu.memory.Memory;
 public final class RAM implements Memory {
 	private final int[] memory;
 	
-	public RAM(int memoryLocations) {
-		memory = new int[memoryLocations];
+	public RAM() {
+		memory = new int[4096];
 	}
 
 	@Override
