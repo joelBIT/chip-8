@@ -19,3 +19,9 @@ A project implementing a [CHIP-8 interpreter](https://en.wikipedia.org/wiki/CHIP
 |A|0|B|F|                |A|8|S|C|
 +-+-+-+-+                +-+-+-+-+
 </code></pre>
+
+-----------------------------------------------------------------------
+
+In-game screenshot of Brix:
+
+![brix](https://user-images.githubusercontent.com/2729676/41599915-c29697aa-73d4-11e8-93f2-30b7d6ea1671.png)
