@@ -2,70 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="55c717f6-17ae-408f-8523-140504081861" name="Default" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__aopalliance_aopalliance_1_0.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_google_guava_guava_19_0.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_google_inject_guice_4_1_0.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__javax_inject_javax_inject_1.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__junit_junit_4_8_1.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_mockito_mockito_all_1_10_19.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_slf4j_slf4j_api_1_7_25.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/emu.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/.classpath" beforeDir="false" afterPath="$PROJECT_DIR$/.classpath" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/.project" beforeDir="false" afterPath="$PROJECT_DIR$/.project" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/.settings/org.eclipse.core.resources.prefs" beforeDir="false" afterPath="$PROJECT_DIR$/.settings/org.eclipse.core.resources.prefs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/.settings/org.eclipse.jdt.core.prefs" beforeDir="false" afterPath="$PROJECT_DIR$/.settings/org.eclipse.jdt.core.prefs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/.settings/org.eclipse.m2e.core.prefs" beforeDir="false" afterPath="$PROJECT_DIR$/.settings/org.eclipse.m2e.core.prefs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/.settings/org.maven.ide.eclipse.prefs" beforeDir="false" afterPath="$PROJECT_DIR$/.settings/org.maven.ide.eclipse.prefs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/Chip8.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/Chip8.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/GameSettings.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/GameSettings.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/GraphicalUserInterface.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/GraphicalUserInterface.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/InterpreterConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/InterpreterConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/InterpreterModule.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/InterpreterModule.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/components/AbstractDialogComponent.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/components/AbstractDialogComponent.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/components/FileChooserComponent.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/components/FileChooserComponent.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/components/TextInputDialogComponent.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/components/TextInputDialogComponent.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/cpu/ALU.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/cpu/ALU.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/cpu/CPU.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/cpu/CPU.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/cpu/GPU.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/cpu/GPU.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/cpu/instructions/Instructions.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/cpu/instructions/Instructions.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/cpu/registers/DataRegister.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/cpu/registers/DataRegister.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/cpu/registers/IndexRegister.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/cpu/registers/IndexRegister.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/cpu/registers/InstructionRegister.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/cpu/registers/InstructionRegister.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/cpu/registers/ProgramCounter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/cpu/registers/ProgramCounter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/cpu/registers/Register.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/cpu/registers/Register.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/flags/ClearFlag.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/flags/ClearFlag.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/flags/DrawFlag.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/flags/DrawFlag.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/flags/Flag.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/flags/Flag.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/input/Input.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/input/Input.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/input/Keyboard.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/input/Keyboard.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/memory/BufferFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/memory/BufferFactory.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/memory/DirtyBuffer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/memory/DirtyBuffer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/memory/DisplayBuffer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/memory/DisplayBuffer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/memory/Memory.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/memory/Memory.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/memory/RAM.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/memory/RAM.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/output/Mutable.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/output/Mutable.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/output/Screen.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/output/Screen.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/output/Sound.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/output/Sound.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/output/Startable.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/output/Startable.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/timers/DelayTimer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/timers/DelayTimer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/timers/SoundTimer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/timers/SoundTimer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/timers/Timer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/timers/Timer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/utils/Chip8Util.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/utils/Chip8Util.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/java/joelbits/emu/utils/RandomNumberGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/utils/RandomNumberGenerator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/main/resources/config.properties" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/config.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/test/java/joelbits/emu/TestALU.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/joelbits/emulator/TestALU.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/test/java/joelbits/emu/TestCPU.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/joelbits/emulator/TestCPU.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/test/java/joelbits/emu/TestDirtyBuffer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/joelbits/emulator/TestDirtyBuffer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/test/java/joelbits/emu/TestDisplayBuffer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/joelbits/emulator/TestDisplayBuffer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/test/java/joelbits/emu/TestGPU.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/joelbits/emulator/TestGPU.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/test/java/joelbits/emu/TestKeyboard.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/joelbits/emulator/TestKeyboard.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emu/src/test/java/joelbits/emu/TestRAM.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/joelbits/emulator/TestRAM.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/emu/target/" />
     <ignored path="$PROJECT_DIR$/target/" />
@@ -81,8 +18,8 @@
       <file leaf-file-name="pom.xml" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/pom.xml">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="208">
-              <caret line="40" column="42" selection-start-line="40" selection-start-column="42" selection-end-line="40" selection-end-column="42" />
+            <state relative-caret-position="276">
+              <caret line="44" column="25" selection-start-line="44" selection-start-column="25" selection-end-line="44" selection-end-column="25" />
             </state>
           </provider>
         </entry>
@@ -134,8 +71,9 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="PackagesPane" />
       <pane id="Scope" />
+      <pane id="AndroidView" />
+      <pane id="PackagesPane" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -179,7 +117,6 @@
           <select />
         </subPane>
       </pane>
-      <pane id="AndroidView" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -287,10 +224,10 @@
       <window_info id="Image Layers" order="2" />
       <window_info anchor="right" id="Capture Analysis" order="3" />
       <window_info anchor="bottom" id="Version Control" order="7" />
-      <window_info anchor="bottom" id="Run" order="2" visible="true" weight="0.3293718" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.3293718" />
       <window_info anchor="bottom" id="Terminal" order="7" />
       <window_info anchor="right" id="FAQ Robot" order="3" />
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.25340393" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.25718608" />
       <window_info anchor="bottom" id="MaxCompute Console" order="7" />
       <window_info anchor="right" id="Theme Preview" order="3" />
       <window_info id="Favorites" order="2" side_tool="true" />
@@ -306,6 +243,13 @@
     <option name="myLimit" value="2678400000" />
   </component>
   <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/pom.xml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="748">
+          <caret line="44" column="25" lean-forward="true" selection-start-line="44" selection-start-column="25" selection-end-line="44" selection-end-column="25" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/pom.xml">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="527">
@@ -353,8 +297,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/pom.xml">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="208">
-          <caret line="40" column="42" selection-start-line="40" selection-start-column="42" selection-end-line="40" selection-end-column="42" />
+        <state relative-caret-position="276">
+          <caret line="44" column="25" selection-start-line="44" selection-start-column="25" selection-end-line="44" selection-end-column="25" />
         </state>
       </provider>
     </entry>
