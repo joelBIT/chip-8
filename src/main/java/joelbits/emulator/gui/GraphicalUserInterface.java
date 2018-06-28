@@ -23,6 +23,8 @@ import joelbits.emulator.gui.components.ComponentCreator;
 import joelbits.emulator.gui.components.FileChooserComponent;
 import joelbits.emulator.gui.components.TextInputDialogComponent;
 import joelbits.emulator.config.InterpreterConfig;
+import joelbits.emulator.input.Input;
+import joelbits.emulator.input.Keyboard;
 import joelbits.emulator.modules.ModuleFactory;
 import joelbits.emulator.output.Audio;
 import joelbits.emulator.settings.GameSettings;
@@ -43,12 +45,15 @@ public class GraphicalUserInterface extends Application {
     private InterpreterConfig config;
 	@Inject
     private GameSettings settings;
+	@Inject
+    private Input<Integer, KeyCode> keyboard;
 
 	public static void main(String[] args) { launch(args); }
 
 	@Override
 	public void start(Stage stage) throws Exception {
-        Guice.createInjector(ModuleFactory.componentModule(), ModuleFactory.soundModule(), ModuleFactory.settingsModule())
+        Guice.createInjector(ModuleFactory.componentModule(), ModuleFactory.soundModule(), ModuleFactory
+                .settingsModule(), ModuleFactory.keyboardModule())
                 .injectMembers(this);
 		this.stage = stage;
 		stage.setTitle("Chip-8 interpreter");
@@ -70,8 +75,8 @@ public class GraphicalUserInterface extends Application {
 		stage.setResizable(false);
 		stage.setOnCloseRequest(event -> chip8Util.terminateApplication());
 		
-		scene.setOnKeyPressed(event -> chip8.keyboard().press(event.getCode()));
-		scene.setOnKeyReleased(event -> chip8.keyboard().releasePressed());
+		scene.setOnKeyPressed(event -> keyboard.press(event.getCode()));
+		scene.setOnKeyReleased(event -> keyboard.releasePressed());
 		
 		root.setTop(componentCreator.menuBar(createInterpreterMenu(), createOptionsMenu(), createGameMenu()));
 		root.setBottom(canvas);

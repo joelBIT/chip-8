@@ -72,7 +72,8 @@ public final class Chip8 {
     private GameSettings settings;
 	
 	public Chip8(GraphicsContext graphicsContext) {
-		Guice.createInjector(ModuleFactory.interpreterModule(), ModuleFactory.soundModule(), ModuleFactory.settingsModule())
+		Guice.createInjector(ModuleFactory.interpreterModule(), ModuleFactory.soundModule(), ModuleFactory
+                .settingsModule(), ModuleFactory.keyboardModule())
                 .injectMembers(this);
 		
 		gpu = createGPU(graphicsContext, drawFlag, clearFlag);
@@ -105,11 +106,7 @@ public final class Chip8 {
 		}
 		return dataRegisters;
 	}
-	
-	public Input<Integer, KeyCode> keyboard() {
-		return keyboard;
-	}
-	
+
 	public void resetGame() {
 		gpu.clearScreen();
 		startGame(settings.getGamePath());

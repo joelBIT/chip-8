@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
+import joelbits.emulator.input.Input;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -30,16 +31,17 @@ import joelbits.emulator.memory.RAM;
 import joelbits.emulator.timers.DelayTimer;
 import joelbits.emulator.timers.SoundTimer;
 import joelbits.emulator.timers.Timer;
+import org.mockito.Mockito;
 
 public class TestCPU {
 	@Mock
 	private GPU gpu;
 	@Mock
 	private ALU alu;
-	
+
+	private final Input<Integer, KeyCode> keyboard = new Keyboard();
 	private CPU target;
 	private Memory primaryMemory;
-	private Keyboard keyboard;
 	private List<Register<Integer>> dataRegisters;
 	private Timer<Integer> delayTimer;
 	private Timer<Integer> soundTimer;
@@ -71,7 +73,6 @@ public class TestCPU {
 		programCounter = ProgramCounter.getInstance();
 		indexRegister = IndexRegister.getInstance();
 		primaryMemory = new RAM();
-		keyboard = new Keyboard();
 		stack = new Stack<Integer>();
 		
 		initMocks(this);

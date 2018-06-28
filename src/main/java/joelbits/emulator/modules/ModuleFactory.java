@@ -1,10 +1,11 @@
 package joelbits.emulator.modules;
 
-public final class ModuleFactory {
+public class ModuleFactory {
     private static SoundModule soundModule = new SoundModule();
     private static ComponentModule componentModule = new ComponentModule();
     private static InterpreterModule interpreterModule = new InterpreterModule();
     private static SettingsModule settingsModule = new SettingsModule();
+    private static KeyboardModule keyboardModule = new KeyboardModule();
 
     private ModuleFactory() { }
 
@@ -22,5 +23,9 @@ public final class ModuleFactory {
 
     public static SettingsModule settingsModule() {
         return settingsModule;
+    }
+
+    public static KeyboardModule keyboardModule() {
+        return keyboardModule;
     }
 }

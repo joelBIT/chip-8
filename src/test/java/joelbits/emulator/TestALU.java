@@ -1,7 +1,9 @@
 package joelbits.emulator;
 
 import static org.junit.Assert.*;
+import static org.mockito.MockitoAnnotations.initMocks;
 
+import joelbits.emulator.modules.ModuleFactory;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -10,8 +12,12 @@ import joelbits.emulator.cpu.registers.DataRegister;
 import joelbits.emulator.cpu.registers.ProgramCounter;
 import joelbits.emulator.cpu.registers.Register;
 import joelbits.emulator.utils.RandomNumberGenerator;
+import org.mockito.Mock;
 
 public class TestALU {
+	@Mock
+	private ModuleFactory moduleFactory;
+
 	private ALU target;
 	private Register<Integer> programCounter;
 	private Register<Integer> dataRegisterVF;
@@ -26,7 +32,9 @@ public class TestALU {
 		register = new DataRegister<Integer>();
 		randomNumberGenerator = new RandomNumberGenerator();
 		programCounter.write(0x200);
-		
+
+		initMocks(this);
+
 		target = new ALU(programCounter, dataRegisterVF, randomNumberGenerator);
 	}
 

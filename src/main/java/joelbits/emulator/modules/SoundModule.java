@@ -6,7 +6,7 @@ import joelbits.emulator.output.Audio;
 import joelbits.emulator.output.Sound;
 
 public final class SoundModule extends AbstractModule {
-    private static Audio sound = new Sound();
+    private static final Audio sound = new Sound();
 
     @Override
     protected void configure() { }

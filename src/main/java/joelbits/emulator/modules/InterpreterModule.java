@@ -28,7 +28,6 @@ public final class InterpreterModule extends AbstractModule {
 		bind(Flag.class).annotatedWith(Names.named("draw")).to(DrawFlag.class);
 		bind(new TypeLiteral<Timer<Integer>>() {}).annotatedWith(Names.named("sound")).to(new TypeLiteral<SoundTimer<Integer>>() {});
 		bind(new TypeLiteral<Timer<Integer>>() {}).annotatedWith(Names.named("delay")).to(new TypeLiteral<DelayTimer<Integer>>() {});
-		bind(new TypeLiteral<Input<Integer, KeyCode>>() {}).to(Keyboard.class);
 	}
 
 	@Provides

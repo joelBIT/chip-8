@@ -3,6 +3,7 @@ package joelbits.emulator.cpu;
 import java.util.List;
 import java.util.Stack;
 
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +25,6 @@ import joelbits.emulator.timers.Timer;
 public final class CPU {
 	private static final Logger log = LoggerFactory.getLogger(CPU.class);
 	private final Memory primaryMemory;
-	private final Input<Integer, KeyCode> keyboard;
 	private final Stack<Integer> stack;
 	private final List<Register<Integer>> dataRegisters;
 	private final Register<Integer> instructionRegister = InstructionRegister.getInstance();
@@ -34,6 +34,7 @@ public final class CPU {
 	private final GPU gpu;
 	private final Timer<Integer> delayTimer;
 	private final Timer<Integer> soundTimer;
+	private final Input<Integer, KeyCode> keyboard;
 	
 	private final int FIT_8BIT_REGISTER = 0xFF;
 	private final int FIT_16BIT_REGISTER = 0xFFFF;

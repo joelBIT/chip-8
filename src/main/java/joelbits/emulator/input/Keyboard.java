@@ -7,7 +7,7 @@ import javafx.scene.input.KeyCode;
  * digit. The key presses of a standard keyboard is mapped to the key presses of a hex keypad.
  *
  */
-public final class Keyboard implements Input<Integer, KeyCode> {
+public class Keyboard implements Input<Integer, KeyCode> {
 	private int currentlyPressedKey;
 	private final char[] keyPad = {'8', '4', '6', '2', 'Q', 'W', 'E', 'R', 'T', 'Y', 'A', 'S', 'D', 'Z', 'X', 'C'};
 	
