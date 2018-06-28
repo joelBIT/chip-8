@@ -11,7 +11,7 @@ import org.junit.Test;
 
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import joelbits.emulator.cpu.GPU;
+import joelbits.emulator.units.GPU;
 import joelbits.emulator.cpu.registers.DataRegister;
 import joelbits.emulator.cpu.registers.IndexRegister;
 import joelbits.emulator.cpu.registers.Register;

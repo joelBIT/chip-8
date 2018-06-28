@@ -6,7 +6,7 @@ import joelbits.emulator.config.InterpreterConfig;
 import joelbits.emulator.gui.components.ComponentCreator;
 import joelbits.emulator.utils.Chip8Util;
 
-public final class ComponentModule extends AbstractModule {
+public class ComponentModule extends AbstractModule {
     @Override
     protected void configure() { }
 

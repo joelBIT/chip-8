@@ -6,6 +6,7 @@ public class ModuleFactory {
     private static InterpreterModule interpreterModule = new InterpreterModule();
     private static SettingsModule settingsModule = new SettingsModule();
     private static KeyboardModule keyboardModule = new KeyboardModule();
+    private static GMUModule gmuModule = new GMUModule();
 
     private ModuleFactory() { }
 
@@ -28,4 +29,6 @@ public class ModuleFactory {
     public static KeyboardModule keyboardModule() {
         return keyboardModule;
     }
+
+    public static GMUModule gmuModule() { return gmuModule; }
 }

@@ -1,4 +1,4 @@
-package joelbits.emulator.cpu;
+package joelbits.emulator.units;
 
 import java.util.List;
 

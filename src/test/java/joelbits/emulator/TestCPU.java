@@ -19,7 +19,7 @@ import org.mockito.Mock;
 import javafx.scene.input.KeyCode;
 import joelbits.emulator.cpu.ALU;
 import joelbits.emulator.cpu.CPU;
-import joelbits.emulator.cpu.GPU;
+import joelbits.emulator.units.GPU;
 import joelbits.emulator.cpu.registers.DataRegister;
 import joelbits.emulator.cpu.registers.IndexRegister;
 import joelbits.emulator.cpu.registers.InstructionRegister;
@@ -31,7 +31,6 @@ import joelbits.emulator.memory.RAM;
 import joelbits.emulator.timers.DelayTimer;
 import joelbits.emulator.timers.SoundTimer;
 import joelbits.emulator.timers.Timer;
-import org.mockito.Mockito;
 
 public class TestCPU {
 	@Mock

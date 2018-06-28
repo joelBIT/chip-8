@@ -24,10 +24,10 @@ import joelbits.emulator.gui.components.FileChooserComponent;
 import joelbits.emulator.gui.components.TextInputDialogComponent;
 import joelbits.emulator.config.InterpreterConfig;
 import joelbits.emulator.input.Input;
-import joelbits.emulator.input.Keyboard;
 import joelbits.emulator.modules.ModuleFactory;
 import joelbits.emulator.output.Audio;
 import joelbits.emulator.settings.GameSettings;
+import joelbits.emulator.units.GMU;
 import joelbits.emulator.utils.Chip8Util;
 
 public class GraphicalUserInterface extends Application {
@@ -66,7 +66,7 @@ public class GraphicalUserInterface extends Application {
                 .inputDialog("Change game velocity", "Game velocity", "Set game velocity (default 10):", String
                         .valueOf(settings.getVelocity()));
 		fileChooser = componentCreator.fileChooser();
-		chip8 = new Chip8(graphicsContext);
+		chip8 = new Chip8(new GMU(graphicsContext));
 		
 		BorderPane root = new BorderPane();
 		root.setStyle("-fx-background: black;");

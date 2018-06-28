@@ -3,7 +3,7 @@ package joelbits.emulator.cpu;
 import java.util.List;
 import java.util.Stack;
 
-import com.google.inject.Inject;
+import joelbits.emulator.units.GPU;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,8 +36,8 @@ public final class CPU {
 	private final Timer<Integer> soundTimer;
 	private final Input<Integer, KeyCode> keyboard;
 	
-	private final int FIT_8BIT_REGISTER = 0xFF;
-	private final int FIT_16BIT_REGISTER = 0xFFFF;
+	private static final int FIT_8BIT_REGISTER = 0xFF;
+	private static final int FIT_16BIT_REGISTER = 0xFFFF;
 	private int registerLocationX;
 	private int registerLocationY;
 	private int address;

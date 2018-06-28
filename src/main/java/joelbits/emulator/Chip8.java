@@ -14,6 +14,7 @@ import joelbits.emulator.config.InterpreterConfig;
 import joelbits.emulator.modules.ModuleFactory;
 import joelbits.emulator.output.Audio;
 import joelbits.emulator.settings.GameSettings;
+import joelbits.emulator.units.GMU;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,22 +22,17 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
-import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.KeyCode;
 import joelbits.emulator.cpu.ALU;
 import joelbits.emulator.cpu.CPU;
-import joelbits.emulator.cpu.GPU;
+import joelbits.emulator.units.GPU;
 import joelbits.emulator.cpu.registers.DataRegister;
 import joelbits.emulator.cpu.registers.IndexRegister;
 import joelbits.emulator.cpu.registers.InstructionRegister;
 import joelbits.emulator.cpu.registers.ProgramCounter;
 import joelbits.emulator.cpu.registers.Register;
-import joelbits.emulator.flags.Flag;
 import joelbits.emulator.input.Input;
-import joelbits.emulator.memory.BufferFactory;
-import joelbits.emulator.memory.Memory;
 import joelbits.emulator.memory.RAM;
-import joelbits.emulator.output.Screen;
 import joelbits.emulator.timers.Timer;
 import joelbits.emulator.utils.Chip8Util;
 import joelbits.emulator.utils.RandomNumberGenerator;
@@ -48,16 +44,10 @@ import joelbits.emulator.utils.RandomNumberGenerator;
 public final class Chip8 {
 	private static final Logger log = LoggerFactory.getLogger(Chip8.class);
 	private final CPU cpu;
-	private final GPU gpu;
+	private final GMU gmu;
 	
 	@Inject
 	private Input<Integer, KeyCode> keyboard;
-	@Inject
-	@Named("clear")
-	private Flag clearFlag;
-	@Inject
-	@Named("draw")
-	private Flag drawFlag;
 	@Inject
 	@Named("sound")
 	private Timer<Integer> soundTimer;
@@ -71,21 +61,12 @@ public final class Chip8 {
 	@Inject
     private GameSettings settings;
 	
-	public Chip8(GraphicsContext graphicsContext) {
+	public Chip8(GMU gmu) {
 		Guice.createInjector(ModuleFactory.interpreterModule(), ModuleFactory.soundModule(), ModuleFactory
                 .settingsModule(), ModuleFactory.keyboardModule())
                 .injectMembers(this);
-		
-		gpu = createGPU(graphicsContext, drawFlag, clearFlag);
-		cpu = createCPU(gpu, delayTimer, soundTimer);
-	}
-	
-	private GPU createGPU(GraphicsContext graphicsContext, Flag drawFlag, Flag clearFlag) {
-		Memory displayBuffer = BufferFactory.createDisplayBuffer(config.screenWidth(), config.screenHeight());
-		Memory dirtyBuffer = BufferFactory.createDirtyBuffer();
-		Screen<Integer> screen = new Screen<Integer>(config.screenWidth(), config.screenHeight(), config.pixelSize());
-		
-		return new GPU(displayBuffer, dirtyBuffer, screen, graphicsContext, drawFlag, clearFlag);
+		this.gmu = gmu;
+		cpu = createCPU(gmu.gpu(), delayTimer, soundTimer);
 	}
 	
 	private CPU createCPU(GPU gpu, Timer<Integer> delayTimer, Timer<Integer> soundTimer) {
@@ -108,7 +89,7 @@ public final class Chip8 {
 	}
 
 	public void resetGame() {
-		gpu.clearScreen();
+		gmu.clearScreen();
 		startGame(settings.getGamePath());
 	}
 	
@@ -151,14 +132,14 @@ public final class Chip8 {
 	 			}
 	 			
 	 			for (int i = 0; i < settings.getVelocity(); i++) {
-	 				if (clearFlag.isActive()) {
-	 	 				gpu.clearScreen();
-	 	 				clearFlag.toggle();
+	 				if (gmu.isClearFlagActive()) {
+	 	 				gmu.clearScreen();
+	 	 				gmu.toggleClearFlag();
 	 	 			}
 	 	 			
-	 	 			if (drawFlag.isActive()) {
-	 	 				gpu.drawScreen();
-	 	 				drawFlag.toggle();
+	 	 			if (gmu.isDrawFlagActive()) {
+	 	 				gmu.drawScreen();
+	 	 				gmu.toggleDrawFlag();
 	 	 			}
 	 				
 	 				cpu.executeNextOperation();
