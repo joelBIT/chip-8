@@ -3,6 +3,7 @@ package joelbits.emulator.cpu;
 import com.google.inject.Guice;
 import joelbits.emulator.cpu.registers.Register;
 import joelbits.emulator.modules.ComponentModule;
+import joelbits.emulator.modules.ModuleFactory;
 import joelbits.emulator.utils.Chip8Util;
 import joelbits.emulator.utils.RandomNumberGenerator;
 
@@ -21,7 +22,7 @@ public class ALU {
 		this.programCounter = programCounter;
 		this.dataRegisterVF = dataRegisterVF;
 		this.randomNumberGenerator = randomNumberGenerator;
-		Guice.createInjector(new ComponentModule()).injectMembers(this);
+		Guice.createInjector(ModuleFactory.componentModule()).injectMembers(this);
 	}
 	
 	public void load(Register<Integer> register, int value) {

@@ -32,7 +32,6 @@ public class GraphicalUserInterface extends Application {
 	private Stage stage;
 	private FileChooserComponent fileChooser;
 	private TextInputDialogComponent velocityDialog;
-	private GameSettings settings;
 	private Chip8 chip8;
 	@Inject
     private ComponentCreator componentCreator;
@@ -42,25 +41,27 @@ public class GraphicalUserInterface extends Application {
     private Audio sound;
 	@Inject
     private InterpreterConfig config;
+	@Inject
+    private GameSettings settings;
 
 	public static void main(String[] args) { launch(args); }
 
 	@Override
 	public void start(Stage stage) throws Exception {
-        Guice.createInjector(ModuleFactory.componentModule(), ModuleFactory.soundModule()).injectMembers(this);
+        Guice.createInjector(ModuleFactory.componentModule(), ModuleFactory.soundModule(), ModuleFactory.settingsModule())
+                .injectMembers(this);
 		this.stage = stage;
 		stage.setTitle("Chip-8 interpreter");
 
 		Canvas canvas = new Canvas(config.canvasWidth(), config.canvasHeight());
 		GraphicsContext graphicsContext = canvas.getGraphicsContext2D();
 		graphicsContext.setFill(Color.WHITE);
-		
-		settings = new GameSettings();
+
 		velocityDialog = componentCreator
                 .inputDialog("Change game velocity", "Game velocity", "Set game velocity (default 10):", String
                         .valueOf(settings.getVelocity()));
 		fileChooser = componentCreator.fileChooser();
-		chip8 = new Chip8(settings, graphicsContext);
+		chip8 = new Chip8(graphicsContext);
 		
 		BorderPane root = new BorderPane();
 		root.setStyle("-fx-background: black;");

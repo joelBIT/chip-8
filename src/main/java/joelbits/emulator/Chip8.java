@@ -49,7 +49,6 @@ public final class Chip8 {
 	private static final Logger log = LoggerFactory.getLogger(Chip8.class);
 	private final CPU cpu;
 	private final GPU gpu;
-	private final GameSettings settings;
 	
 	@Inject
 	private Input<Integer, KeyCode> keyboard;
@@ -69,10 +68,12 @@ public final class Chip8 {
     private Audio sound;
 	@Inject
     private InterpreterConfig config;
+	@Inject
+    private GameSettings settings;
 	
-	public Chip8(GameSettings settings, GraphicsContext graphicsContext) {
-		Guice.createInjector(ModuleFactory.interpreterModule(), ModuleFactory.soundModule()).injectMembers(this);
-		this.settings = settings;
+	public Chip8(GraphicsContext graphicsContext) {
+		Guice.createInjector(ModuleFactory.interpreterModule(), ModuleFactory.soundModule(), ModuleFactory.settingsModule())
+                .injectMembers(this);
 		
 		gpu = createGPU(graphicsContext, drawFlag, clearFlag);
 		cpu = createCPU(gpu, delayTimer, soundTimer);
