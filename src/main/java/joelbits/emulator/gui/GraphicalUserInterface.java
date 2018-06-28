@@ -1,4 +1,4 @@
-package joelbits.emulator;
+package joelbits.emulator.gui;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -6,6 +6,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import com.google.inject.Guice;
+import com.google.inject.Inject;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -14,7 +16,6 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Menu;
-import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.input.KeyCode;
@@ -24,8 +25,13 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import joelbits.emulator.components.FileChooserComponent;
-import joelbits.emulator.components.TextInputDialogComponent;
+import joelbits.emulator.Chip8;
+import joelbits.emulator.gui.components.ComponentCreator;
+import joelbits.emulator.gui.components.FileChooserComponent;
+import joelbits.emulator.gui.components.TextInputDialogComponent;
+import joelbits.emulator.config.InterpreterConfig;
+import joelbits.emulator.modules.ComponentModule;
+import joelbits.emulator.settings.GameSettings;
 
 public class GraphicalUserInterface extends Application {
 	private Stage stage;
@@ -33,13 +39,14 @@ public class GraphicalUserInterface extends Application {
 	private TextInputDialogComponent velocityDialog;
 	private GameSettings settings;
 	private Chip8 chip8;
+	@Inject
+    private ComponentCreator componentCreator;
 
-	public static void main(String[] args) {
-		launch(args);
-	}
+	public static void main(String[] args) { launch(args); }
 
 	@Override
 	public void start(Stage stage) throws Exception {
+        Guice.createInjector(new ComponentModule()).injectMembers(this);
 		this.stage = stage;
 		stage.setTitle("Chip-8 interpreter");
 		
@@ -62,7 +69,7 @@ public class GraphicalUserInterface extends Application {
 		scene.setOnKeyPressed(event -> chip8.keyboard().press(event.getCode()));
 		scene.setOnKeyReleased(event -> chip8.keyboard().releasePressed());
 		
-		root.setTop(createMenuBar());
+		root.setTop(componentCreator.menuBar(createInterpreterMenu(), createOptionsMenu(), createGameMenu()));
 		root.setBottom(canvas);
 		
 		stage.show();
@@ -82,13 +89,6 @@ public class GraphicalUserInterface extends Application {
 		velocityDialog.setContentText("Set game velocity (default 10):");
 		
 		return velocityDialog;
-	}
-	
-	private MenuBar createMenuBar() {
-		MenuBar menuBar = new MenuBar();
-		menuBar.getMenus().addAll(createInterpreterMenu(), createOptionsMenu(), createGameMenu());
-		
-		return menuBar;
 	}
 	
 	private Menu createInterpreterMenu() {

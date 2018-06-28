@@ -1,4 +1,4 @@
-package joelbits.emulator.components;
+package joelbits.emulator.gui.components;
 
 import java.io.File;
 import java.util.List;

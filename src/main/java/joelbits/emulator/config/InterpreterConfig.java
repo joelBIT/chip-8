@@ -1,4 +1,4 @@
-package joelbits.emulator;
+package joelbits.emulator.config;
 
 import java.io.IOException;
 import java.util.Properties;

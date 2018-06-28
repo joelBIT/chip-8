@@ -37,7 +37,7 @@
                         <transformers>
                             <transformer implementation=
                                                  "org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                <mainClass>joelbits.emulator.GraphicalUserInterface</mainClass>
+                                <mainClass>joelbits.emulator.gui.GraphicalUserInterface</mainClass>
                             </transformer>
                         </transformers>
                     </configuration>

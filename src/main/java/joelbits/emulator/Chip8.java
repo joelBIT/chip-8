@@ -10,7 +10,9 @@ import java.util.Stack;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import joelbits.emulator.config.InterpreterConfig;
 import joelbits.emulator.modules.InterpreterModule;
+import joelbits.emulator.settings.GameSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,7 +70,7 @@ public final class Chip8 {
 	@Inject
 	private Sound sound;
 	
-	Chip8(GameSettings settings, GraphicsContext graphicsContext) {
+	public Chip8(GameSettings settings, GraphicsContext graphicsContext) {
 		Guice.createInjector(new InterpreterModule()).injectMembers(this);
 		this.settings = settings;
 		
@@ -104,11 +106,11 @@ public final class Chip8 {
 		return dataRegisters;
 	}
 	
-	Input<Integer, KeyCode> keyboard() {
+	public Input<Integer, KeyCode> keyboard() {
 		return keyboard;
 	}
 	
-	void resetGame() {
+	public void resetGame() {
 		gpu.clearScreen();
 		startGame(settings.getGamePath());
 	}
@@ -134,7 +136,7 @@ public final class Chip8 {
 		return Files.readAllBytes(Paths.get(gamePath));
 	}
 	
-	void toggleMute(CheckMenuItem muteSound) {
+	public void toggleMute(CheckMenuItem muteSound) {
 		if (muteSound.isSelected()) {
 			sound.mute();
 		} else {
@@ -142,7 +144,7 @@ public final class Chip8 {
 		}
 	}
 	
-	void terminateApplication() {
+	public void terminateApplication() {
 	    Platform.exit();
 	    System.exit(0);
 	}

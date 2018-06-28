@@ -1,4 +1,4 @@
-package joelbits.emulator;
+package joelbits.emulator.settings;
 
 import java.net.URI;
 
