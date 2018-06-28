@@ -6,6 +6,7 @@ import java.util.Arrays;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import javafx.application.Application;
+import javafx.event.Event;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -18,7 +19,8 @@ import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-import joelbits.emulator.Chip8;
+import joelbits.emulator.cache.EmulatorCache;
+import joelbits.emulator.events.ResetEvent;
 import joelbits.emulator.gui.components.ComponentCreator;
 import joelbits.emulator.gui.components.FileChooserComponent;
 import joelbits.emulator.gui.components.TextInputDialogComponent;
@@ -27,14 +29,13 @@ import joelbits.emulator.input.Input;
 import joelbits.emulator.modules.ModuleFactory;
 import joelbits.emulator.output.Audio;
 import joelbits.emulator.settings.GameSettings;
-import joelbits.emulator.units.GMU;
 import joelbits.emulator.utils.Chip8Util;
 
 public class GraphicalUserInterface extends Application {
 	private Stage stage;
 	private FileChooserComponent fileChooser;
 	private TextInputDialogComponent velocityDialog;
-	private Chip8 chip8;
+
 	@Inject
     private ComponentCreator componentCreator;
 	@Inject
@@ -61,12 +62,12 @@ public class GraphicalUserInterface extends Application {
 		Canvas canvas = new Canvas(config.canvasWidth(), config.canvasHeight());
 		GraphicsContext graphicsContext = canvas.getGraphicsContext2D();
 		graphicsContext.setFill(Color.WHITE);
+		EmulatorCache.setGraphicsContext(graphicsContext);
 
 		velocityDialog = componentCreator
                 .inputDialog("Change game velocity", "Game velocity", "Set game velocity (default 10):", String
                         .valueOf(settings.getVelocity()));
 		fileChooser = componentCreator.fileChooser();
-		chip8 = new Chip8(new GMU(graphicsContext));
 		
 		BorderPane root = new BorderPane();
 		root.setStyle("-fx-background: black;");
@@ -101,7 +102,7 @@ public class GraphicalUserInterface extends Application {
 		File file = fileChooser.showOpenDialog(stage);
 		if (file != null) {
 			settings.setGamePath(file.toURI());
-			chip8.resetGame();
+			new ResetEvent().handle(new Event(Event.ANY));
 		}
 		settings.setPaused(false);
 	}
@@ -111,7 +112,8 @@ public class GraphicalUserInterface extends Application {
 		pause.setOnAction(event -> settings.setPaused(pause.isSelected()));
 
 		MenuItem reset = componentCreator
-                .menuItem("Reset", new KeyCodeCombination(KeyCode.F3), event -> chip8.resetGame());
+                .menuItem("Reset", new KeyCodeCombination(KeyCode.F3), event -> new ResetEvent()
+                        .handle(new Event(Event.ANY)));
 		
 		return componentCreator
                 .menu("Game", Arrays.asList(pause, reset), event -> settings

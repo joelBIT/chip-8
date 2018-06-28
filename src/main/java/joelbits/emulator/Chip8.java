@@ -41,7 +41,7 @@ import joelbits.emulator.utils.RandomNumberGenerator;
  * A ROM is written to memory starting at location 0x200 since the CHIP-8 interpreter occupies
  * most of the preceding memory locations.
  */
-public final class Chip8 {
+public final class Chip8 implements Emulator {
 	private static final Logger log = LoggerFactory.getLogger(Chip8.class);
 	private final CPU cpu;
 	private final GMU gmu;
@@ -88,12 +88,14 @@ public final class Chip8 {
 		return dataRegisters;
 	}
 
-	public void resetGame() {
+	@Override
+	public void reset() {
 		gmu.clearScreen();
-		startGame(settings.getGamePath());
+		start();
 	}
-	
-	private void startGame(URI gamePath) {
+
+	@Override
+	public void start() {
 		cpu.initialize(0x200, 0x0, 0x0, 0x0, 0x0, Chip8Util.fontset);
 		loadGame();
 		if (!settings.isRunning()) {
@@ -109,13 +111,12 @@ public final class Chip8 {
 			log.error(e.toString(), e);
 		}
 	}
-	
+
 	private byte[] readROM(URI gamePath) throws IOException {
 		return Files.readAllBytes(Paths.get(gamePath));
 	}
 	
 	class InstructionCycle implements Runnable {
-
 		@Override
 		public void run() {
 			if (!settings.isPaused()) {
