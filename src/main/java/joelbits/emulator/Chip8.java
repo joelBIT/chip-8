@@ -11,7 +11,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import joelbits.emulator.config.InterpreterConfig;
-import joelbits.emulator.modules.InterpreterModule;
+import joelbits.emulator.modules.ModuleFactory;
+import joelbits.emulator.output.Audio;
 import joelbits.emulator.settings.GameSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,9 +21,7 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
-import javafx.application.Platform;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.CheckMenuItem;
 import javafx.scene.input.KeyCode;
 import joelbits.emulator.cpu.ALU;
 import joelbits.emulator.cpu.CPU;
@@ -38,7 +37,6 @@ import joelbits.emulator.memory.BufferFactory;
 import joelbits.emulator.memory.Memory;
 import joelbits.emulator.memory.RAM;
 import joelbits.emulator.output.Screen;
-import joelbits.emulator.output.Sound;
 import joelbits.emulator.timers.Timer;
 import joelbits.emulator.utils.Chip8Util;
 import joelbits.emulator.utils.RandomNumberGenerator;
@@ -68,10 +66,12 @@ public final class Chip8 {
 	@Named("delay")
 	private Timer<Integer> delayTimer;
 	@Inject
-	private Sound sound;
+    private Audio sound;
+	@Inject
+    private InterpreterConfig config;
 	
 	public Chip8(GameSettings settings, GraphicsContext graphicsContext) {
-		Guice.createInjector(new InterpreterModule()).injectMembers(this);
+		Guice.createInjector(ModuleFactory.interpreterModule(), ModuleFactory.soundModule()).injectMembers(this);
 		this.settings = settings;
 		
 		gpu = createGPU(graphicsContext, drawFlag, clearFlag);
@@ -79,7 +79,6 @@ public final class Chip8 {
 	}
 	
 	private GPU createGPU(GraphicsContext graphicsContext, Flag drawFlag, Flag clearFlag) {
-		InterpreterConfig config = new InterpreterConfig();
 		Memory displayBuffer = BufferFactory.createDisplayBuffer(config.screenWidth(), config.screenHeight());
 		Memory dirtyBuffer = BufferFactory.createDirtyBuffer();
 		Screen<Integer> screen = new Screen<Integer>(config.screenWidth(), config.screenHeight(), config.pixelSize());
@@ -136,14 +135,6 @@ public final class Chip8 {
 		return Files.readAllBytes(Paths.get(gamePath));
 	}
 	
-	public void toggleMute(CheckMenuItem muteSound) {
-		if (muteSound.isSelected()) {
-			sound.mute();
-		} else {
-			sound.unmute();
-		}
-	}
-	
 	class InstructionCycle implements Runnable {
 
 		@Override
@@ -154,7 +145,7 @@ public final class Chip8 {
 	 			}
 	 			
 	 			if (soundTimer.currentValue() > 0) {
-	 				sound.start();
+                    sound.start();
 	 				decrementSoundTimer();
 	 				if (soundTimer.currentValue() <= 0) {
 	 					sound.stop();

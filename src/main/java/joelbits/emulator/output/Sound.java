@@ -13,7 +13,7 @@ import javax.sound.sampled.LineUnavailableException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class Sound implements Startable, Mutable {
+public final class Sound implements Audio {
 	private static final Logger log = LoggerFactory.getLogger(Sound.class);
     private final int SAMPLE_RATE = 8000;
     private final int SAMPLE_SIZE_IN_BITS = 8;

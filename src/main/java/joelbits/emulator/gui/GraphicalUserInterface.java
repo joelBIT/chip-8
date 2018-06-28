@@ -23,8 +23,8 @@ import joelbits.emulator.gui.components.ComponentCreator;
 import joelbits.emulator.gui.components.FileChooserComponent;
 import joelbits.emulator.gui.components.TextInputDialogComponent;
 import joelbits.emulator.config.InterpreterConfig;
-import joelbits.emulator.modules.ComponentModule;
-import joelbits.emulator.modules.UtilModule;
+import joelbits.emulator.modules.ModuleFactory;
+import joelbits.emulator.output.Audio;
 import joelbits.emulator.settings.GameSettings;
 import joelbits.emulator.utils.Chip8Util;
 
@@ -38,17 +38,19 @@ public class GraphicalUserInterface extends Application {
     private ComponentCreator componentCreator;
 	@Inject
     private Chip8Util chip8Util;
+	@Inject
+    private Audio sound;
+	@Inject
+    private InterpreterConfig config;
 
 	public static void main(String[] args) { launch(args); }
 
 	@Override
 	public void start(Stage stage) throws Exception {
-        Guice.createInjector(new ComponentModule()).injectMembers(this);
-        Guice.createInjector(new UtilModule()).injectMembers(this);
+        Guice.createInjector(ModuleFactory.componentModule(), ModuleFactory.soundModule()).injectMembers(this);
 		this.stage = stage;
 		stage.setTitle("Chip-8 interpreter");
-		
-		InterpreterConfig config = new InterpreterConfig();
+
 		Canvas canvas = new Canvas(config.canvasWidth(), config.canvasHeight());
 		GraphicsContext graphicsContext = canvas.getGraphicsContext2D();
 		graphicsContext.setFill(Color.WHITE);
@@ -112,7 +114,7 @@ public class GraphicalUserInterface extends Application {
 	
 	private Menu createOptionsMenu() {
 		CheckMenuItem muteSound = componentCreator.checkMenuItem("Mute Sound", new KeyCodeCombination(KeyCode.F4));
-		muteSound.setOnAction(event -> chip8.toggleMute(muteSound));
+		muteSound.setOnAction(event -> toggleMute(muteSound));
 		
 		MenuItem velocity = componentCreator
                 .menuItem("Change velocity", new KeyCodeCombination(KeyCode.F5), event -> showVelocityDialog());
@@ -122,6 +124,14 @@ public class GraphicalUserInterface extends Application {
                         .asList(muteSound, velocity), event -> settings
                         .setPaused(true), event -> settings.setPaused(false));
 	}
+
+    private void toggleMute(CheckMenuItem muteSound) {
+        if (muteSound.isSelected()) {
+            sound.mute();
+        } else {
+            sound.unmute();
+        }
+    }
 	
 	private void showVelocityDialog() {
 		settings.setPaused(true);

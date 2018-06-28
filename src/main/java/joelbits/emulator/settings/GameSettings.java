@@ -3,7 +3,7 @@ package joelbits.emulator.settings;
 import java.net.URI;
 
 public class GameSettings {
-	private int VELOCITY = 10;
+	private static int VELOCITY = 10;
 	private boolean running;
 	private boolean paused;
 	private URI gamePath;
