@@ -1,29 +1,23 @@
 package joelbits.emulator.gui;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import javafx.application.Application;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.TextInputDialog;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
-import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import joelbits.emulator.Chip8;
 import joelbits.emulator.gui.components.ComponentCreator;
@@ -35,7 +29,7 @@ import joelbits.emulator.settings.GameSettings;
 
 public class GraphicalUserInterface extends Application {
 	private Stage stage;
-	private FileChooserComponent fileChooser = createFileChooser();
+	private FileChooserComponent fileChooser;
 	private TextInputDialogComponent velocityDialog;
 	private GameSettings settings;
 	private Chip8 chip8;
@@ -56,7 +50,10 @@ public class GraphicalUserInterface extends Application {
 		graphicsContext.setFill(Color.WHITE);
 		
 		settings = new GameSettings();
-		velocityDialog = createVelocityDialog();
+		velocityDialog = componentCreator
+                .inputDialog("Change game velocity", "Game velocity", "Set game velocity (default 10):", String
+                        .valueOf(settings.getVelocity()));
+		fileChooser = componentCreator.fileChooser();
 		chip8 = new Chip8(settings, graphicsContext);
 		
 		BorderPane root = new BorderPane();
@@ -75,35 +72,16 @@ public class GraphicalUserInterface extends Application {
 		stage.show();
 	}
 	
-	private FileChooserComponent createFileChooser() {
-		FileChooserComponent fileChooser = new FileChooserComponent(new FileChooser());
-		fileChooser.addExtensions(new ArrayList<>(Arrays.asList(new FileChooser.ExtensionFilter("ch8", "*.ch8"), new FileChooser.ExtensionFilter("rom", "*.rom"))));
-		
-		return fileChooser;
-	}
-
-	private TextInputDialogComponent createVelocityDialog() {
-		TextInputDialogComponent velocityDialog = new TextInputDialogComponent(new TextInputDialog(String.valueOf(settings.getVelocity())));
-		velocityDialog.setTitle("Change game velocity");
-		velocityDialog.setHeaderText("Game velocity");
-		velocityDialog.setContentText("Set game velocity (default 10):");
-		
-		return velocityDialog;
-	}
-	
 	private Menu createInterpreterMenu() {
-		MenuItem open = createMenuItem("Open", new KeyCodeCombination(KeyCode.O, KeyCombination.CONTROL_DOWN), event -> openLoadFileDialog());
-		MenuItem exit = createMenuItem("Exit", new KeyCodeCombination(KeyCode.Q, KeyCombination.CONTROL_DOWN), event -> chip8.terminateApplication());
+		MenuItem open = componentCreator
+                .menuItem("Open", new KeyCodeCombination(KeyCode.O, KeyCombination
+                        .CONTROL_DOWN), event -> openLoadFileDialog());
+		MenuItem exit = componentCreator
+                .menuItem("Exit", new KeyCodeCombination(KeyCode.Q, KeyCombination
+                        .CONTROL_DOWN), event -> chip8.terminateApplication());
 
-		return createMenu("Interpreter", Arrays.asList(open, exit));
-	}
-	
-	private MenuItem createMenuItem(String displayName, KeyCodeCombination keyCombination, EventHandler<ActionEvent> event) {
-		MenuItem menuItem = new MenuItem(displayName);
-		menuItem.setAccelerator(keyCombination);
-		menuItem.setOnAction(event);
-		
-		return menuItem;
+		return componentCreator.menu("Interpreter", Arrays
+                .asList(open, exit), event -> settings.setPaused(true), event -> settings.setPaused(false));
 	}
 	
 	private void openLoadFileDialog() {
@@ -116,23 +94,15 @@ public class GraphicalUserInterface extends Application {
 		settings.setPaused(false);
 	}
 	
-	private Menu createMenu(String title, List<MenuItem> menuItems) {
-		Menu menu = new Menu(title);
-		menu.setOnShowing(event -> settings.setPaused(true));
-		menu.setOnHidden(event -> settings.setPaused(false));
-		menu.getItems().addAll(menuItems);
-		
-		return menu;
-	}
-	
 	private Menu createGameMenu() {
 		CheckMenuItem pause = new CheckMenuItem("Pause");
 		pause.setAccelerator(new KeyCodeCombination(KeyCode.F2));
 		pause.setOnAction(event -> settings.setPaused(pause.isSelected()));
+
+		MenuItem reset = componentCreator
+                .menuItem("Reset", new KeyCodeCombination(KeyCode.F3), event -> chip8.resetGame());
 		
-		MenuItem reset = createMenuItem("Reset", new KeyCodeCombination(KeyCode.F3), event -> chip8.resetGame());
-		
-		return createMenu("Game", Arrays.asList(pause, reset));
+		return componentCreator.menu("Game", Arrays.asList(pause, reset), event -> settings.setPaused(true), event -> settings.setPaused(false));
 	}
 	
 	private Menu createOptionsMenu() {
@@ -140,18 +110,20 @@ public class GraphicalUserInterface extends Application {
 		muteSound.setAccelerator(new KeyCodeCombination(KeyCode.F4));
 		muteSound.setOnAction(event -> chip8.toggleMute(muteSound));
 		
-		MenuItem velocity = createMenuItem("Change velocity", new KeyCodeCombination(KeyCode.F5), event -> showVelocityDialog());
+		MenuItem velocity = componentCreator
+                .menuItem("Change velocity", new KeyCodeCombination(KeyCode.F5), event -> showVelocityDialog());
 		
-		return createMenu("Options", Arrays.asList(muteSound, velocity));
+		return componentCreator
+                .menu("Options", Arrays
+                        .asList(muteSound, velocity), event -> settings
+                        .setPaused(true), event -> settings.setPaused(false));
 	}
 	
 	private void showVelocityDialog() {
 		settings.setPaused(true);
 		
 		Optional<String> result = velocityDialog.showDialog();
-		if (result.isPresent()) {
-			settings.setVelocity(Integer.parseInt(result.get()));
-		}
+        result.ifPresent(s -> settings.setVelocity(Integer.parseInt(s)));
 		
 		settings.setPaused(false);
 	}
