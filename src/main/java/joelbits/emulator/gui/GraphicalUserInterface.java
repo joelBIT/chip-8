@@ -2,7 +2,6 @@ package joelbits.emulator.gui;
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.Optional;
 
 import com.google.inject.Guice;
 import com.google.inject.Inject;
@@ -25,7 +24,9 @@ import joelbits.emulator.gui.components.FileChooserComponent;
 import joelbits.emulator.gui.components.TextInputDialogComponent;
 import joelbits.emulator.config.InterpreterConfig;
 import joelbits.emulator.modules.ComponentModule;
+import joelbits.emulator.modules.UtilModule;
 import joelbits.emulator.settings.GameSettings;
+import joelbits.emulator.utils.Chip8Util;
 
 public class GraphicalUserInterface extends Application {
 	private Stage stage;
@@ -35,12 +36,15 @@ public class GraphicalUserInterface extends Application {
 	private Chip8 chip8;
 	@Inject
     private ComponentCreator componentCreator;
+	@Inject
+    private Chip8Util chip8Util;
 
 	public static void main(String[] args) { launch(args); }
 
 	@Override
 	public void start(Stage stage) throws Exception {
         Guice.createInjector(new ComponentModule()).injectMembers(this);
+        Guice.createInjector(new UtilModule()).injectMembers(this);
 		this.stage = stage;
 		stage.setTitle("Chip-8 interpreter");
 		
@@ -61,7 +65,7 @@ public class GraphicalUserInterface extends Application {
 		Scene scene = new Scene(root);
 		stage.setScene(scene);
 		stage.setResizable(false);
-		stage.setOnCloseRequest(event -> chip8.terminateApplication());
+		stage.setOnCloseRequest(event -> chip8Util.terminateApplication());
 		
 		scene.setOnKeyPressed(event -> chip8.keyboard().press(event.getCode()));
 		scene.setOnKeyReleased(event -> chip8.keyboard().releasePressed());
@@ -78,7 +82,7 @@ public class GraphicalUserInterface extends Application {
                         .CONTROL_DOWN), event -> openLoadFileDialog());
 		MenuItem exit = componentCreator
                 .menuItem("Exit", new KeyCodeCombination(KeyCode.Q, KeyCombination
-                        .CONTROL_DOWN), event -> chip8.terminateApplication());
+                        .CONTROL_DOWN), event -> chip8Util.terminateApplication());
 
 		return componentCreator.menu("Interpreter", Arrays
                 .asList(open, exit), event -> settings.setPaused(true), event -> settings.setPaused(false));
@@ -95,19 +99,19 @@ public class GraphicalUserInterface extends Application {
 	}
 	
 	private Menu createGameMenu() {
-		CheckMenuItem pause = new CheckMenuItem("Pause");
-		pause.setAccelerator(new KeyCodeCombination(KeyCode.F2));
+		CheckMenuItem pause = componentCreator.checkMenuItem("Pause", new KeyCodeCombination(KeyCode.F2));
 		pause.setOnAction(event -> settings.setPaused(pause.isSelected()));
 
 		MenuItem reset = componentCreator
                 .menuItem("Reset", new KeyCodeCombination(KeyCode.F3), event -> chip8.resetGame());
 		
-		return componentCreator.menu("Game", Arrays.asList(pause, reset), event -> settings.setPaused(true), event -> settings.setPaused(false));
+		return componentCreator
+                .menu("Game", Arrays.asList(pause, reset), event -> settings
+                        .setPaused(true), event -> settings.setPaused(false));
 	}
 	
 	private Menu createOptionsMenu() {
-		CheckMenuItem muteSound = new CheckMenuItem("Mute Sound");
-		muteSound.setAccelerator(new KeyCodeCombination(KeyCode.F4));
+		CheckMenuItem muteSound = componentCreator.checkMenuItem("Mute Sound", new KeyCodeCombination(KeyCode.F4));
 		muteSound.setOnAction(event -> chip8.toggleMute(muteSound));
 		
 		MenuItem velocity = componentCreator
@@ -121,10 +125,7 @@ public class GraphicalUserInterface extends Application {
 	
 	private void showVelocityDialog() {
 		settings.setPaused(true);
-		
-		Optional<String> result = velocityDialog.showDialog();
-        result.ifPresent(s -> settings.setVelocity(Integer.parseInt(s)));
-		
+        velocityDialog.showDialog().ifPresent(s -> settings.setVelocity(Integer.parseInt(s)));
 		settings.setPaused(false);
 	}
 }

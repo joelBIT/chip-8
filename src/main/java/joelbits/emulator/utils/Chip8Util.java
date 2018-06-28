@@ -1,5 +1,7 @@
 package joelbits.emulator.utils;
 
+import javafx.application.Platform;
+
 public final class Chip8Util {
 	public final static int fontset[] =
 		{
@@ -23,5 +25,10 @@ public final class Chip8Util {
 
 	public int convertToUnsignedInt(int value) {
 		return value < 0 ? value + 65536 : value;
+	}
+
+	public void terminateApplication() {
+		Platform.exit();
+		System.exit(0);
 	}
 }

@@ -144,11 +144,6 @@ public final class Chip8 {
 		}
 	}
 	
-	public void terminateApplication() {
-	    Platform.exit();
-	    System.exit(0);
-	}
-	
 	class InstructionCycle implements Runnable {
 
 		@Override

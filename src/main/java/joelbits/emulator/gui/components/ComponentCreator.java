@@ -46,6 +46,13 @@ public class ComponentCreator {
         return menuItem;
     }
 
+    public CheckMenuItem checkMenuItem(String displayName, KeyCodeCombination keyCombination) {
+        CheckMenuItem menuItem = new CheckMenuItem(displayName);
+        menuItem.setAccelerator(keyCombination);
+
+        return menuItem;
+    }
+
     public Menu menu(String title, List<MenuItem> menuItems, EventHandler<Event> onShowing, EventHandler<Event> onHidden) {
         Menu menu = new Menu(title);
         menu.setOnShowing(onShowing);
