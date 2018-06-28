@@ -1,4 +1,4 @@
-A CHIP-8 interpreter written in Java
+A CHIP-8 interpreter written in Java    [![Build Status](https://travis-ci.org/joelBIT/chip-8.svg?branch=master)](https://travis-ci.org/joelBIT/chip-8)
 -------------------------------------------------------
 
 A project implementing a [CHIP-8 interpreter](https://en.wikipedia.org/wiki/CHIP-8). ROMs with the .ch8 and .rom extensions can be loaded into the memory, and many of these ROMs can be downloaded from (http://www.zophar.net/pdroms/chip8/chip-8-games-pack.html). The original CHIP-8 had a keypad with the numbered keys 0 - 9 and A - F (16 keys in total).
