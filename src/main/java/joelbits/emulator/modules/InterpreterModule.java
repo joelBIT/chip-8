@@ -1,4 +1,4 @@
-package joelbits.emulator;
+package joelbits.emulator.modules;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.TypeLiteral;
@@ -16,7 +16,7 @@ import joelbits.emulator.timers.DelayTimer;
 import joelbits.emulator.timers.SoundTimer;
 import joelbits.emulator.timers.Timer;
 
-public class InterpreterModule extends AbstractModule {
+public final class InterpreterModule extends AbstractModule {
 
 	@Override
 	protected void configure() {
@@ -27,5 +27,4 @@ public class InterpreterModule extends AbstractModule {
 		bind(new TypeLiteral<Timer<Integer>>() {}).annotatedWith(Names.named("delay")).to(new TypeLiteral<DelayTimer<Integer>>() {});
 		bind(new TypeLiteral<Input<Integer, KeyCode>>() {}).to(Keyboard.class);
 	}
-
 }

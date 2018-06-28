@@ -10,12 +10,12 @@ import java.util.Stack;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import joelbits.emulator.modules.InterpreterModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.inject.Guice;
 import com.google.inject.Inject;
-import com.google.inject.Injector;
 import com.google.inject.name.Named;
 
 import javafx.application.Platform;
@@ -42,8 +42,8 @@ import joelbits.emulator.utils.Chip8Util;
 import joelbits.emulator.utils.RandomNumberGenerator;
 
 /**
- * A ROM is written to memory starting at location 0x200 since the CHIP-8 interpreter occupies most of the preceding memory locations.
- * 
+ * A ROM is written to memory starting at location 0x200 since the CHIP-8 interpreter occupies
+ * most of the preceding memory locations.
  */
 public final class Chip8 {
 	private static final Logger log = LoggerFactory.getLogger(Chip8.class);
@@ -68,10 +68,8 @@ public final class Chip8 {
 	@Inject
 	private Sound sound;
 	
-	public Chip8(GameSettings settings, GraphicsContext graphicsContext) {
-		Injector injector = Guice.createInjector(new InterpreterModule());
-		injector.injectMembers(this);
-		
+	Chip8(GameSettings settings, GraphicsContext graphicsContext) {
+		Guice.createInjector(new InterpreterModule()).injectMembers(this);
 		this.settings = settings;
 		
 		gpu = createGPU(graphicsContext, drawFlag, clearFlag);
@@ -106,16 +104,16 @@ public final class Chip8 {
 		return dataRegisters;
 	}
 	
-	public Input<Integer, KeyCode> keyboard() {
+	Input<Integer, KeyCode> keyboard() {
 		return keyboard;
 	}
 	
-	public void resetGame() {
+	void resetGame() {
 		gpu.clearScreen();
 		startGame(settings.getGamePath());
 	}
 	
-	public void startGame(URI gamePath) {
+	private void startGame(URI gamePath) {
 		cpu.initialize(0x200, 0x0, 0x0, 0x0, 0x0, Chip8Util.fontset);
 		loadGame();
 		if (!settings.isRunning()) {
@@ -136,7 +134,7 @@ public final class Chip8 {
 		return Files.readAllBytes(Paths.get(gamePath));
 	}
 	
-	public void toggleMute(CheckMenuItem muteSound) {
+	void toggleMute(CheckMenuItem muteSound) {
 		if (muteSound.isSelected()) {
 			sound.mute();
 		} else {
@@ -144,7 +142,7 @@ public final class Chip8 {
 		}
 	}
 	
-	public void terminateApplication() {
+	void terminateApplication() {
 	    Platform.exit();
 	    System.exit(0);
 	}

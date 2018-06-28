@@ -209,7 +209,7 @@ public final class CPU {
 	
 	private int fetchNextInstruction() {
 		int instruction = primaryMemory.read(programCounter.read()) << 8 | primaryMemory.read(programCounter.read()+1);
-		instructionRegister.write(Integer.valueOf(instruction));
+		instructionRegister.write(instruction);
 		return instruction;
 	}
 	

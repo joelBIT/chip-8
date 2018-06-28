@@ -1,8 +1,8 @@
 package joelbits.emulator.utils;
 
-public class Chip8Util {
+public final class Chip8Util {
 	public final static int fontset[] =
-		{ 
+		{
 		  0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
 		  0x20, 0x60, 0x20, 0x20, 0x70, // 1
 		  0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
@@ -20,4 +20,8 @@ public class Chip8Util {
 		  0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
 		  0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 		};
+
+	public int convertToUnsignedInt(int value) {
+		return value < 0 ? value + 65536 : value;
+	}
 }

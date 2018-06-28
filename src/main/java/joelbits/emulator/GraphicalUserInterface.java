@@ -28,7 +28,6 @@ import joelbits.emulator.components.FileChooserComponent;
 import joelbits.emulator.components.TextInputDialogComponent;
 
 public class GraphicalUserInterface extends Application {
-	private GraphicsContext graphicsContext;
 	private Stage stage;
 	private FileChooserComponent fileChooser = createFileChooser();
 	private TextInputDialogComponent velocityDialog;
@@ -46,7 +45,7 @@ public class GraphicalUserInterface extends Application {
 		
 		InterpreterConfig config = new InterpreterConfig();
 		Canvas canvas = new Canvas(config.canvasWidth(), config.canvasHeight());
-		graphicsContext = canvas.getGraphicsContext2D();
+		GraphicsContext graphicsContext = canvas.getGraphicsContext2D();
 		graphicsContext.setFill(Color.WHITE);
 		
 		settings = new GameSettings();
