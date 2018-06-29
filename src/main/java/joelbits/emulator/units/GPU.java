@@ -3,6 +3,7 @@ package joelbits.emulator.units;
 import java.util.List;
 
 import javafx.scene.canvas.GraphicsContext;
+import joelbits.emulator.cache.EmulatorCache;
 import joelbits.emulator.cpu.registers.Register;
 import joelbits.emulator.flags.Flag;
 import joelbits.emulator.memory.Memory;
@@ -12,20 +13,19 @@ public class GPU {
 	private final Memory displayBuffer;
 	private final Memory dirtyBuffer;
 	private final Screen<Integer> screen;
-	private final GraphicsContext graphicsContext;
+	private final GraphicsContext graphicsContext = EmulatorCache.getInstance().getGraphicsContext();
 	private final Flag drawFlag;
 	private final Flag clearFlag;
 	
-	public GPU(Memory displayBuffer, Memory dirtyBuffer, Screen<Integer> screen, GraphicsContext graphicsContext, Flag drawFlag, Flag clearFlag) {
+	public GPU(Memory displayBuffer, Memory dirtyBuffer, Screen<Integer> screen, Flag drawFlag, Flag clearFlag) {
 		this.displayBuffer = displayBuffer;
 		this.dirtyBuffer = dirtyBuffer;
 		this.screen = screen;
-		this.graphicsContext = graphicsContext;
 		this.drawFlag = drawFlag;
 		this.clearFlag = clearFlag;
 	}
 	
-	public void drawScreen() {
+	void drawScreen() {
 		int dirtyBufferSize = dirtyBuffer.size();
 		int pixelSize = screen.pixelSize();
 		int screenWidth = screen.width();
@@ -71,7 +71,7 @@ public class GPU {
 		return (coordinateX % screen.width()) + ((coordinateY % screen.width()) * screen.width());
 	}
 	
-	public void clearScreen() {
+	void clearScreen() {
 		int displayBufferSize = displayBuffer.size();
 		int pixelSize = screen.pixelSize();
 		int screenWidth = screen.width();

@@ -29,8 +29,7 @@ public class GMU {
         Memory displayBuffer = BufferFactory.createDisplayBuffer(config.screenWidth(), config.screenHeight());
         Memory dirtyBuffer = BufferFactory.createDirtyBuffer();
         Screen<Integer> screen = new Screen<>(config.screenWidth(), config.screenHeight(), config.pixelSize());
-        gpu = new GPU(displayBuffer, dirtyBuffer, screen, EmulatorCache.getInstance()
-                .getGraphicsContext(), drawFlag, clearFlag);
+        gpu = new GPU(displayBuffer, dirtyBuffer, screen, drawFlag, clearFlag);
     }
 
     public GPU gpu() {

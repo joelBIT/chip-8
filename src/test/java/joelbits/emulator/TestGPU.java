@@ -9,8 +9,6 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 
-import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
 import joelbits.emulator.units.GPU;
 import joelbits.emulator.cpu.registers.DataRegister;
 import joelbits.emulator.cpu.registers.IndexRegister;
@@ -24,7 +22,6 @@ import joelbits.emulator.memory.RAM;
 import joelbits.emulator.output.Screen;
 
 public class TestGPU {
-	private GraphicsContext graphicsContext;
 	private GPU target;
 	private Memory primaryMemory;
 	private Memory displayBuffer;
@@ -34,7 +31,6 @@ public class TestGPU {
 	private Flag drawFlag;
 	private Flag clearFlag;
 	private Register<Integer> indexRegister;
-	private Canvas canvas;
 
 	private int[] dataRegisterValues = {43, 176, 40, 206, 33, 148, 33, 136, 77, 29, 48, 81, 30, 8, 1, 0};
 	private int SCREEN_WIDTH = 64;
@@ -44,23 +40,21 @@ public class TestGPU {
 	@Before
 	public void setUp() {
 		dataRegisters = new ArrayList<>();
-		populateRegisters(dataRegisters, dataRegisterValues);
+		populateRegisters(dataRegisterValues);
 		drawFlag = new DrawFlag();
 		clearFlag = new ClearFlag();
 		indexRegister = IndexRegister.getInstance();
-		screen = new Screen<Integer>(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SIZE);
+		screen = new Screen<>(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SIZE);
 		displayBuffer = BufferFactory.createDisplayBuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
 		dirtyBuffer = BufferFactory.createDirtyBuffer();
 		primaryMemory = new RAM();
-		canvas = new Canvas(SCREEN_WIDTH, SCREEN_HEIGHT);
-		graphicsContext = canvas.getGraphicsContext2D();
 		
-		target = new GPU(displayBuffer, dirtyBuffer, screen, graphicsContext, drawFlag, clearFlag);
+		target = new GPU(displayBuffer, dirtyBuffer, screen, drawFlag, clearFlag);
 	}
 	
-	private void populateRegisters(List<Register<Integer>> registers, int[] registerValues) {
+	private void populateRegisters(int[] registerValues) {
 		for (int i = 0; i < registerValues.length; i++) {
-			dataRegisters.add(i, new DataRegister<Integer>());
+			dataRegisters.add(i, new DataRegister<>());
 			dataRegisters.get(i).write(dataRegisterValues[i]);
 		}
 	}
@@ -112,9 +106,9 @@ public class TestGPU {
 	}
 	
 	private void assertDisplayBuffer(Memory displayBuffer, int[] addresses, int collisionAddress) {
-		for (int i = 0; i < addresses.length; i++) {
-			int value = addresses[i] != collisionAddress ? 1 : 0;
-			assertEquals(value, displayBuffer.read(addresses[i]));
+		for (int address : addresses) {
+			int value = address != collisionAddress ? 1 : 0;
+			assertEquals(value, displayBuffer.read(address));
 		}
 	}
 	

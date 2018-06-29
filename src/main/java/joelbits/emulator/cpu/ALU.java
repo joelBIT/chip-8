@@ -96,7 +96,7 @@ public class ALU {
 		programCounter.write((programCounter.read() + 2) & FIT_16BIT_REGISTER);
 	}
 
-	public int convertToUnsignedInt(int value) {
+	private int convertToUnsignedInt(int value) {
 		return value < 0 ? value + 65536 : value;
 	}
 }
