@@ -22,6 +22,7 @@ import joelbits.emulator.settings.GameSettings;
 import joelbits.emulator.timers.DelayTimer;
 import joelbits.emulator.timers.SoundTimer;
 import joelbits.emulator.timers.Timer;
+import joelbits.emulator.units.GMU;
 import joelbits.emulator.utils.Chip8Util;
 
 public final class InterpreterModule extends AbstractModule {
@@ -31,6 +32,7 @@ public final class InterpreterModule extends AbstractModule {
 		bind(GameSettings.class).asEagerSingleton();
 		bind(Audio.class).to(Sound.class).in(Scopes.SINGLETON);
 		bind(Memory.class).to(RAM.class);
+		bind(GMU.class).in(Scopes.SINGLETON);
         bind(Flag.class).annotatedWith(Names.named("clear")).to(ClearFlag.class).asEagerSingleton();
         bind(Flag.class).annotatedWith(Names.named("draw")).to(DrawFlag.class).asEagerSingleton();
 		bind(new TypeLiteral<Timer<Integer>>() {}).annotatedWith(Names.named("sound")).to(new TypeLiteral<SoundTimer<Integer>>() {});

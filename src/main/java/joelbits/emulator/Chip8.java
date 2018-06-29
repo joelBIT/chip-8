@@ -43,7 +43,6 @@ import joelbits.emulator.utils.RandomNumberGenerator;
 public final class Chip8 implements Emulator {
 	private static final Logger log = LoggerFactory.getLogger(Chip8.class);
 	private final CPU cpu;
-	private final GMU gmu;
 	
 	@Inject
 	private Input<Integer, KeyCode> keyboard;
@@ -59,11 +58,11 @@ public final class Chip8 implements Emulator {
     private InterpreterConfig config;
 	@Inject
     private GameSettings settings;
+	@Inject
+	private GMU gmu;
 	
-	public Chip8(GMU gmu) {
+	public Chip8() {
 		EmulatorCache.getInstance().getInjector().injectMembers(this);
-
-		this.gmu = gmu;
 		cpu = createCPU(gmu.gpu(), delayTimer, soundTimer);
 	}
 	

@@ -52,17 +52,10 @@ public class GraphicalUserInterface extends Application {
 
 	@Override
 	public void start(Stage stage) throws Exception {
-		Injector injector = Guice.createInjector(new InterpreterModule());
-		injector.injectMembers(this);
-		EmulatorCache.getInstance().setInjector(injector);
+		handleInjection();
 
 		this.stage = stage;
 		stage.setTitle("Chip-8 interpreter");
-
-		Canvas canvas = new Canvas(config.canvasWidth(), config.canvasHeight());
-		GraphicsContext graphicsContext = canvas.getGraphicsContext2D();
-		graphicsContext.setFill(Color.WHITE);
-		EmulatorCache.getInstance().setGraphicsContext(graphicsContext);
 
 		velocityDialog = componentCreator
                 .inputDialog("Change game velocity", "Game velocity", "Set game velocity (default 10):", String
@@ -80,11 +73,28 @@ public class GraphicalUserInterface extends Application {
 		scene.setOnKeyReleased(event -> keyboard.releasePressed());
 		
 		root.setTop(componentCreator.menuBar(createInterpreterMenu(), createOptionsMenu(), createGameMenu()));
-		root.setBottom(canvas);
+		root.setBottom(createCanvas());
 		
 		stage.show();
 	}
-	
+
+	private void handleInjection() {
+		Injector injector = Guice.createInjector(new InterpreterModule());
+		injector.injectMembers(this);
+		EmulatorCache.getInstance().setInjector(injector);
+	}
+
+	private Canvas createCanvas() {
+		Canvas canvas = new Canvas(config.canvasWidth(), config.canvasHeight());
+		configureGraphic(canvas.getGraphicsContext2D());
+		return canvas;
+	}
+
+	private void configureGraphic(GraphicsContext graphicsContext) {
+		graphicsContext.setFill(Color.WHITE);
+		EmulatorCache.getInstance().setGraphicsContext(graphicsContext);
+	}
+
 	private Menu createInterpreterMenu() {
 		MenuItem open = componentCreator
                 .menuItem("Open", new KeyCodeCombination(KeyCode.O, KeyCombination
