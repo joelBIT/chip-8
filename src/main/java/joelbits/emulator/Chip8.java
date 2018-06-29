@@ -10,16 +10,15 @@ import java.util.Stack;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import com.google.inject.*;
+import joelbits.emulator.cache.EmulatorCache;
 import joelbits.emulator.config.InterpreterConfig;
-import joelbits.emulator.modules.ModuleFactory;
 import joelbits.emulator.output.Audio;
 import joelbits.emulator.settings.GameSettings;
 import joelbits.emulator.units.GMU;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.inject.Guice;
-import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
 import javafx.scene.input.KeyCode;
@@ -62,9 +61,8 @@ public final class Chip8 implements Emulator {
     private GameSettings settings;
 	
 	public Chip8(GMU gmu) {
-		Guice.createInjector(ModuleFactory.interpreterModule(), ModuleFactory.soundModule(), ModuleFactory
-                .settingsModule(), ModuleFactory.keyboardModule())
-                .injectMembers(this);
+		EmulatorCache.getInstance().getInjector().injectMembers(this);
+
 		this.gmu = gmu;
 		cpu = createCPU(gmu.gpu(), delayTimer, soundTimer);
 	}

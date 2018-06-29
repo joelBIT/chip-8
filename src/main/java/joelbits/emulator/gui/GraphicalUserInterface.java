@@ -3,8 +3,7 @@ package joelbits.emulator.gui;
 import java.io.File;
 import java.util.Arrays;
 
-import com.google.inject.Guice;
-import com.google.inject.Inject;
+import com.google.inject.*;
 import javafx.application.Application;
 import javafx.event.Event;
 import javafx.scene.Scene;
@@ -26,7 +25,7 @@ import joelbits.emulator.gui.components.FileChooserComponent;
 import joelbits.emulator.gui.components.TextInputDialogComponent;
 import joelbits.emulator.config.InterpreterConfig;
 import joelbits.emulator.input.Input;
-import joelbits.emulator.modules.ModuleFactory;
+import joelbits.emulator.modules.InterpreterModule;
 import joelbits.emulator.output.Audio;
 import joelbits.emulator.settings.GameSettings;
 import joelbits.emulator.utils.Chip8Util;
@@ -53,16 +52,17 @@ public class GraphicalUserInterface extends Application {
 
 	@Override
 	public void start(Stage stage) throws Exception {
-        Guice.createInjector(ModuleFactory.componentModule(), ModuleFactory.soundModule(), ModuleFactory
-                .settingsModule(), ModuleFactory.keyboardModule())
-                .injectMembers(this);
+		Injector injector = Guice.createInjector(new InterpreterModule());
+		injector.injectMembers(this);
+		EmulatorCache.getInstance().setInjector(injector);
+
 		this.stage = stage;
 		stage.setTitle("Chip-8 interpreter");
 
 		Canvas canvas = new Canvas(config.canvasWidth(), config.canvasHeight());
 		GraphicsContext graphicsContext = canvas.getGraphicsContext2D();
 		graphicsContext.setFill(Color.WHITE);
-		EmulatorCache.setGraphicsContext(graphicsContext);
+		EmulatorCache.getInstance().setGraphicsContext(graphicsContext);
 
 		velocityDialog = componentCreator
                 .inputDialog("Change game velocity", "Game velocity", "Set game velocity (default 10):", String

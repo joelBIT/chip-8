@@ -1,14 +1,13 @@
 package joelbits.emulator.units;
 
-import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import javafx.scene.canvas.GraphicsContext;
+import joelbits.emulator.cache.EmulatorCache;
 import joelbits.emulator.config.InterpreterConfig;
 import joelbits.emulator.flags.Flag;
 import joelbits.emulator.memory.BufferFactory;
 import joelbits.emulator.memory.Memory;
-import joelbits.emulator.modules.ModuleFactory;
 import joelbits.emulator.output.Screen;
 
 /**
@@ -26,7 +25,7 @@ public class GMU {
     private InterpreterConfig config;
 
     public GMU(GraphicsContext graphicsContext) {
-        Guice.createInjector(ModuleFactory.gmuModule()).injectMembers(this);
+        EmulatorCache.getInstance().getInjector().injectMembers(this);
 
         Memory displayBuffer = BufferFactory.createDisplayBuffer(config.screenWidth(), config.screenHeight());
         Memory dirtyBuffer = BufferFactory.createDirtyBuffer();

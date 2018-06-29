@@ -23,10 +23,6 @@ public final class Chip8Util {
 		  0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 		};
 
-	public int convertToUnsignedInt(int value) {
-		return value < 0 ? value + 65536 : value;
-	}
-
 	public void terminateApplication() {
 		Platform.exit();
 		System.exit(0);

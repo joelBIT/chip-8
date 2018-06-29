@@ -1,12 +1,7 @@
 package joelbits.emulator.cpu;
 
-import com.google.inject.Guice;
 import joelbits.emulator.cpu.registers.Register;
-import joelbits.emulator.modules.ComponentModule;
-import joelbits.emulator.utils.Chip8Util;
 import joelbits.emulator.utils.RandomNumberGenerator;
-
-import javax.inject.Inject;
 
 public class ALU {
 	private final Register<Integer> programCounter;
@@ -14,14 +9,11 @@ public class ALU {
 	private final RandomNumberGenerator randomNumberGenerator;
 	private final int FIT_8BIT_REGISTER = 0xFF;
 	private final int FIT_16BIT_REGISTER = 0xFFFF;
-	@Inject
-	private Chip8Util chip8Util;
 	
 	public ALU(Register<Integer> programCounter, Register<Integer> dataRegisterVF, RandomNumberGenerator randomNumberGenerator) {
 		this.programCounter = programCounter;
 		this.dataRegisterVF = dataRegisterVF;
 		this.randomNumberGenerator = randomNumberGenerator;
-		Guice.createInjector(new ComponentModule()).injectMembers(this);
 	}
 	
 	public void load(Register<Integer> register, int value) {
@@ -49,13 +41,13 @@ public class ALU {
 	
 	public void subtractWithBorrow(Register<Integer> register, int value) {
 		dataRegisterVF.write(register.read() > value ? 1 : 0);
-		register.write(chip8Util.convertToUnsignedInt(register.read() - value) & FIT_8BIT_REGISTER);
+		register.write(convertToUnsignedInt(register.read() - value) & FIT_8BIT_REGISTER);
 		incrementProgramCounter(programCounter);
 	}
 	
 	public void subtractWithNegatedBorrow(Register<Integer> register, int value) {
 		dataRegisterVF.write(register.read() > value ? 0 : 1);
-		register.write(chip8Util.convertToUnsignedInt(value - register.read()) & FIT_8BIT_REGISTER);
+		register.write(convertToUnsignedInt(value - register.read()) & FIT_8BIT_REGISTER);
 		incrementProgramCounter(programCounter);
 	}
 	
@@ -102,5 +94,9 @@ public class ALU {
 	
 	private void incrementProgramCounter(Register<Integer> programCounter) {
 		programCounter.write((programCounter.read() + 2) & FIT_16BIT_REGISTER);
+	}
+
+	public int convertToUnsignedInt(int value) {
+		return value < 0 ? value + 65536 : value;
 	}
 }

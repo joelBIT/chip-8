@@ -10,11 +10,11 @@ import joelbits.emulator.units.GMU;
 public class ResetEvent implements EventHandler {
     @Override
     public void handle(Event event) {
-        if (EmulatorCache.hasEmulator()) {
-            EmulatorCache.getEmulator().reset();
-        } else if (EmulatorCache.hasGraphicsContext()) {
-            Emulator emulator = new Chip8(new GMU(EmulatorCache.getGraphicsContext()));
-            EmulatorCache.setEmulator(emulator);
+        if (EmulatorCache.getInstance().hasEmulator()) {
+            EmulatorCache.getInstance().getEmulator().reset();
+        } else if (EmulatorCache.getInstance().hasGraphicsContext()) {
+            Emulator emulator = new Chip8(new GMU(EmulatorCache.getInstance().getGraphicsContext()));
+            EmulatorCache.getInstance().setEmulator(emulator);
             emulator.reset();
         }
     }

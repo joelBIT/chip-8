@@ -1,6 +1,7 @@
 package joelbits.emulator;
 
 import static org.junit.Assert.*;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -33,7 +34,7 @@ public class TestALU {
 	public void loadValueIntoRegister() {
 		register.write(0x45);
 		target.load(register, 0xA);
-		
+
 		assertTrue(register.read().equals(0xA));
 		assertTrue(programCounter.read().equals(0x202));
 	}

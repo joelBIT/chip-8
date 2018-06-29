@@ -1,35 +1,51 @@
 package joelbits.emulator.cache;
 
+import com.google.inject.Injector;
 import javafx.scene.canvas.GraphicsContext;
 import joelbits.emulator.Emulator;
 
-public final class EmulatorCache {
-    private static GraphicsContext graphics;
-    private static Emulator emulator;
+public class EmulatorCache {
+    private GraphicsContext graphics;
+    private Emulator emulator;
+    private Injector injector;
+    private static EmulatorCache cache;
 
     private EmulatorCache() { }
 
-    public static void setEmulator(Emulator emul) {
-        emulator = emul;
+    public static EmulatorCache getInstance() {
+        if (cache == null) {
+            cache = new EmulatorCache();
+        }
+        return cache;
     }
 
-    public static Emulator getEmulator() {
+    public void setEmulator(Emulator emulator) {
+        this.emulator = emulator;
+    }
+
+    public Emulator getEmulator() {
         return emulator;
     }
 
-    public static void setGraphicsContext(GraphicsContext graphicsContext) {
+    public void setGraphicsContext(GraphicsContext graphicsContext) {
         graphics = graphicsContext;
     }
 
-    public static GraphicsContext getGraphicsContext() {
+    public GraphicsContext getGraphicsContext() {
         return graphics;
     }
 
-    public static boolean hasGraphicsContext() {
+    public Injector getInjector() { return injector; }
+
+    public void setInjector(Injector injector) {
+        this.injector = injector;
+    }
+
+    public boolean hasGraphicsContext() {
         return graphics != null;
     }
 
-    public static boolean hasEmulator() {
+    public boolean hasEmulator() {
         return emulator != null;
     }
 }
