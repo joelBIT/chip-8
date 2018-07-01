@@ -27,7 +27,6 @@ import joelbits.emulator.cpu.ALU;
 import joelbits.emulator.cpu.CPU;
 import joelbits.emulator.cpu.registers.DataRegister;
 import joelbits.emulator.cpu.registers.IndexRegister;
-import joelbits.emulator.cpu.registers.InstructionRegister;
 import joelbits.emulator.cpu.registers.ProgramCounter;
 import joelbits.emulator.cpu.registers.Register;
 import joelbits.emulator.input.Input;
@@ -71,10 +70,9 @@ public final class Chip8 implements Emulator {
 	private CPU createCPU() {
 		List<Register<Integer>> dataRegisters = initializeDataRegisters();
 		ALU alu = new ALU(ProgramCounter.getInstance(), dataRegisters.get(0xF), new RandomNumberGenerator());
-		
-		Register<Integer> instructionRegister = InstructionRegister.getInstance();
+
 		Register<Integer> indexRegister = IndexRegister.getInstance();
-		return new CPU(new Stack<>(), mmu, keyboard, dataRegisters, instructionRegister, indexRegister, delayTimer, soundTimer, alu, gmu);
+		return new CPU(new Stack<>(), mmu, keyboard, dataRegisters, indexRegister, delayTimer, soundTimer, alu, gmu);
 	}
 
 	private List<Register<Integer>> initializeDataRegisters() {
@@ -94,7 +92,7 @@ public final class Chip8 implements Emulator {
 
 	@Override
 	public void start() {
-		cpu.initialize(0x200, 0x0, 0x0, 0x0, 0x0, Chip8Util.fontset);
+		cpu.initialize(0x200,  0x0, 0x0, 0x0, Chip8Util.fontset);
 		loadGame();
 		if (!settings.isRunning()) {
 			Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new InstructionCycle(), 0, 17, TimeUnit.MILLISECONDS);

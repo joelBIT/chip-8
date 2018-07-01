@@ -25,7 +25,6 @@ import joelbits.emulator.cpu.ALU;
 import joelbits.emulator.cpu.CPU;
 import joelbits.emulator.cpu.registers.DataRegister;
 import joelbits.emulator.cpu.registers.IndexRegister;
-import joelbits.emulator.cpu.registers.InstructionRegister;
 import joelbits.emulator.cpu.registers.ProgramCounter;
 import joelbits.emulator.cpu.registers.Register;
 import joelbits.emulator.input.Keyboard;
@@ -44,7 +43,6 @@ public class TestCPU {
 	private Timer<Integer> delayTimer;
 	private Timer<Integer> soundTimer;
 	private Stack<Integer> stack;
-	private Register<Integer> instructionRegister;
 	private Register<Integer> indexRegister;
 	private MMU mmu;
 	private ALU alu;
@@ -54,7 +52,6 @@ public class TestCPU {
 	private int[] dataRegisterValues = {43, 176, 40, 206, 33, 148, 33, 136, 77, 29, 48, 81, 30, 8, 1, 0};
 	private int[] fontset = new int[80];
 	private int address = 0x200;
-	private int instruction = 0x0;
 	private int index = 0x250;
 	private int delayTime = 0x0;
 	private int soundTime = 0x0;
@@ -68,7 +65,6 @@ public class TestCPU {
 		}
 		delayTimer = new DelayTimer<>();
 		soundTimer = new SoundTimer<>();
-		instructionRegister = InstructionRegister.getInstance();
 		indexRegister = IndexRegister.getInstance();
 		stack = new Stack<>();
 		mmu = new MMU(new RAM());
@@ -76,8 +72,8 @@ public class TestCPU {
 		
 		initMocks(this);
 		
-		target = new CPU(stack, mmu, keyboard, dataRegisters, instructionRegister, indexRegister, delayTimer, soundTimer, alu, gmu);
-		target.initialize(address, instruction, index, delayTime, soundTime, fontset);
+		target = new CPU(stack, mmu, keyboard, dataRegisters, indexRegister, delayTimer, soundTimer, alu, gmu);
+		target.initialize(address, index, delayTime, soundTime, fontset);
 	}
 	
 	/**
@@ -101,7 +97,7 @@ public class TestCPU {
 	}
 	
 	private void writeToMemory(int location, int data) {
-		mmu.writeRAM(location, data);
+		mmu.writePrimaryMemory(location, data);
 	}
 	
 	/**
@@ -144,7 +140,7 @@ public class TestCPU {
 	@Test
 	public void pushProgramCounterValueOntoStack() {
 		executeOpCode(0x2567);
-		
+
 		assertTrue(stack.peek().equals(address));
 		assertEquals(alu.programCounter(), 0x567);
 	}
@@ -383,7 +379,7 @@ public class TestCPU {
 	public void drawSprite() {
 		executeOpCode(0xD475);
 		
-		verify(gmu, times(1)).drawSprite(eq(dataRegisters), eq(mmu.ram()), eq(indexRegister), eq(0xD475));
+		verify(gmu, times(1)).drawSprite(eq(dataRegisters), eq(mmu.primaryMemory()), eq(indexRegister), eq(0xD475));
 	}
 	
 	/**
@@ -488,7 +484,7 @@ public class TestCPU {
 	@Test
 	public void storeIndexRegisterPlusDataRegisterValueInIndexRegisterAndSetDataRegisterToOne() {
 		index = 0xFFF;
-		target.initialize(address, instruction, index, delayTime, soundTime, fontset);
+		target.initialize(address, index, delayTime, soundTime, fontset);
 		executeOpCode(0xFD1E);
 		
 		verify(alu, times(1)).addWithCarry(eq(indexRegister), eq(dataRegisters.get(0xD).read()), eq(index));
@@ -518,9 +514,9 @@ public class TestCPU {
 	public void storeBinaryCodedDecimalRepresentationOfDataRegisterValue() {
 		executeOpCode(0xF733);
 
-		assertEquals(1, mmu.readRAM(index));
-		assertEquals(3, mmu.readRAM(index+1));
-		assertEquals(6, mmu.readRAM(index+2));
+		assertEquals(1, mmu.readPrimaryMemory(index));
+		assertEquals(3, mmu.readPrimaryMemory(index+1));
+		assertEquals(6, mmu.readPrimaryMemory(index+2));
 	}
 	
 	/**
@@ -534,7 +530,7 @@ public class TestCPU {
 		executeOpCode(0xF755);
 
 		for (int i = 0; i < 8; i++) {
-			assertTrue(dataRegisters.get(i).read().equals(mmu.readRAM(index+i)));
+			assertTrue(dataRegisters.get(i).read().equals(mmu.readPrimaryMemory(index+i)));
 		}
 	}
 	
@@ -549,7 +545,7 @@ public class TestCPU {
 		executeOpCode(0xF465);
 		
 		for (int i = 0; i < 5; i++) {
-			assertEquals(mmu.readRAM(index+i), dataRegisters.get(i).read().intValue());
+			assertEquals(mmu.readPrimaryMemory(index+i), dataRegisters.get(i).read().intValue());
 		}
 	}
 }

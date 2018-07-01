@@ -12,21 +12,21 @@ public final class MMU {
         this.primaryMemory = primaryMemory;
     }
 
-    public void clearRAM() {
+    public void clearPrimaryMemory() {
         primaryMemory.clear();
     }
 
-    public void writeRAM(int[] data) {
+    public void writePrimaryMemory(int[] data) {
         for (int i = 0; i < data.length; i++) {
             primaryMemory.write(i, data[i]);
         }
     }
 
-    public void writeRAM(int location, int data) {
+    public void writePrimaryMemory(int location, int data) {
         primaryMemory.write(location, data);
     }
 
-    public int[] ram() {
+    public int[] primaryMemory() {
         int[] ram = new int[primaryMemory.size()];
         for (int i = 0; i < primaryMemory.size(); i++) {
             ram[i] = primaryMemory.read(i);
@@ -34,7 +34,7 @@ public final class MMU {
         return ram;
     }
 
-    public int readRAM(int location) {
+    public int readPrimaryMemory(int location) {
         return primaryMemory.read(location);
     }
 }

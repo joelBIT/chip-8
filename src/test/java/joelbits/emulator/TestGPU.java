@@ -80,7 +80,7 @@ public class TestGPU {
 		initializeSpriteDrawing();
 		int[] addresses = new int[]{0x221,0x222,0x223,0x224,0x264};
 		
-		target.drawSprite(dataRegisters, mmu.ram(), indexRegister, 0xD475);
+		target.drawSprite(dataRegisters, mmu.primaryMemory(), indexRegister, 0xD475);
 		
 		assertDirtyBuffer(dirtyBuffer, addresses);
 		assertDisplayBuffer(displayBuffer, addresses, -1);
@@ -96,7 +96,7 @@ public class TestGPU {
 	}
 	
 	private void writeToMemory(int location, int data) {
-		mmu.writeRAM(location, data);
+		mmu.writePrimaryMemory(location, data);
 	}
 	
 	private void assertDirtyBuffer(Memory dirtyBuffer, int[] addresses) {
@@ -121,7 +121,7 @@ public class TestGPU {
 		int COLLISION_ADDRESS = 0x223;
 		displayBuffer.write(COLLISION_ADDRESS, 0x1);
 		
-		target.drawSprite(dataRegisters, mmu.ram(), indexRegister, 0xD475);
+		target.drawSprite(dataRegisters, mmu.primaryMemory(), indexRegister, 0xD475);
 		
 		assertDirtyBuffer(dirtyBuffer, addresses);
 		assertDisplayBuffer(displayBuffer, addresses, COLLISION_ADDRESS);
