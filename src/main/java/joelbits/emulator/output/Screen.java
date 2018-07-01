@@ -25,4 +25,5 @@ public abstract class Screen<T> {
 
 	public abstract void fill(double x, double y);
 	public abstract void clear(double x, double y);
+	public abstract void clearAll(int bufferSize);
 }

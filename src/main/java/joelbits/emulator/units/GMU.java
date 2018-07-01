@@ -15,6 +15,8 @@ import joelbits.emulator.output.Screen;
  */
 public class GMU {
     private final GPU gpu;
+    private final Memory displayBuffer;
+    private final Screen<Integer> screen;
     @Inject
     @Named("clear")
     private Flag clearFlag;
@@ -27,9 +29,9 @@ public class GMU {
     public GMU() {
         EmulatorCache.getInstance().getInjector().injectMembers(this);
 
-        Memory displayBuffer = BufferFactory.createDisplayBuffer(config.screenWidth(), config.screenHeight());
+        displayBuffer = BufferFactory.createDisplayBuffer(config.screenWidth(), config.screenHeight());
         Memory dirtyBuffer = BufferFactory.createDirtyBuffer();
-        Screen<Integer> screen = new Chip8Screen(config.screenWidth(), config.screenHeight(), config.pixelSize());
+        screen = new Chip8Screen(config.screenWidth(), config.screenHeight(), config.pixelSize());
         gpu = new GPU(displayBuffer, dirtyBuffer, screen, drawFlag, clearFlag);
     }
 
@@ -38,7 +40,7 @@ public class GMU {
     }
 
     public void clearScreen() {
-        gpu.clearScreen();
+        screen.clearAll(displayBuffer.size());
     }
 
     public void drawScreen() {

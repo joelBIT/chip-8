@@ -66,17 +66,7 @@ public class GPU {
 	private int convertToIndex(int coordinateX, int coordinateY) {
 		return (coordinateX % screen.width()) + ((coordinateY % screen.width()) * screen.width());
 	}
-	
-	void clearScreen() {
-		int displayBufferSize = displayBuffer.size();
-		int screenWidth = screen.width();
-		for (int i = 0; i < displayBufferSize; i++) {
-			int coordinateX = i % screenWidth;
-			int coordinateY = i / screenWidth;
-			screen.clear(coordinateX, coordinateY);
-		}
-	}
-	
+
 	public void clearBuffers() {
 		dirtyBuffer.clear();
 		displayBuffer.clear();
