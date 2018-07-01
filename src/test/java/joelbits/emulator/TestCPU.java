@@ -15,6 +15,7 @@ import joelbits.emulator.input.Input;
 import joelbits.emulator.memory.RAM;
 import joelbits.emulator.units.GMU;
 import joelbits.emulator.units.MMU;
+import joelbits.emulator.utils.RandomNumberGenerator;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -31,12 +32,11 @@ import joelbits.emulator.input.Keyboard;
 import joelbits.emulator.timers.DelayTimer;
 import joelbits.emulator.timers.SoundTimer;
 import joelbits.emulator.timers.Timer;
+import org.mockito.Mockito;
 
 public class TestCPU {
 	@Mock
 	private GMU gmu;
-	@Mock
-	private ALU alu;
 
 	private final Input<Integer, KeyCode> keyboard = new Keyboard();
 	private CPU target;
@@ -45,9 +45,9 @@ public class TestCPU {
 	private Timer<Integer> soundTimer;
 	private Stack<Integer> stack;
 	private Register<Integer> instructionRegister;
-	private Register<Integer> programCounter;
 	private Register<Integer> indexRegister;
 	private MMU mmu;
+	private ALU alu;
 	
 	private final int FIT_8BIT_REGISTER = 0xFF;
 	private final int FIT_16BIT_REGISTER = 0xFFFF;
@@ -69,16 +69,15 @@ public class TestCPU {
 		delayTimer = new DelayTimer<>();
 		soundTimer = new SoundTimer<>();
 		instructionRegister = InstructionRegister.getInstance();
-		programCounter = ProgramCounter.getInstance();
 		indexRegister = IndexRegister.getInstance();
 		stack = new Stack<>();
 		mmu = new MMU(new RAM());
+		alu = Mockito.spy(new ALU(ProgramCounter.getInstance(), dataRegisters.get(0xF), new RandomNumberGenerator()));
 		
 		initMocks(this);
 		
-		target = new CPU(stack, mmu, keyboard, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, alu, gmu);
+		target = new CPU(stack, mmu, keyboard, dataRegisters, instructionRegister, indexRegister, delayTimer, soundTimer, alu, gmu);
 		target.initialize(address, instruction, index, delayTime, soundTime, fontset);
-		
 	}
 	
 	/**
@@ -121,7 +120,7 @@ public class TestCPU {
 		executeOpCode(0x00EE);
 		
 		assertTrue(stack.empty());
-		assertTrue(programCounter.read().equals(address+2));
+		assertEquals(alu.programCounter(), address+2);
 	}
 	
 	/**
@@ -133,7 +132,7 @@ public class TestCPU {
 	public void storeAddressInProgramCounter() {
 		executeOpCode(0x1AB5);
 		
-		assertTrue(programCounter.read().equals(0xAB5));
+		assertEquals(alu.programCounter(), 0xAB5);
 	}
 	
 	/**
@@ -147,7 +146,7 @@ public class TestCPU {
 		executeOpCode(0x2567);
 		
 		assertTrue(stack.peek().equals(address));
-		assertTrue(programCounter.read().equals(0x567));
+		assertEquals(alu.programCounter(), 0x567);
 	}
 	
 	/**
@@ -320,7 +319,7 @@ public class TestCPU {
 	public void leftShift() {
 		executeOpCode(0x835E);
 
-		verify(alu, times(1)).leftShiftWithCarry(eq(dataRegisters.get(0x3)));
+		verify(alu).leftShiftWithCarry(eq(dataRegisters.get(0x3)));
 	}
 	
 	/**
@@ -356,7 +355,7 @@ public class TestCPU {
 	public void setProgramCounterToAddressPlusDataRegisterValue() {
 		executeOpCode(0xB348);
 
-		assertTrue(programCounter.read().equals(0x348 + dataRegisters.get(0).read()));
+		assertEquals(alu.programCounter(), (0x348 + dataRegisters.get(0).read()));
 	}
 	
 	/**

@@ -18,81 +18,89 @@ public class ALU {
 	
 	public void load(Register<Integer> register, int value) {
 		register.write(value);
-		incrementProgramCounter(programCounter);
+		incrementProgramCounter();
 	}
 	
 	public void add(Register<Integer> register, int value) {
 		register.write((register.read() + value) & FIT_8BIT_REGISTER);
-		incrementProgramCounter(programCounter);
+		incrementProgramCounter();
 	}
 	
 	public void addWithRandom(Register<Integer> register, int value) {
 		randomNumberGenerator.generate(FIT_8BIT_REGISTER);
 		register.write(randomNumberGenerator.value() & value);
-		incrementProgramCounter(programCounter);
+		incrementProgramCounter();
 	}
 	
 	public void addWithCarry(Register<Integer> register, int value, int limit) {
 		int sum = (register.read() + value) & FIT_16BIT_REGISTER;
 		dataRegisterVF.write((sum > limit) ? 1 : 0);
 		register.write(limit == FIT_8BIT_REGISTER ? sum & FIT_8BIT_REGISTER : sum);
-		incrementProgramCounter(programCounter);
+		incrementProgramCounter();
 	}
 	
 	public void subtractWithBorrow(Register<Integer> register, int value) {
 		dataRegisterVF.write(register.read() > value ? 1 : 0);
 		register.write(convertToUnsignedInt(register.read() - value) & FIT_8BIT_REGISTER);
-		incrementProgramCounter(programCounter);
+		incrementProgramCounter();
 	}
 	
 	public void subtractWithNegatedBorrow(Register<Integer> register, int value) {
 		dataRegisterVF.write(register.read() > value ? 0 : 1);
 		register.write(convertToUnsignedInt(value - register.read()) & FIT_8BIT_REGISTER);
-		incrementProgramCounter(programCounter);
+		incrementProgramCounter();
 	}
 	
 	public void bitwiseOR(Register<Integer> register, int value) {
 		register.write((register.read() | value));
-		incrementProgramCounter(programCounter);
+		incrementProgramCounter();
 	}
 	
 	public void bitwiseAND(Register<Integer> register, int value) {
 		register.write((register.read() & value));
-		incrementProgramCounter(programCounter);
+		incrementProgramCounter();
 	}
 	
 	public void bitwiseXOR(Register<Integer> register, int value) {
 		register.write((register.read() ^ value));
-		incrementProgramCounter(programCounter);
+		incrementProgramCounter();
 	}
 	
 	public void leftShiftWithCarry(Register<Integer> register) {
 		dataRegisterVF.write((register.read() >> 7) & 0x1);
 		register.write((register.read() << 1) & FIT_8BIT_REGISTER);
-		incrementProgramCounter(programCounter);
+		incrementProgramCounter();
 	}
 	
 	public void rightShiftWithCarry(Register<Integer> register) {
 		dataRegisterVF.write(register.read() & 0x1);
 		register.write((register.read() >> 1));
-		incrementProgramCounter(programCounter);
+		incrementProgramCounter();
 	}
 	
 	public void skipNextIfEqual(Register<Integer> register, int value) {
 		if (register.read().equals(value)) {
-			incrementProgramCounter(programCounter);
+			incrementProgramCounter();
 		}
-		incrementProgramCounter(programCounter);
+		incrementProgramCounter();
 	}
 	
 	public void skipNextIfNotEqual(Register<Integer> register, int value) {
 		if (!register.read().equals(value)) {
-			incrementProgramCounter(programCounter);
+			incrementProgramCounter();
 		}
-		incrementProgramCounter(programCounter);
+		incrementProgramCounter();
 	}
-	
-	private void incrementProgramCounter(Register<Integer> programCounter) {
+
+	void setProgramCounter(int address) {
+		programCounter.write(address);
+	}
+
+	public int programCounter() {
+		return programCounter.read();
+	}
+
+	private void incrementProgramCounter() {
 		programCounter.write((programCounter.read() + 2) & FIT_16BIT_REGISTER);
 	}
 

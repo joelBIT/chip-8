@@ -10,8 +10,6 @@ import org.slf4j.LoggerFactory;
 
 import javafx.scene.input.KeyCode;
 import joelbits.emulator.cpu.instructions.Instructions;
-import joelbits.emulator.cpu.registers.InstructionRegister;
-import joelbits.emulator.cpu.registers.ProgramCounter;
 import joelbits.emulator.cpu.registers.Register;
 import joelbits.emulator.input.Input;
 import joelbits.emulator.timers.Timer;
@@ -26,8 +24,7 @@ public final class CPU {
 	private static final Logger log = LoggerFactory.getLogger(CPU.class);
 	private final Stack<Integer> stack;
 	private final List<Register<Integer>> dataRegisters;
-	private final Register<Integer> instructionRegister = InstructionRegister.getInstance();
-	private final Register<Integer> programCounter = ProgramCounter.getInstance();
+	private final Register<Integer> instructionRegister;
 	private final Register<Integer> indexRegister;
 	private final ALU alu;
 	private final GMU gmu;
@@ -43,11 +40,12 @@ public final class CPU {
 	private int address;
 	private int lowestByte;
 	
-	public CPU(Stack<Integer> stack, MMU mmu, Input<Integer, KeyCode> keyboard, List<Register<Integer>> dataRegisters, Register<Integer> instructionRegister, Register<Integer> programCounter, Register<Integer> indexRegister, Timer<Integer> delayTimer, Timer<Integer> soundTimer, ALU alu, GMU gmu) {
+	public CPU(Stack<Integer> stack, MMU mmu, Input<Integer, KeyCode> keyboard, List<Register<Integer>> dataRegisters, Register<Integer> instructionRegister, Register<Integer> indexRegister, Timer<Integer> delayTimer, Timer<Integer> soundTimer, ALU alu, GMU gmu) {
 		this.stack = stack;
 		this.mmu = mmu;
 		this.keyboard = keyboard;
 		this.dataRegisters = dataRegisters;
+		this.instructionRegister = instructionRegister;
 		this.indexRegister = indexRegister;
 		this.delayTimer = delayTimer;
 		this.soundTimer = soundTimer;
@@ -56,7 +54,7 @@ public final class CPU {
 	}
 
 	public void initialize(int address, int instruction, int index, int delayTime, int soundTime, int[] data) {
-		programCounter.write(address);
+		alu.setProgramCounter(address);
 		delayTimer.setValue(delayTime);
 		soundTimer.setValue(soundTime);
 		indexRegister.write(index);
@@ -87,17 +85,17 @@ public final class CPU {
 		switch(Instructions.getInstruction(String.format("%04X", instruction & FIT_16BIT_REGISTER).toUpperCase())) {
 			case CLEAR_THE_DISPLAY:
 				gmu.clearBuffers();
-				programCounter.write(programCounter.read() + 2);
+				alu.setProgramCounter(alu.programCounter() + 2);
 				break;
 			case RETURN_FROM_SUBROUTINE:
-				programCounter.write(stack.pop() + 2);
+				alu.setProgramCounter(stack.pop() + 2);
 				break;
 			case JUMP_TO_LOCATION:
-				programCounter.write(address);
+				alu.setProgramCounter(address);
 				break;
 			case CALL_SUBROUTINE:
-				stack.push(programCounter.read());
-				programCounter.write(address);
+				stack.push(alu.programCounter());
+				alu.setProgramCounter(address);
 				break;
 			case SKIP_NEXT_INSTRUCTION_IF_VALUES_EQUAL:
 				alu.skipNextIfEqual(dataRegisters.get(registerLocationX), lowestByte);
@@ -148,14 +146,14 @@ public final class CPU {
 				alu.load(indexRegister, address);
 				break;
 			case JUMP_TO_LOCATION_WITH_OFFSET:
-				programCounter.write(dataRegisters.get(0x0).read() + address);
+				alu.setProgramCounter(dataRegisters.get(0x0).read() + address);
 				break;
 			case SET_RANDOM_BYTE_IN_REGISTER:
 				alu.addWithRandom(dataRegisters.get(registerLocationX), lowestByte);
 				break;
 			case DRAW_SPRITE:
 				gmu.drawSprite(dataRegisters, mmu.ram(), indexRegister, instruction);
-				programCounter.write(programCounter.read() + 2);
+				alu.setProgramCounter(alu.programCounter() + 2);
 				break;
 			case SKIP_NEXT_IF_KEY_PRESSED:
 				alu.skipNextIfEqual(dataRegisters.get(registerLocationX), keyboard.currentlyPressed());
@@ -174,12 +172,12 @@ public final class CPU {
 				break;
 			case SET_DELAY_TIMER:
 				delayTimer.setValue(dataRegisters.get(registerLocationX).read());
-				programCounter.write(programCounter.read() + 2);
+				alu.setProgramCounter(alu.programCounter() + 2);
 				break;
 			case SET_SOUND_TIMER:
 				int value = dataRegisters.get(registerLocationX).read();
 				soundTimer.setValue(value == 1 ? 2 : value);
-				programCounter.write(programCounter.read() + 2);
+				alu.setProgramCounter(alu.programCounter() + 2);
 				break;
 			case ADD_DATA_REGISTER_AND_INDEX_REGISTER:
 				alu.addWithCarry(indexRegister, dataRegisters.get(registerLocationX).read(), 0xFFF);
@@ -189,24 +187,24 @@ public final class CPU {
 				break;
 			case STORE_BCD_REPRESENTATION_IN_MEMORY:
 				writeBcdRepresentationToMemory(registerLocationX);
-			 	programCounter.write(programCounter.read() + 2);
+			 	alu.setProgramCounter(alu.programCounter() + 2);
 			 	break;
 			case STORE_DATA_REGISTERS_IN_MEMORY:
 				writeDataRegistersToMemory(registerLocationX);
-				programCounter.write(programCounter.read() + 2);
+				alu.setProgramCounter(alu.programCounter() + 2);
 				break;
 			case LOAD_FROM_MEMORY_TO_DATA_REGISTERS:
 				writeMemoryToDataRegisters(registerLocationX);
-				programCounter.write(programCounter.read() + 2);
+				alu.setProgramCounter(alu.programCounter() + 2);
 				break;
 			default:
-				log.warn("Unknown instruction " + Integer.toHexString(instruction & FIT_16BIT_REGISTER) + " at location " + programCounter.read());
+				log.warn("Unknown instruction " + Integer.toHexString(instruction & FIT_16BIT_REGISTER) + " at location " + alu.programCounter());
 				break;
 		}
 	}
 	
 	private int fetchNextInstruction() {
-		int instruction = mmu.readRAM(programCounter.read()) << 8 | mmu.readRAM(programCounter.read()+1);
+		int instruction = mmu.readRAM(alu.programCounter()) << 8 | mmu.readRAM(alu.programCounter()+1);
 		instructionRegister.write(instruction);
 		return instruction;
 	}

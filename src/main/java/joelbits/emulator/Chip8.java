@@ -70,12 +70,11 @@ public final class Chip8 implements Emulator {
 	
 	private CPU createCPU() {
 		List<Register<Integer>> dataRegisters = initializeDataRegisters();
-		Register<Integer> programCounter = ProgramCounter.getInstance();
-		ALU alu = new ALU(programCounter, dataRegisters.get(0xF), new RandomNumberGenerator());
+		ALU alu = new ALU(ProgramCounter.getInstance(), dataRegisters.get(0xF), new RandomNumberGenerator());
 		
 		Register<Integer> instructionRegister = InstructionRegister.getInstance();
 		Register<Integer> indexRegister = IndexRegister.getInstance();
-		return new CPU(new Stack<>(), mmu, keyboard, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, alu, gmu);
+		return new CPU(new Stack<>(), mmu, keyboard, dataRegisters, instructionRegister, indexRegister, delayTimer, soundTimer, alu, gmu);
 	}
 
 	private List<Register<Integer>> initializeDataRegisters() {
