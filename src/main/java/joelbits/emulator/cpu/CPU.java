@@ -87,7 +87,7 @@ public final class CPU {
 		int instruction = fetchNextInstruction();
 		extractInstructionInformation(instruction);
 		
-		switch(Instructions.getInstruction(String.format("%04X", instruction & 0xFFFF).toUpperCase())) {
+		switch(Instructions.getInstruction(String.format("%04X", instruction & FIT_16BIT_REGISTER).toUpperCase())) {
 			case CLEAR_THE_DISPLAY:
 				gpu.clearBuffers();
 				programCounter.write(programCounter.read() + 2);

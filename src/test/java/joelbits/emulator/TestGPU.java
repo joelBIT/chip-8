@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.List;
 
+import joelbits.emulator.output.Chip8Screen;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -44,7 +45,7 @@ public class TestGPU {
 		drawFlag = new DrawFlag();
 		clearFlag = new ClearFlag();
 		indexRegister = IndexRegister.getInstance();
-		screen = new Screen<>(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SIZE);
+		screen = new Chip8Screen(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SIZE);
 		displayBuffer = BufferFactory.createDisplayBuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
 		dirtyBuffer = BufferFactory.createDirtyBuffer();
 		primaryMemory = new RAM();

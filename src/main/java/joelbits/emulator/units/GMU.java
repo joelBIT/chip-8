@@ -7,6 +7,7 @@ import joelbits.emulator.config.InterpreterConfig;
 import joelbits.emulator.flags.Flag;
 import joelbits.emulator.memory.BufferFactory;
 import joelbits.emulator.memory.Memory;
+import joelbits.emulator.output.Chip8Screen;
 import joelbits.emulator.output.Screen;
 
 /**
@@ -28,7 +29,7 @@ public class GMU {
 
         Memory displayBuffer = BufferFactory.createDisplayBuffer(config.screenWidth(), config.screenHeight());
         Memory dirtyBuffer = BufferFactory.createDirtyBuffer();
-        Screen<Integer> screen = new Screen<>(config.screenWidth(), config.screenHeight(), config.pixelSize());
+        Screen<Integer> screen = new Chip8Screen(config.screenWidth(), config.screenHeight(), config.pixelSize());
         gpu = new GPU(displayBuffer, dirtyBuffer, screen, drawFlag, clearFlag);
     }
 

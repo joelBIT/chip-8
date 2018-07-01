@@ -2,8 +2,6 @@ package joelbits.emulator.units;
 
 import java.util.List;
 
-import javafx.scene.canvas.GraphicsContext;
-import joelbits.emulator.cache.EmulatorCache;
 import joelbits.emulator.cpu.registers.Register;
 import joelbits.emulator.flags.Flag;
 import joelbits.emulator.memory.Memory;
@@ -12,31 +10,29 @@ import joelbits.emulator.output.Screen;
 public class GPU {
 	private final Memory displayBuffer;
 	private final Memory dirtyBuffer;
-	private final Screen<Integer> screen;
-	private final GraphicsContext graphicsContext = EmulatorCache.getInstance().getGraphicsContext();
 	private final Flag drawFlag;
 	private final Flag clearFlag;
+	private final Screen<Integer> screen;
 	
 	public GPU(Memory displayBuffer, Memory dirtyBuffer, Screen<Integer> screen, Flag drawFlag, Flag clearFlag) {
 		this.displayBuffer = displayBuffer;
 		this.dirtyBuffer = dirtyBuffer;
-		this.screen = screen;
 		this.drawFlag = drawFlag;
 		this.clearFlag = clearFlag;
+		this.screen = screen;
 	}
 	
 	void drawScreen() {
 		int dirtyBufferSize = dirtyBuffer.size();
-		int pixelSize = screen.pixelSize();
 		int screenWidth = screen.width();
 		for (int i = 0; i < dirtyBufferSize; i++) {
 			int dirtyLocation = dirtyBuffer.read(i);
 			int coordinateX = dirtyLocation % screenWidth;
 			int coordinateY = dirtyLocation / screenWidth;
 			if (displayBuffer.read(dirtyLocation) != 0) {
-				graphicsContext.fillRect(coordinateX*pixelSize, coordinateY*pixelSize, pixelSize, pixelSize);
+				screen.fill(coordinateX, coordinateY);
 			} else {
-				graphicsContext.clearRect(coordinateX*pixelSize, coordinateY*pixelSize, pixelSize, pixelSize);
+				screen.clear(coordinateX, coordinateY);
 			}
 		}
 	}
@@ -73,12 +69,11 @@ public class GPU {
 	
 	void clearScreen() {
 		int displayBufferSize = displayBuffer.size();
-		int pixelSize = screen.pixelSize();
 		int screenWidth = screen.width();
 		for (int i = 0; i < displayBufferSize; i++) {
 			int coordinateX = i % screenWidth;
 			int coordinateY = i / screenWidth;
-			graphicsContext.clearRect(coordinateX*pixelSize, coordinateY*pixelSize, pixelSize, pixelSize);
+			screen.clear(coordinateX, coordinateY);
 		}
 	}
 	

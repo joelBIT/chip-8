@@ -1,6 +1,6 @@
 package joelbits.emulator.output;
 
-public class Screen<T> {
+public abstract class Screen<T> {
 	private final T width;
 	private final T height;
 	private final T pixelSize;
@@ -22,4 +22,7 @@ public class Screen<T> {
 	public T pixelSize() {
 		return pixelSize;
 	}
+
+	public abstract void fill(double x, double y);
+	public abstract void clear(double x, double y);
 }
