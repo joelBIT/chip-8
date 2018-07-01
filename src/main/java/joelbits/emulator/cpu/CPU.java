@@ -3,7 +3,7 @@ package joelbits.emulator.cpu;
 import java.util.List;
 import java.util.Stack;
 
-import joelbits.emulator.units.GPU;
+import joelbits.emulator.units.GMU;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +31,7 @@ public final class CPU {
 	private final Register<Integer> programCounter = ProgramCounter.getInstance();
 	private final Register<Integer> indexRegister;
 	private final ALU alu;
-	private final GPU gpu;
+	private final GMU gmu;
 	private final Timer<Integer> delayTimer;
 	private final Timer<Integer> soundTimer;
 	private final Input<Integer, KeyCode> keyboard;
@@ -43,7 +43,7 @@ public final class CPU {
 	private int address;
 	private int lowestByte;
 	
-	public CPU(Stack<Integer> stack, Memory primaryMemory, Input<Integer, KeyCode> keyboard, List<Register<Integer>> dataRegisters, Register<Integer> instructionRegister, Register<Integer> programCounter, Register<Integer> indexRegister, Timer<Integer> delayTimer, Timer<Integer> soundTimer, ALU alu, GPU gpu) {
+	public CPU(Stack<Integer> stack, Memory primaryMemory, Input<Integer, KeyCode> keyboard, List<Register<Integer>> dataRegisters, Register<Integer> instructionRegister, Register<Integer> programCounter, Register<Integer> indexRegister, Timer<Integer> delayTimer, Timer<Integer> soundTimer, ALU alu, GMU gmu) {
 		this.stack = stack;
 		this.primaryMemory = primaryMemory;
 		this.keyboard = keyboard;
@@ -52,7 +52,7 @@ public final class CPU {
 		this.delayTimer = delayTimer;
 		this.soundTimer = soundTimer;
 		this.alu = alu;
-		this.gpu = gpu;
+		this.gmu = gmu;
 	}
 
 	public void initialize(int address, int instruction, int index, int delayTime, int soundTime, int[] data) {
@@ -62,7 +62,7 @@ public final class CPU {
 		indexRegister.write(index);
 		instructionRegister.write(instruction);
 		
-		gpu.clearBuffers();
+		gmu.clearBuffers();
 		primaryMemory.clear();
 		
 		for (int i = 0; i < data.length; i++) {
@@ -89,7 +89,7 @@ public final class CPU {
 		
 		switch(Instructions.getInstruction(String.format("%04X", instruction & FIT_16BIT_REGISTER).toUpperCase())) {
 			case CLEAR_THE_DISPLAY:
-				gpu.clearBuffers();
+				gmu.clearBuffers();
 				programCounter.write(programCounter.read() + 2);
 				break;
 			case RETURN_FROM_SUBROUTINE:
@@ -157,7 +157,7 @@ public final class CPU {
 				alu.addWithRandom(dataRegisters.get(registerLocationX), lowestByte);
 				break;
 			case DRAW_SPRITE:
-				gpu.drawSprite(dataRegisters, primaryMemory, indexRegister, instruction);
+				gmu.drawSprite(dataRegisters, primaryMemory, indexRegister, instruction);
 				programCounter.write(programCounter.read() + 2);
 				break;
 			case SKIP_NEXT_IF_KEY_PRESSED:

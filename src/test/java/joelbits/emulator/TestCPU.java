@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Stack;
 
 import joelbits.emulator.input.Input;
+import joelbits.emulator.units.GMU;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -19,7 +20,6 @@ import org.mockito.Mock;
 import javafx.scene.input.KeyCode;
 import joelbits.emulator.cpu.ALU;
 import joelbits.emulator.cpu.CPU;
-import joelbits.emulator.units.GPU;
 import joelbits.emulator.cpu.registers.DataRegister;
 import joelbits.emulator.cpu.registers.IndexRegister;
 import joelbits.emulator.cpu.registers.InstructionRegister;
@@ -34,7 +34,7 @@ import joelbits.emulator.timers.Timer;
 
 public class TestCPU {
 	@Mock
-	private GPU gpu;
+	private GMU gmu;
 	@Mock
 	private ALU alu;
 
@@ -76,7 +76,7 @@ public class TestCPU {
 		
 		initMocks(this);
 		
-		target = new CPU(stack, primaryMemory, keyboard, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, alu, gpu);
+		target = new CPU(stack, primaryMemory, keyboard, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, alu, gmu);
 		target.initialize(address, instruction, index, delayTime, soundTime, fontset);
 		
 	}
@@ -88,10 +88,10 @@ public class TestCPU {
 	 */
 	@Test
 	public void clearBuffers() {
-		reset(gpu);
+		reset(gmu);
 		executeOpCode(0x00E0);
 
-		verify(gpu, times(1)).clearBuffers();
+		verify(gmu, times(1)).clearBuffers();
 	}
 	
 	private void executeOpCode(int opcode) {
@@ -384,7 +384,7 @@ public class TestCPU {
 	public void drawSprite() {
 		executeOpCode(0xD475);
 		
-		verify(gpu, times(1)).drawSprite(eq(dataRegisters), eq(primaryMemory), eq(indexRegister), eq(0xD475));
+		verify(gmu, times(1)).drawSprite(eq(dataRegisters), eq(primaryMemory), eq(indexRegister), eq(0xD475));
 	}
 	
 	/**

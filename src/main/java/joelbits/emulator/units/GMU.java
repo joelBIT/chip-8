@@ -4,11 +4,14 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import joelbits.emulator.cache.EmulatorCache;
 import joelbits.emulator.config.InterpreterConfig;
+import joelbits.emulator.cpu.registers.Register;
 import joelbits.emulator.flags.Flag;
 import joelbits.emulator.memory.BufferFactory;
 import joelbits.emulator.memory.Memory;
 import joelbits.emulator.output.Chip8Screen;
 import joelbits.emulator.output.Screen;
+
+import java.util.List;
 
 /**
  * Graphics Management Unit. Handles tasks related to graphics.
@@ -30,17 +33,20 @@ public class GMU {
         EmulatorCache.getInstance().getInjector().injectMembers(this);
 
         displayBuffer = BufferFactory.createDisplayBuffer(config.screenWidth(), config.screenHeight());
-        Memory dirtyBuffer = BufferFactory.createDirtyBuffer();
         screen = new Chip8Screen(config.screenWidth(), config.screenHeight(), config.pixelSize());
-        gpu = new GPU(displayBuffer, dirtyBuffer, screen, drawFlag, clearFlag);
-    }
-
-    public GPU gpu() {
-        return gpu;
+        gpu = new GPU(displayBuffer, BufferFactory.createDirtyBuffer(), screen, drawFlag, clearFlag);
     }
 
     public void clearScreen() {
         screen.clearAll(displayBuffer.size());
+    }
+
+    public void clearBuffers() {
+        gpu.clearBuffers();
+    }
+
+    public void drawSprite(List<Register<Integer>> dataRegisters, Memory primaryMemory, Register<Integer> indexRegister, int instruction) {
+        gpu.drawSprite(dataRegisters, primaryMemory, indexRegister, instruction);
     }
 
     public void drawScreen() {

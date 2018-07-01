@@ -21,22 +21,37 @@ public class GPU {
 		this.clearFlag = clearFlag;
 		this.screen = screen;
 	}
-	
+
+	/**
+	 * Updates all affected sprites on the screen. To avoid redrawing sprites that are in the same state as
+	 * before, only dirty sprites are updated. The dirty buffer contains information about which sprites has
+	 * had their state changed and thus should be redrawn.
+	 */
 	void drawScreen() {
-		int dirtyBufferSize = dirtyBuffer.size();
-		int screenWidth = screen.width();
-		for (int i = 0; i < dirtyBufferSize; i++) {
+		for (int i = 0; i < dirtyBuffer.size(); i++) {
 			int dirtyLocation = dirtyBuffer.read(i);
-			int coordinateX = dirtyLocation % screenWidth;
-			int coordinateY = dirtyLocation / screenWidth;
-			if (displayBuffer.read(dirtyLocation) != 0) {
-				screen.fill(coordinateX, coordinateY);
-			} else {
-				screen.clear(coordinateX, coordinateY);
-			}
+			int x = dirtyLocation % screen.width();
+			int y = dirtyLocation / screen.width();
+			updateSprite(displayBuffer.read(dirtyLocation), x, y);
 		}
 	}
-	
+
+	/**
+	 * Updates sprite on the screen. If value is 0 then clear sprite, otherwise
+	 * draw sprite on supplied coordinates.
+	 *
+	 * @param value		value from dirty buffer
+	 * @param x			x coordinate of sprite
+	 * @param y			y coordinate of sprite
+	 */
+	private void updateSprite(int value, int x, int y) {
+		if (value != 0) {
+			screen.fill(x, y);
+		} else {
+			screen.clear(x, y);
+		}
+	}
+
 	public void drawSprite(List<Register<Integer>> dataRegisters, Memory primaryMemory, Register<Integer> indexRegister, int instruction) {
 		int nibble = instruction & 0x000F;
 		int registerLocationX = (instruction & 0x0F00) >> 8;
@@ -49,22 +64,34 @@ public class GPU {
 			for (int column = 0; column < 8; column++) {
 				if ((memoryByte & (0x80 >> column)) != 0) {
 					int coordinateX = dataRegisters.get(registerLocationX).read() + column;
-					int data = displayBuffer.read(convertToIndex(coordinateX, coordinateY));
-					if (data != 0) {
-						dataRegisters.get(0xF).write(1);
-					}
-					displayBuffer.write(convertToIndex(coordinateX, coordinateY), data^1);
-					dirtyBuffer.write(convertToIndex(coordinateX, coordinateY), data^1);
+					updateBuffers(dataRegisters, coordinateX, coordinateY);
 				}
 			}
 		}
+		activateDrawFlag();
+	}
+
+	private void updateBuffers(List<Register<Integer>> dataRegisters, int coordinateX, int coordinateY) {
+		int data = displayBuffer.read(convertToIndex(coordinateX, coordinateY));
+		if (data != 0) {
+			dataRegisters.get(0xF).write(1);
+		}
+		displayBuffer.write(convertToIndex(coordinateX, coordinateY), data^1);
+		dirtyBuffer.write(convertToIndex(coordinateX, coordinateY), data^1);
+	}
+
+	private int convertToIndex(int coordinateX, int coordinateY) {
+		return (coordinateX % screen.width()) + ((coordinateY % screen.width()) * screen.width());
+	}
+
+	/**
+	 * Activate draw flag to notify Chip8 that the sprite should be drawn on next occurrence
+	 * of the draw instruction.
+	 */
+	private void activateDrawFlag() {
 		if (!drawFlag.isActive()) {
 			drawFlag.toggle();
 		}
-	}
-	
-	private int convertToIndex(int coordinateX, int coordinateY) {
-		return (coordinateX % screen.width()) + ((coordinateY % screen.width()) * screen.width());
 	}
 
 	public void clearBuffers() {

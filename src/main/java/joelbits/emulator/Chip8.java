@@ -63,23 +63,23 @@ public final class Chip8 implements Emulator {
 	
 	public Chip8() {
 		EmulatorCache.getInstance().getInjector().injectMembers(this);
-		cpu = createCPU(gmu.gpu(), delayTimer, soundTimer);
+		cpu = createCPU(gmu, delayTimer, soundTimer);
 	}
 	
-	private CPU createCPU(GPU gpu, Timer<Integer> delayTimer, Timer<Integer> soundTimer) {
+	private CPU createCPU(GMU gmu, Timer<Integer> delayTimer, Timer<Integer> soundTimer) {
 		List<Register<Integer>> dataRegisters = initializeDataRegisters();
 		Register<Integer> programCounter = ProgramCounter.getInstance();
 		ALU alu = new ALU(programCounter, dataRegisters.get(0xF), new RandomNumberGenerator());
 		
 		Register<Integer> instructionRegister = InstructionRegister.getInstance();
 		Register<Integer> indexRegister = IndexRegister.getInstance();
-		return new CPU(new Stack<Integer>(), new RAM(), keyboard, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, alu, gpu);
+		return new CPU(new Stack<>(), new RAM(), keyboard, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, alu, gmu);
 	}
 
 	private List<Register<Integer>> initializeDataRegisters() {
 		List<Register<Integer>> dataRegisters = new ArrayList<>();
 		for (int i = 0; i <= 0xF; i++) {
-			dataRegisters.add(i, new DataRegister<Integer>());
+			dataRegisters.add(i, new DataRegister<>());
 			dataRegisters.get(i).write(0);
 		}
 		return dataRegisters;
