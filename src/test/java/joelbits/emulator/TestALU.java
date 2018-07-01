@@ -22,8 +22,8 @@ public class TestALU {
 	@Before
 	public void setUp() {
 		programCounter = ProgramCounter.getInstance();
-		dataRegisterVF = new DataRegister<Integer>();
-		register = new DataRegister<Integer>();
+		dataRegisterVF = new DataRegister<>();
+		register = new DataRegister<>();
 		randomNumberGenerator = new RandomNumberGenerator();
 		programCounter.write(0x200);
 

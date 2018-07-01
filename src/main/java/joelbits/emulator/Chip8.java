@@ -16,6 +16,7 @@ import joelbits.emulator.config.InterpreterConfig;
 import joelbits.emulator.output.Audio;
 import joelbits.emulator.settings.GameSettings;
 import joelbits.emulator.units.GMU;
+import joelbits.emulator.units.MMU;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +25,6 @@ import com.google.inject.name.Named;
 import javafx.scene.input.KeyCode;
 import joelbits.emulator.cpu.ALU;
 import joelbits.emulator.cpu.CPU;
-import joelbits.emulator.units.GPU;
 import joelbits.emulator.cpu.registers.DataRegister;
 import joelbits.emulator.cpu.registers.IndexRegister;
 import joelbits.emulator.cpu.registers.InstructionRegister;
@@ -43,6 +43,7 @@ import joelbits.emulator.utils.RandomNumberGenerator;
 public final class Chip8 implements Emulator {
 	private static final Logger log = LoggerFactory.getLogger(Chip8.class);
 	private final CPU cpu;
+	private final MMU mmu;
 	
 	@Inject
 	private Input<Integer, KeyCode> keyboard;
@@ -63,17 +64,18 @@ public final class Chip8 implements Emulator {
 	
 	public Chip8() {
 		EmulatorCache.getInstance().getInjector().injectMembers(this);
-		cpu = createCPU(gmu, delayTimer, soundTimer);
+		mmu = new MMU(new RAM());
+		cpu = createCPU();
 	}
 	
-	private CPU createCPU(GMU gmu, Timer<Integer> delayTimer, Timer<Integer> soundTimer) {
+	private CPU createCPU() {
 		List<Register<Integer>> dataRegisters = initializeDataRegisters();
 		Register<Integer> programCounter = ProgramCounter.getInstance();
 		ALU alu = new ALU(programCounter, dataRegisters.get(0xF), new RandomNumberGenerator());
 		
 		Register<Integer> instructionRegister = InstructionRegister.getInstance();
 		Register<Integer> indexRegister = IndexRegister.getInstance();
-		return new CPU(new Stack<>(), new RAM(), keyboard, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, alu, gmu);
+		return new CPU(new Stack<>(), mmu, keyboard, dataRegisters, instructionRegister, programCounter, indexRegister, delayTimer, soundTimer, alu, gmu);
 	}
 
 	private List<Register<Integer>> initializeDataRegisters() {

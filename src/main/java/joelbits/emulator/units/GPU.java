@@ -52,14 +52,14 @@ public class GPU {
 		}
 	}
 
-	public void drawSprite(List<Register<Integer>> dataRegisters, Memory primaryMemory, Register<Integer> indexRegister, int instruction) {
+	public void drawSprite(List<Register<Integer>> dataRegisters, int[] primaryMemory, Register<Integer> indexRegister, int instruction) {
 		int nibble = instruction & 0x000F;
 		int registerLocationX = (instruction & 0x0F00) >> 8;
 		int registerLocationY = (instruction & 0x00F0) >> 4;
 		
 		dataRegisters.get(0xF).write(0);
 		for (int row = 0; row < nibble; row++) {
-			int memoryByte = primaryMemory.read(indexRegister.read() + row);
+			int memoryByte = primaryMemory[indexRegister.read() + row];
 			int coordinateY = dataRegisters.get(registerLocationY).read() + row;
 			for (int column = 0; column < 8; column++) {
 				if ((memoryByte & (0x80 >> column)) != 0) {

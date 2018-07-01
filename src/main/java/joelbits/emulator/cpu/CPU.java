@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Stack;
 
 import joelbits.emulator.units.GMU;
+import joelbits.emulator.units.MMU;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,7 +14,6 @@ import joelbits.emulator.cpu.registers.InstructionRegister;
 import joelbits.emulator.cpu.registers.ProgramCounter;
 import joelbits.emulator.cpu.registers.Register;
 import joelbits.emulator.input.Input;
-import joelbits.emulator.memory.Memory;
 import joelbits.emulator.timers.Timer;
 
 /**
@@ -24,7 +24,6 @@ import joelbits.emulator.timers.Timer;
  */
 public final class CPU {
 	private static final Logger log = LoggerFactory.getLogger(CPU.class);
-	private final Memory primaryMemory;
 	private final Stack<Integer> stack;
 	private final List<Register<Integer>> dataRegisters;
 	private final Register<Integer> instructionRegister = InstructionRegister.getInstance();
@@ -32,6 +31,7 @@ public final class CPU {
 	private final Register<Integer> indexRegister;
 	private final ALU alu;
 	private final GMU gmu;
+	private final MMU mmu;
 	private final Timer<Integer> delayTimer;
 	private final Timer<Integer> soundTimer;
 	private final Input<Integer, KeyCode> keyboard;
@@ -43,9 +43,9 @@ public final class CPU {
 	private int address;
 	private int lowestByte;
 	
-	public CPU(Stack<Integer> stack, Memory primaryMemory, Input<Integer, KeyCode> keyboard, List<Register<Integer>> dataRegisters, Register<Integer> instructionRegister, Register<Integer> programCounter, Register<Integer> indexRegister, Timer<Integer> delayTimer, Timer<Integer> soundTimer, ALU alu, GMU gmu) {
+	public CPU(Stack<Integer> stack, MMU mmu, Input<Integer, KeyCode> keyboard, List<Register<Integer>> dataRegisters, Register<Integer> instructionRegister, Register<Integer> programCounter, Register<Integer> indexRegister, Timer<Integer> delayTimer, Timer<Integer> soundTimer, ALU alu, GMU gmu) {
 		this.stack = stack;
-		this.primaryMemory = primaryMemory;
+		this.mmu = mmu;
 		this.keyboard = keyboard;
 		this.dataRegisters = dataRegisters;
 		this.indexRegister = indexRegister;
@@ -63,16 +63,13 @@ public final class CPU {
 		instructionRegister.write(instruction);
 		
 		gmu.clearBuffers();
-		primaryMemory.clear();
-		
-		for (int i = 0; i < data.length; i++) {
-			primaryMemory.write(i, data[i]);
-		}
+		mmu.clearRAM();
+		mmu.writeRAM(data);
 	}
 	
 	public void loadROM(byte[] ROM, int startLocation) {
 		for (int i = 0, location = startLocation; i < ROM.length; i++, location++) {
-			primaryMemory.write(location, Byte.toUnsignedInt(ROM[i]));
+			mmu.writeRAM(location, Byte.toUnsignedInt(ROM[i]));
 		}
 		resetDataRegisters();
 	}
@@ -157,7 +154,7 @@ public final class CPU {
 				alu.addWithRandom(dataRegisters.get(registerLocationX), lowestByte);
 				break;
 			case DRAW_SPRITE:
-				gmu.drawSprite(dataRegisters, primaryMemory, indexRegister, instruction);
+				gmu.drawSprite(dataRegisters, mmu.ram(), indexRegister, instruction);
 				programCounter.write(programCounter.read() + 2);
 				break;
 			case SKIP_NEXT_IF_KEY_PRESSED:
@@ -209,7 +206,7 @@ public final class CPU {
 	}
 	
 	private int fetchNextInstruction() {
-		int instruction = primaryMemory.read(programCounter.read()) << 8 | primaryMemory.read(programCounter.read()+1);
+		int instruction = mmu.readRAM(programCounter.read()) << 8 | mmu.readRAM(programCounter.read()+1);
 		instructionRegister.write(instruction);
 		return instruction;
 	}
@@ -222,20 +219,20 @@ public final class CPU {
 	}
 	
 	private void writeBcdRepresentationToMemory(int registerLocation) {
-		primaryMemory.write(indexRegister.read(), dataRegisters.get(registerLocation).read() / 100);
- 		primaryMemory.write(indexRegister.read() + 1, (dataRegisters.get(registerLocation).read() % 100) / 10);
- 		primaryMemory.write(indexRegister.read() + 2, dataRegisters.get(registerLocation).read() % 10);
+		mmu.writeRAM(indexRegister.read(), dataRegisters.get(registerLocation).read() / 100);
+ 		mmu.writeRAM(indexRegister.read() + 1, (dataRegisters.get(registerLocation).read() % 100) / 10);
+ 		mmu.writeRAM(indexRegister.read() + 2, dataRegisters.get(registerLocation).read() % 10);
 	}
 	
 	private void writeDataRegistersToMemory(int registerBound) {
 		for (int i = 0; i <= registerBound; i++) {
-			primaryMemory.write(indexRegister.read() + i, dataRegisters.get(i).read());
+			mmu.writeRAM(indexRegister.read() + i, dataRegisters.get(i).read());
 		}
 	}
 	
 	private void writeMemoryToDataRegisters(int registerBound) {
 		for (int i = 0; i <= registerBound; i++) {
-			dataRegisters.get(i).write(primaryMemory.read(indexRegister.read() + i));
+			dataRegisters.get(i).write(mmu.readRAM(indexRegister.read() + i));
 		}
 	}
 }

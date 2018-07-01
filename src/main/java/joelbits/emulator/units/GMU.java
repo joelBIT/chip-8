@@ -45,7 +45,7 @@ public class GMU {
         gpu.clearBuffers();
     }
 
-    public void drawSprite(List<Register<Integer>> dataRegisters, Memory primaryMemory, Register<Integer> indexRegister, int instruction) {
+    public void drawSprite(List<Register<Integer>> dataRegisters, int[] primaryMemory, Register<Integer> indexRegister, int instruction) {
         gpu.drawSprite(dataRegisters, primaryMemory, indexRegister, instruction);
     }
 

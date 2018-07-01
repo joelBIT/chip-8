@@ -6,7 +6,9 @@ import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.List;
 
+import joelbits.emulator.memory.RAM;
 import joelbits.emulator.output.Chip8Screen;
+import joelbits.emulator.units.MMU;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -19,12 +21,11 @@ import joelbits.emulator.flags.DrawFlag;
 import joelbits.emulator.flags.Flag;
 import joelbits.emulator.memory.BufferFactory;
 import joelbits.emulator.memory.Memory;
-import joelbits.emulator.memory.RAM;
 import joelbits.emulator.output.Screen;
 
 public class TestGPU {
 	private GPU target;
-	private Memory primaryMemory;
+	private MMU mmu;
 	private Memory displayBuffer;
 	private Memory dirtyBuffer;
 	private List<Register<Integer>> dataRegisters;
@@ -48,7 +49,7 @@ public class TestGPU {
 		screen = new Chip8Screen(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SIZE);
 		displayBuffer = BufferFactory.createDisplayBuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
 		dirtyBuffer = BufferFactory.createDirtyBuffer();
-		primaryMemory = new RAM();
+		mmu = new MMU(new RAM());
 		
 		target = new GPU(displayBuffer, dirtyBuffer, screen, drawFlag, clearFlag);
 	}
@@ -79,7 +80,7 @@ public class TestGPU {
 		initializeSpriteDrawing();
 		int[] addresses = new int[]{0x221,0x222,0x223,0x224,0x264};
 		
-		target.drawSprite(dataRegisters, primaryMemory, indexRegister, 0xD475);
+		target.drawSprite(dataRegisters, mmu.ram(), indexRegister, 0xD475);
 		
 		assertDirtyBuffer(dirtyBuffer, addresses);
 		assertDisplayBuffer(displayBuffer, addresses, -1);
@@ -95,7 +96,7 @@ public class TestGPU {
 	}
 	
 	private void writeToMemory(int location, int data) {
-		primaryMemory.write(location, data);
+		mmu.writeRAM(location, data);
 	}
 	
 	private void assertDirtyBuffer(Memory dirtyBuffer, int[] addresses) {
@@ -120,7 +121,7 @@ public class TestGPU {
 		int COLLISION_ADDRESS = 0x223;
 		displayBuffer.write(COLLISION_ADDRESS, 0x1);
 		
-		target.drawSprite(dataRegisters, primaryMemory, indexRegister, 0xD475);
+		target.drawSprite(dataRegisters, mmu.ram(), indexRegister, 0xD475);
 		
 		assertDirtyBuffer(dirtyBuffer, addresses);
 		assertDisplayBuffer(displayBuffer, addresses, COLLISION_ADDRESS);
