@@ -1,14 +1,11 @@
 package joelbits.emulator.gui.components;
 
-import javafx.event.Event;
-import javafx.event.EventHandler;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.stage.FileChooser;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 public class ComponentCreator {
     public MenuBar menuBar(Menu... menus) {
@@ -42,14 +39,5 @@ public class ComponentCreator {
         menuItem.setAccelerator(keyCombination);
 
         return menuItem;
-    }
-
-    public Menu menu(String title, List<MenuItem> menuItems, EventHandler<Event> onShowing, EventHandler<Event> onHidden) {
-        Menu menu = new Menu(title);
-        menu.setOnShowing(onShowing);
-        menu.setOnHidden(onHidden);
-        menu.getItems().addAll(menuItems);
-
-        return menu;
     }
 }

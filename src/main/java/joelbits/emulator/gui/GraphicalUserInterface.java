@@ -20,10 +20,7 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import joelbits.emulator.cache.EmulatorCache;
 import joelbits.emulator.events.ResetEvent;
-import joelbits.emulator.gui.components.ComponentCreator;
-import joelbits.emulator.gui.components.FileChooserComponent;
-import joelbits.emulator.gui.components.MenuItemComponent;
-import joelbits.emulator.gui.components.TextInputDialogComponent;
+import joelbits.emulator.gui.components.*;
 import joelbits.emulator.config.InterpreterConfig;
 import joelbits.emulator.input.Input;
 import joelbits.emulator.modules.InterpreterModule;
@@ -109,8 +106,12 @@ public class GraphicalUserInterface extends Application {
 				.keyCombination(new KeyCodeCombination(KeyCode.Q, KeyCombination.CONTROL_DOWN))
 				.build();
 
-		return componentCreator.menu("Interpreter", Arrays
-                .asList(open, exit), event -> settings.setPaused(true), event -> settings.setPaused(false));
+		return MenuComponent.builder()
+				.menuItems(Arrays.asList(open, exit))
+				.title("Interpreter")
+				.onHidden(event -> settings.setPaused(false))
+				.onShowing(event -> settings.setPaused(true))
+				.build();
 	}
 	
 	private void openLoadFileDialog() {
@@ -132,10 +133,13 @@ public class GraphicalUserInterface extends Application {
 				.event(event -> new ResetEvent().handle(new Event(Event.ANY)))
 				.keyCombination(new KeyCodeCombination(KeyCode.F3))
 				.build();
-		
-		return componentCreator
-                .menu("Game", Arrays.asList(pause, reset), event -> settings
-                        .setPaused(true), event -> settings.setPaused(false));
+
+		return MenuComponent.builder()
+				.menuItems(Arrays.asList(pause, reset))
+				.title("Game")
+				.onHidden(event -> settings.setPaused(false))
+				.onShowing(event -> settings.setPaused(true))
+				.build();
 	}
 	
 	private Menu createOptionsMenu() {
@@ -147,11 +151,13 @@ public class GraphicalUserInterface extends Application {
 				.event(event -> showVelocityDialog())
 				.keyCombination(new KeyCodeCombination(KeyCode.F5))
 				.build();
-		
-		return componentCreator
-                .menu("Options", Arrays
-                        .asList(muteSound, velocity), event -> settings
-                        .setPaused(true), event -> settings.setPaused(false));
+
+		return MenuComponent.builder()
+				.menuItems(Arrays.asList(muteSound, velocity))
+				.title("Options")
+				.onHidden(event -> settings.setPaused(false))
+				.onShowing(event -> settings.setPaused(true))
+				.build();
 	}
 
     private void toggleMute(CheckMenuItem muteSound) {

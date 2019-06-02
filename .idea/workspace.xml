@@ -2,13 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="55c717f6-17ae-408f-8523-140504081861" name="Default" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/gui/components/MenuItemComponent.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/gui/components/MenuComponent.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/joelbits/emulator/gui/GraphicalUserInterface.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/gui/GraphicalUserInterface.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/joelbits/emulator/gui/components/ComponentCreator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/gui/components/ComponentCreator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/joelbits/emulator/memory/DisplayBuffer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/memory/DisplayBuffer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/joelbits/emulator/units/GPU.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/joelbits/emulator/units/GPU.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/joelbits/emulator/TestCPU.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/joelbits/emulator/TestCPU.java" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/emu/target/" />
     <ignored path="$PROJECT_DIR$/target/" />
@@ -26,8 +22,20 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/main/java/joelbits/emulator/gui/components/ComponentCreator.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="21">
-              <caret line="1" selection-start-line="1" selection-end-line="1" />
+            <state relative-caret-position="147">
+              <caret line="7" column="24" selection-start-line="7" selection-start-column="24" selection-end-line="7" selection-end-column="24" />
+              <folding>
+                <element signature="imports" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/java/joelbits/emulator/gui/components/MenuComponent.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="57">
+              <caret line="10" column="8" selection-start-line="10" selection-start-column="8" selection-end-line="10" selection-end-column="8" />
               <folding>
                 <element signature="imports" expanded="true" />
               </folding>
@@ -50,8 +58,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/main/java/joelbits/emulator/gui/GraphicalUserInterface.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2394">
-              <caret line="143" selection-start-line="143" selection-end-line="143" />
+            <state relative-caret-position="226">
+              <caret line="159" column="25" selection-start-line="159" selection-start-column="25" selection-end-line="159" selection-end-column="25" />
             </state>
           </provider>
         </entry>
@@ -121,6 +129,7 @@
         <option value="$PROJECT_DIR$/src/main/java/joelbits/emulator/units/GPU.java" />
         <option value="$PROJECT_DIR$/src/test/java/joelbits/emulator/TestCPU.java" />
         <option value="$PROJECT_DIR$/src/main/java/joelbits/emulator/gui/components/MenuItemComponent.java" />
+        <option value="$PROJECT_DIR$/src/main/java/joelbits/emulator/gui/components/MenuComponent.java" />
         <option value="$PROJECT_DIR$/src/main/java/joelbits/emulator/gui/components/ComponentCreator.java" />
         <option value="$PROJECT_DIR$/src/main/java/joelbits/emulator/gui/GraphicalUserInterface.java" />
       </list>
@@ -671,13 +680,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/joelbits/emulator/gui/components/TextInputDialogComponent.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="84">
-          <caret line="6" column="13" selection-start-line="6" selection-start-column="13" selection-end-line="6" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/joelbits/emulator/gui/components/FileChooserComponent.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="231">
@@ -827,13 +829,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/joelbits/emulator/gui/components/ComponentCreator.java">
+    <entry file="file://$PROJECT_DIR$/src/main/java/joelbits/emulator/gui/components/TextInputDialogComponent.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="21">
-          <caret line="1" selection-start-line="1" selection-end-line="1" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
+        <state relative-caret-position="84">
+          <caret line="6" column="13" selection-start-line="6" selection-start-column="13" selection-end-line="6" selection-end-column="13" />
         </state>
       </provider>
     </entry>
@@ -847,10 +846,30 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/joelbits/emulator/gui/components/MenuComponent.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="57">
+          <caret line="10" column="8" selection-start-line="10" selection-start-column="8" selection-end-line="10" selection-end-column="8" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/joelbits/emulator/gui/components/ComponentCreator.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="147">
+          <caret line="7" column="24" selection-start-line="7" selection-start-column="24" selection-end-line="7" selection-end-column="24" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/joelbits/emulator/gui/GraphicalUserInterface.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2394">
-          <caret line="143" selection-start-line="143" selection-end-line="143" />
+        <state relative-caret-position="226">
+          <caret line="159" column="25" selection-start-line="159" selection-start-column="25" selection-end-line="159" selection-end-column="25" />
         </state>
       </provider>
     </entry>
