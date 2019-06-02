@@ -5,19 +5,22 @@ import java.util.List;
 
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import lombok.Builder;
 
+@Builder
 public class FileChooserComponent {
 	private final FileChooser fileChooser;
-	
-	public FileChooserComponent(FileChooser fileChooser) {
-		this.fileChooser = fileChooser;
-	}
-	
-	public void addExtensions(List<FileChooser.ExtensionFilter> extensions) {
-		fileChooser.getExtensionFilters().addAll(extensions);
-	}
+	private List<FileChooser.ExtensionFilter> extensions;
 	
 	public File showOpenDialog(Stage stage) {
 		return fileChooser.showOpenDialog(stage);
+	}
+
+	public static class FileChooserComponentBuilder {
+		public FileChooserComponent build() {
+			fileChooser.getExtensionFilters().addAll(extensions);
+
+			return new FileChooserComponent(fileChooser, extensions);
+		}
 	}
 }

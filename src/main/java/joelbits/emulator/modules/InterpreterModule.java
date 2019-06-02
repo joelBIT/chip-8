@@ -11,7 +11,6 @@ import joelbits.emulator.config.InterpreterConfig;
 import joelbits.emulator.flags.ClearFlag;
 import joelbits.emulator.flags.DrawFlag;
 import joelbits.emulator.flags.Flag;
-import joelbits.emulator.gui.components.ComponentCreator;
 import joelbits.emulator.input.Input;
 import joelbits.emulator.input.Keyboard;
 import joelbits.emulator.memory.Memory;
@@ -37,11 +36,6 @@ public final class InterpreterModule extends AbstractModule {
         bind(Flag.class).annotatedWith(Names.named("draw")).to(DrawFlag.class).asEagerSingleton();
 		bind(new TypeLiteral<Timer<Integer>>() {}).annotatedWith(Names.named("sound")).to(new TypeLiteral<SoundTimer<Integer>>() {});
 		bind(new TypeLiteral<Timer<Integer>>() {}).annotatedWith(Names.named("delay")).to(new TypeLiteral<DelayTimer<Integer>>() {});
-	}
-
-	@Provides
-	public ComponentCreator getComponentCreator() {
-		return new ComponentCreator();
 	}
 
 	@Provides

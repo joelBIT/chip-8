@@ -17,6 +17,7 @@ import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import joelbits.emulator.cache.EmulatorCache;
 import joelbits.emulator.events.ResetEvent;
@@ -33,8 +34,6 @@ public class GraphicalUserInterface extends Application {
 	private FileChooserComponent fileChooser;
 	private TextInputDialogComponent velocityDialog;
 
-	@Inject
-    private ComponentCreator componentCreator;
 	@Inject
     private Chip8Util chip8Util;
 	@Inject
@@ -55,14 +54,8 @@ public class GraphicalUserInterface extends Application {
 		this.stage = stage;
 		stage.setTitle("Chip-8 interpreter");
 
-		velocityDialog = TextInputDialogComponent.builder()
-				.title("Change game velocity")
-				.header("Game velocity")
-				.content("Set game velocity (default 10):")
-				.value(String.valueOf(settings.getVelocity()))
-				.build();
-
-		fileChooser = componentCreator.fileChooser();
+		velocityDialog = createVelocityDialog();
+		fileChooser = createFileChooser();
 		
 		BorderPane root = new BorderPane();
 		root.setStyle("-fx-background: black;");
@@ -74,10 +67,30 @@ public class GraphicalUserInterface extends Application {
 		scene.setOnKeyPressed(event -> keyboard.press(event.getCode()));
 		scene.setOnKeyReleased(event -> keyboard.releasePressed());
 		
-		root.setTop(componentCreator.menuBar(createInterpreterMenu(), createOptionsMenu(), createGameMenu()));
+		root.setTop(MenuBarComponent.builder()
+				.menus(Arrays.asList(createInterpreterMenu(), createOptionsMenu(), createGameMenu()))
+				.build());
 		root.setBottom(createCanvas());
 		
 		stage.show();
+	}
+
+	private FileChooserComponent createFileChooser() {
+		return FileChooserComponent.builder()
+				.fileChooser(new FileChooser())
+				.extensions(Arrays.asList(new FileChooser
+						.ExtensionFilter("ch8", "*.ch8"), new FileChooser
+						.ExtensionFilter("rom", "*.rom")))
+				.build();
+	}
+
+	private TextInputDialogComponent createVelocityDialog() {
+		return TextInputDialogComponent.builder()
+				.title("Change game velocity")
+				.header("Game velocity")
+				.content("Set game velocity (default 10):")
+				.value(String.valueOf(settings.getVelocity()))
+				.build();
 	}
 
 	private void handleInjection() {
@@ -129,7 +142,10 @@ public class GraphicalUserInterface extends Application {
 	}
 	
 	private Menu createGameMenu() {
-		CheckMenuItem pause = componentCreator.checkMenuItem("Pause", new KeyCodeCombination(KeyCode.F2));
+		CheckMenuItem pause = CheckMenuItemComponent.builder()
+				.displayName("Pause")
+				.keyCombination(new KeyCodeCombination(KeyCode.F2))
+				.build();
 		pause.setOnAction(event -> settings.setPaused(pause.isSelected()));
 
 		MenuItem reset = MenuItemComponent.builder()
@@ -147,7 +163,10 @@ public class GraphicalUserInterface extends Application {
 	}
 	
 	private Menu createOptionsMenu() {
-		CheckMenuItem muteSound = componentCreator.checkMenuItem("Mute Sound", new KeyCodeCombination(KeyCode.F4));
+		CheckMenuItem muteSound = CheckMenuItemComponent.builder()
+				.displayName("Mute Sound")
+				.keyCombination(new KeyCodeCombination(KeyCode.F4))
+				.build();
 		muteSound.setOnAction(event -> toggleMute(muteSound));
 
 		MenuItem velocity = MenuItemComponent.builder()
