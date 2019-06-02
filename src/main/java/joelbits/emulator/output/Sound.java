@@ -22,7 +22,7 @@ public final class Sound implements Audio {
     private boolean muted;
 
     public Sound() {
-    	audioFormat = new AudioFormat(Chip8Util.SAMPLE_RATE, Chip8Util.SAMPLE_SIZE_IN_BITS, 1, true, false);
+    	audioFormat = new AudioFormat(Chip8Util.SAMPLE_RATE, Chip8Util.SAMPLE_SIZE_IN_BITS, Chip8Util.CHANNELS, true, false);
     	
     	try {
     		beepSound = (Clip) AudioSystem.getLine(new DataLine.Info(Clip.class, audioFormat));

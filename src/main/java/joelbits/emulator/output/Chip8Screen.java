@@ -12,20 +12,20 @@ public class Chip8Screen extends Screen<Integer> {
 
     @Override
     public void fill(double x, double y) {
-        graphicsContext.fillRect(x*pixelSize(), y*pixelSize(), pixelSize(), pixelSize());
+        graphicsContext.fillRect(x* getPixelSize(), y* getPixelSize(), getPixelSize(), getPixelSize());
     }
 
     @Override
     public void clear(double x, double y) {
-        graphicsContext.clearRect(x*pixelSize(), y*pixelSize(), pixelSize(), pixelSize());
+        graphicsContext.clearRect(x* getPixelSize(), y* getPixelSize(), getPixelSize(), getPixelSize());
     }
 
     @Override
     public void clearAll(int bufferSize) {
         for (int i = 0; i < bufferSize; i++) {
-            int coordinateX = i % width();
-            int coordinateY = i / width();
-            graphicsContext.clearRect(coordinateX*pixelSize(), coordinateY*pixelSize(), pixelSize(), pixelSize());
+            int coordinateX = i % getWidth();
+            int coordinateY = i / getWidth();
+            graphicsContext.clearRect(coordinateX* getPixelSize(), coordinateY* getPixelSize(), getPixelSize(), getPixelSize());
         }
     }
 }

@@ -24,8 +24,8 @@ public class GPU {
 	void drawScreen() {
 		for (int i = 0; i < dirtyBuffer.size(); i++) {
 			int dirtyLocation = dirtyBuffer.read(i);
-			int x = dirtyLocation % screen.width();
-			int y = dirtyLocation / screen.width();
+			int x = dirtyLocation % screen.getWidth();
+			int y = dirtyLocation / screen.getWidth();
 			updateSprite(displayBuffer.read(dirtyLocation), x, y);
 		}
 	}
@@ -75,7 +75,7 @@ public class GPU {
 	}
 
 	private int convertToIndex(int coordinateX, int coordinateY) {
-		return (coordinateX % screen.width()) + ((coordinateY % screen.width()) * screen.width());
+		return (coordinateX % screen.getWidth()) + ((coordinateY % screen.getWidth()) * screen.getWidth());
 	}
 
 	/**
