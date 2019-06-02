@@ -28,7 +28,7 @@ public class ALU {
 	
 	public void addWithRandom(Register<Integer> register, int value) {
 		randomNumberGenerator.generate(FIT_8BIT_REGISTER);
-		register.write(randomNumberGenerator.value() & value);
+		register.write(randomNumberGenerator.getValue() & value);
 		incrementProgramCounter();
 	}
 	

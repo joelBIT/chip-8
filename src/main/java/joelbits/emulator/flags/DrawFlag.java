@@ -1,12 +1,9 @@
 package joelbits.emulator.flags;
 
-public final class DrawFlag implements Flag {
-	private boolean active;
+import lombok.Getter;
 
-	@Override
-	public boolean isActive() {
-		return active;
-	}
+public final class DrawFlag implements Flag {
+	@Getter private boolean active;
 
 	@Override
 	public void toggle() {

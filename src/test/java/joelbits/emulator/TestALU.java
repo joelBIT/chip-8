@@ -61,7 +61,7 @@ public class TestALU {
 	public void addWithRandom() {
 		target.addWithRandom(register, 0x2);
 		
-		assertTrue(register.read().equals(0x2 & randomNumberGenerator.value()));
+		assertTrue(register.read().equals(0x2 & randomNumberGenerator.getValue()));
 		assertTrue(programCounter.read().equals(0x202));
 	}
 	

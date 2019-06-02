@@ -3,9 +3,13 @@ package joelbits.emulator.cache;
 import com.google.inject.Injector;
 import javafx.scene.canvas.GraphicsContext;
 import joelbits.emulator.Emulator;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public class EmulatorCache {
-    private GraphicsContext graphics;
+    private GraphicsContext graphicsContext;
     private Emulator emulator;
     private Injector injector;
     private static EmulatorCache cache;
@@ -19,30 +23,8 @@ public class EmulatorCache {
         return cache;
     }
 
-    public void setEmulator(Emulator emulator) {
-        this.emulator = emulator;
-    }
-
-    public Emulator getEmulator() {
-        return emulator;
-    }
-
-    public void setGraphicsContext(GraphicsContext graphicsContext) {
-        graphics = graphicsContext;
-    }
-
-    public GraphicsContext getGraphicsContext() {
-        return graphics;
-    }
-
-    public Injector getInjector() { return injector; }
-
-    public void setInjector(Injector injector) {
-        this.injector = injector;
-    }
-
     public boolean hasGraphicsContext() {
-        return graphics != null;
+        return graphicsContext != null;
     }
 
     public boolean hasEmulator() {

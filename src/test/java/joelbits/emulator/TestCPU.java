@@ -134,7 +134,7 @@ public class TestCPU {
 	/**
 	 * 2nnn - CALL addr
 	 * 
-	 * Call subroutine at nnn. The interpreter increments the stack pointer, then puts the current program counter value on the top of the stack. 
+	 * Call subroutine at nnn. The interpreter increments the stack pointer, then puts the current program counter getValue on the top of the stack.
 	 * The PC is then set to nnn.
 	 */
 	@Test
@@ -186,7 +186,7 @@ public class TestCPU {
 	/**
 	 * 6xkk - LD Vx, byte
 	 * 
-	 * Set Vx = kk. The interpreter puts the value kk into register Vx.
+	 * Set Vx = kk. The interpreter puts the getValue kk into register Vx.
 	 */
 	@Test
 	public void storeLowestByteIntoDataRegister() {
@@ -198,7 +198,7 @@ public class TestCPU {
 	/**
 	 * 7xkk - ADD Vx, byte
 	 * 
-	 * Set Vx = Vx + kk. Adds the value kk to the value of register Vx, then stores the result in Vx. 
+	 * Set Vx = Vx + kk. Adds the getValue kk to the getValue of register Vx, then stores the result in Vx.
 	 */
 	@Test
 	public void addsLowestByteToDataRegister() {
@@ -210,7 +210,7 @@ public class TestCPU {
 	/**
 	 * 8xy0 - LD Vx, Vy
 	 * 
-	 * Set Vx = Vy. Stores the value of register Vy in register Vx.
+	 * Set Vx = Vy. Stores the getValue of register Vy in register Vx.
 	 */
 	@Test
 	public void storeDataRegisterValueInAnotherDataRegister() {
@@ -333,7 +333,7 @@ public class TestCPU {
 	/**
 	 * Annn - LD I, addr
 	 * 
-	 * Set I = nnn. The value of the index register is set to nnn.
+	 * Set I = nnn. The getValue of the index register is set to nnn.
 	 */
 	@Test
 	public void storeAddressInIndexRegister() {
@@ -345,7 +345,7 @@ public class TestCPU {
 	/**
 	 * Bnnn - JP V0, addr
 	 * 
-	 * Jump to location nnn + V0. The program counter is set to nnn plus the value of V0.
+	 * Jump to location nnn + V0. The program counter is set to nnn plus the getValue of V0.
 	 */
 	@Test
 	public void setProgramCounterToAddressPlusDataRegisterValue() {
@@ -357,7 +357,7 @@ public class TestCPU {
 	/**
 	 * Cxkk - RND Vx, byte
 	 * 
-	 * Set Vx = random byte AND kk. The interpreter generates a random number from 0 to 255, which is then ANDed with the value kk. 
+	 * Set Vx = random byte AND kk. The interpreter generates a random number from 0 to 255, which is then ANDed with the getValue kk.
 	 * The results are stored in Vx.
 	 */
 	@Test
@@ -385,8 +385,8 @@ public class TestCPU {
 	/**
 	 * Ex9E - SKP Vx
 	 * 
-	 * Skip next instruction if key with the value of Vx is pressed. Checks the keyboard, and if the key corresponding to the
-	 * value of Vx is currently in the down position, the program counter is increased by 4.
+	 * Skip next instruction if key with the getValue of Vx is pressed. Checks the keyboard, and if the key corresponding to the
+	 * getValue of Vx is currently in the down position, the program counter is increased by 4.
 	 */
 	@Test
 	public void skipNextInstructionBecauseKeyEqualToDataRegisterValueIsPressed() {
@@ -399,8 +399,8 @@ public class TestCPU {
 	/**
 	 * ExA1 - SKNP Vx
 	 * 
-	 * Skip next instruction if key with the value of Vx is not pressed. Checks the keyboard, and if the key corresponding to 
-	 * the value of Vx is currently in the up position, the program counter is increased by 2.
+	 * Skip next instruction if key with the getValue of Vx is not pressed. Checks the keyboard, and if the key corresponding to
+	 * the getValue of Vx is currently in the up position, the program counter is increased by 2.
 	 */
 	@Test
 	public void doNotSkipNextInstructionBecauseKeyEqualToDataRegisterValueIsPressed() {
@@ -413,7 +413,7 @@ public class TestCPU {
 	/**
 	 * Fx07 - LD Vx, DT
 	 * 
-	 * Set Vx = delay timer value. The value of the delay timer is placed into Vx.
+	 * Set Vx = delay timer getValue. The getValue of the delay timer is placed into Vx.
 	 */
 	@Test
 	public void storeDelayTimerValueInDataRegister() {
@@ -425,7 +425,7 @@ public class TestCPU {
 	/**
 	 * Fx0A - LD Vx, K
 	 * 
-	 * Wait for a key press, store the value of the key in Vx. All execution stops until a key is pressed, then the value of 
+	 * Wait for a key press, store the getValue of the key in Vx. All execution stops until a key is pressed, then the getValue of
 	 * that key is stored in Vx.
 	 */
 	@Test
@@ -439,7 +439,7 @@ public class TestCPU {
 	/**
 	 * Fx15 - LD DT, Vx
 	 * 
-	 * Set delay timer = Vx. Delay timer is set equal to the value of Vx.
+	 * Set delay timer = Vx. Delay timer is set equal to the getValue of Vx.
 	 */
 	@Test
 	public void setDelayTimerEqualToDataRegisterValue() {
@@ -451,7 +451,7 @@ public class TestCPU {
 	/**
 	 * Fx18 - LD ST, Vx
 	 * 
-	 * Set sound timer = Vx. Sound timer is set equal to the value of Vx, unless the value of Vx is 1. Then the sound
+	 * Set sound timer = Vx. Sound timer is set equal to the getValue of Vx, unless the getValue of Vx is 1. Then the sound
 	 * timer is set to 2 (to make the beep last longer).
 	 */
 	@Test
@@ -464,7 +464,7 @@ public class TestCPU {
 	/**
 	 * Fx18 - LD ST, Vx
 	 * 
-	 * Set sound timer = Vx. Sound timer is set equal to the value of Vx, unless the value of Vx is 1. Then the sound
+	 * Set sound timer = Vx. Sound timer is set equal to the getValue of Vx, unless the getValue of Vx is 1. Then the sound
 	 * timer is set to 2 (to make the sound last longer).
 	 */
 	@Test
@@ -493,8 +493,8 @@ public class TestCPU {
 	/**
 	 * Fx29 - LD F, Vx
 	 * 
-	 * Set I = location of sprite for digit Vx. The value of I is set to the location for the hexadecimal sprite corresponding 
-	 * to the value of Vx.
+	 * Set I = location of sprite for digit Vx. The getValue of I is set to the location for the hexadecimal sprite corresponding
+	 * to the getValue of Vx.
 	 */
 	@Test
 	public void storeSpriteLocationInIndexRegister() {
@@ -507,7 +507,7 @@ public class TestCPU {
 	 * Fx33 - LD B, Vx
 	 * 
 	 * Store BCD representation of Vx in memory locations I, I+1, and I+2. The interpreter takes the decimal 
-	 * value of Vx, and places the hundreds digit in memory at location in I, the tens digit at location I+1, 
+	 * getValue of Vx, and places the hundreds digit in memory at location in I, the tens digit at location I+1,
 	 * and the ones digit at location I+2.
 	 */
 	@Test

@@ -2,7 +2,7 @@ package joelbits.emulator.memory;
 
 /**
  * The current display state is stored in this buffer. Value 1 means that a pixel is visible on the display at the corresponding coordinates,
- * while value 0 means that there is no visible pixel at the corresponding coordinates. Here visible means that the drawn pixel has a color
+ * while getValue 0 means that there is no visible pixel at the corresponding coordinates. Here visible means that the drawn pixel has a color
  * different from the background color.
  *
  */
