@@ -116,14 +116,14 @@ public final class Chip8 implements Emulator {
 		@Override
 		public void run() {
 			if (!settings.isPaused()) {
-	 			if (delayTimer.currentValue() > 0) {
+	 			if (delayTimer.getValue() > 0) {
 	 				decrementDelayTimer();
 	 			}
 	 			
-	 			if (soundTimer.currentValue() > 0) {
+	 			if (soundTimer.getValue() > 0) {
                     sound.start();
 	 				decrementSoundTimer();
-	 				if (soundTimer.currentValue() <= 0) {
+	 				if (soundTimer.getValue() <= 0) {
 	 					sound.stop();
 	 				}
 	 			}
@@ -146,11 +146,11 @@ public final class Chip8 implements Emulator {
 		}
 		
 		private void decrementDelayTimer() {
-			delayTimer.setValue(delayTimer.currentValue() - 1);
+			delayTimer.setValue(delayTimer.getValue() - 1);
 		}
 		
 		private void decrementSoundTimer() {
-			soundTimer.setValue(soundTimer.currentValue() - 1);
+			soundTimer.setValue(soundTimer.getValue() - 1);
 		}
 	}
 }

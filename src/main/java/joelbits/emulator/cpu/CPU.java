@@ -147,7 +147,7 @@ public final class CPU {
 				alu.skipNextIfNotEqual(dataRegisters.get(registerLocationX), keyboard.currentlyPressed());
 				break;
 			case LOAD_REGISTER_WITH_DELAY_TIMER_VALUE:
-				alu.load(dataRegisters.get(registerLocationX), delayTimer.currentValue());
+				alu.load(dataRegisters.get(registerLocationX), delayTimer.getValue());
 				break;
 			case WAIT_FOR_KEY_PRESS_AND_STORE_VALUE_IN_REGISTER:
 				while (keyboard.currentlyPressed().equals(0)) {

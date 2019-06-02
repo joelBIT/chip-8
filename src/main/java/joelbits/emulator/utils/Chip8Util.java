@@ -25,6 +25,10 @@ public final class Chip8Util {
 
 	public static final int FIT_8BIT_REGISTER = 0xFF;
 	public static final int FIT_16BIT_REGISTER = 0xFFFF;
+	public static final int SAMPLE_RATE = 8000;
+	public static final int SAMPLE_SIZE_IN_BITS = 8;
+	public static final int SOUND_FREQUENCY = 880;
+	public static final int SOUND_VOLUME = 30;
 
 	public void terminateApplication() {
 		Platform.exit();
