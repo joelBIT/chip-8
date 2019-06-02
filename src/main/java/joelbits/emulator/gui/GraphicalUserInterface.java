@@ -22,6 +22,7 @@ import joelbits.emulator.cache.EmulatorCache;
 import joelbits.emulator.events.ResetEvent;
 import joelbits.emulator.gui.components.ComponentCreator;
 import joelbits.emulator.gui.components.FileChooserComponent;
+import joelbits.emulator.gui.components.MenuItemComponent;
 import joelbits.emulator.gui.components.TextInputDialogComponent;
 import joelbits.emulator.config.InterpreterConfig;
 import joelbits.emulator.input.Input;
@@ -96,12 +97,17 @@ public class GraphicalUserInterface extends Application {
 	}
 
 	private Menu createInterpreterMenu() {
-		MenuItem open = componentCreator
-                .menuItem("Open", new KeyCodeCombination(KeyCode.O, KeyCombination
-                        .CONTROL_DOWN), event -> openLoadFileDialog());
-		MenuItem exit = componentCreator
-                .menuItem("Exit", new KeyCodeCombination(KeyCode.Q, KeyCombination
-                        .CONTROL_DOWN), event -> chip8Util.terminateApplication());
+		MenuItem open = MenuItemComponent.builder()
+				.displayName("Open")
+				.event(event -> openLoadFileDialog())
+				.keyCombination(new KeyCodeCombination(KeyCode.O, KeyCombination.CONTROL_DOWN))
+				.build();
+
+		MenuItem exit = MenuItemComponent.builder()
+				.displayName("Exit")
+				.event(event -> chip8Util.terminateApplication())
+				.keyCombination(new KeyCodeCombination(KeyCode.Q, KeyCombination.CONTROL_DOWN))
+				.build();
 
 		return componentCreator.menu("Interpreter", Arrays
                 .asList(open, exit), event -> settings.setPaused(true), event -> settings.setPaused(false));
@@ -121,9 +127,11 @@ public class GraphicalUserInterface extends Application {
 		CheckMenuItem pause = componentCreator.checkMenuItem("Pause", new KeyCodeCombination(KeyCode.F2));
 		pause.setOnAction(event -> settings.setPaused(pause.isSelected()));
 
-		MenuItem reset = componentCreator
-                .menuItem("Reset", new KeyCodeCombination(KeyCode.F3), event -> new ResetEvent()
-                        .handle(new Event(Event.ANY)));
+		MenuItem reset = MenuItemComponent.builder()
+				.displayName("Reset")
+				.event(event -> new ResetEvent().handle(new Event(Event.ANY)))
+				.keyCombination(new KeyCodeCombination(KeyCode.F3))
+				.build();
 		
 		return componentCreator
                 .menu("Game", Arrays.asList(pause, reset), event -> settings
@@ -133,9 +141,12 @@ public class GraphicalUserInterface extends Application {
 	private Menu createOptionsMenu() {
 		CheckMenuItem muteSound = componentCreator.checkMenuItem("Mute Sound", new KeyCodeCombination(KeyCode.F4));
 		muteSound.setOnAction(event -> toggleMute(muteSound));
-		
-		MenuItem velocity = componentCreator
-                .menuItem("Change velocity", new KeyCodeCombination(KeyCode.F5), event -> showVelocityDialog());
+
+		MenuItem velocity = MenuItemComponent.builder()
+				.displayName("Change velocity")
+				.event(event -> showVelocityDialog())
+				.keyCombination(new KeyCodeCombination(KeyCode.F5))
+				.build();
 		
 		return componentCreator
                 .menu("Options", Arrays

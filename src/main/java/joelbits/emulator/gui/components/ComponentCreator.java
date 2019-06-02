@@ -1,6 +1,5 @@
 package joelbits.emulator.gui.components;
 
-import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.scene.control.*;
@@ -36,14 +35,6 @@ public class ComponentCreator {
         dialog.setContentText(content);
 
         return dialog;
-    }
-
-    public MenuItem menuItem(String displayName, KeyCodeCombination keyCombination, EventHandler<ActionEvent> event) {
-        MenuItem menuItem = new MenuItem(displayName);
-        menuItem.setAccelerator(keyCombination);
-        menuItem.setOnAction(event);
-
-        return menuItem;
     }
 
     public CheckMenuItem checkMenuItem(String displayName, KeyCodeCombination keyCombination) {

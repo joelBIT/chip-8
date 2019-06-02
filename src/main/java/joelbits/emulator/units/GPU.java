@@ -31,10 +31,10 @@ public class GPU {
 	}
 
 	/**
-	 * Updates sprite on the screen. If getValue is 0 then clear sprite, otherwise
+	 * Updates sprite on the screen. If value is 0 then clear sprite, otherwise
 	 * draw sprite on supplied coordinates.
 	 *
-	 * @param value		getValue from dirty buffer
+	 * @param value		value from dirty buffer
 	 * @param x			x coordinate of sprite
 	 * @param y			y coordinate of sprite
 	 */
