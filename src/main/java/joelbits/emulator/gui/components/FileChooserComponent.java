@@ -17,10 +17,6 @@ public class FileChooserComponent {
 		fileChooser.getExtensionFilters().addAll(extensions);
 	}
 	
-	public void removeExtensions(List<FileChooser.ExtensionFilter> extensions) {
-		fileChooser.getExtensionFilters().removeAll(extensions);
-	}
-	
 	public File showOpenDialog(Stage stage) {
 		return fileChooser.showOpenDialog(stage);
 	}

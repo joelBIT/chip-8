@@ -6,21 +6,15 @@ import joelbits.emulator.cpu.registers.Register;
 import joelbits.emulator.flags.Flag;
 import joelbits.emulator.memory.Memory;
 import joelbits.emulator.output.Screen;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor
 public class GPU {
 	private final Memory displayBuffer;
 	private final Memory dirtyBuffer;
+	private final Screen<Integer> screen;
 	private final Flag drawFlag;
 	private final Flag clearFlag;
-	private final Screen<Integer> screen;
-	
-	public GPU(Memory displayBuffer, Memory dirtyBuffer, Screen<Integer> screen, Flag drawFlag, Flag clearFlag) {
-		this.displayBuffer = displayBuffer;
-		this.dirtyBuffer = dirtyBuffer;
-		this.drawFlag = drawFlag;
-		this.clearFlag = clearFlag;
-		this.screen = screen;
-	}
 
 	/**
 	 * Updates all affected sprites on the screen. To avoid redrawing sprites that are in the same state as

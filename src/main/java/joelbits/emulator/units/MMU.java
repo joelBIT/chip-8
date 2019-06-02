@@ -1,16 +1,14 @@
 package joelbits.emulator.units;
 
 import joelbits.emulator.memory.Memory;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Memory Management Unit. Handles tasks related to memory.
  */
+@RequiredArgsConstructor
 public final class MMU {
     private final Memory primaryMemory;
-
-    public MMU(Memory primaryMemory) {
-        this.primaryMemory = primaryMemory;
-    }
 
     public void clearPrimaryMemory() {
         primaryMemory.clear();

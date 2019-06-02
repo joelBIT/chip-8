@@ -23,6 +23,9 @@ public final class Chip8Util {
 		  0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 		};
 
+	public static final int FIT_8BIT_REGISTER = 0xFF;
+	public static final int FIT_16BIT_REGISTER = 0xFFFF;
+
 	public void terminateApplication() {
 		Platform.exit();
 		System.exit(0);

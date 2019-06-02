@@ -5,6 +5,8 @@ import java.util.Stack;
 
 import joelbits.emulator.units.GMU;
 import joelbits.emulator.units.MMU;
+import joelbits.emulator.utils.Chip8Util;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,36 +22,22 @@ import joelbits.emulator.timers.Timer;
  * drawn and set to 0 otherwise. Last 8 bits of each register are used to
  * represent an unsigned byte.
  */
+@RequiredArgsConstructor
 public final class CPU {
 	private static final Logger log = LoggerFactory.getLogger(CPU.class);
 	private final Stack<Integer> stack;
+	private final MMU mmu;
+	private final Input<Integer, KeyCode> keyboard;
 	private final List<Register<Integer>> dataRegisters;
 	private final Register<Integer> indexRegister;
-	private final ALU alu;
-	private final GMU gmu;
-	private final MMU mmu;
 	private final Timer<Integer> delayTimer;
 	private final Timer<Integer> soundTimer;
-	private final Input<Integer, KeyCode> keyboard;
-	
-	private static final int FIT_8BIT_REGISTER = 0xFF;
-	private static final int FIT_16BIT_REGISTER = 0xFFFF;
+	private final ALU alu;
+	private final GMU gmu;
 	private int registerLocationX;
 	private int registerLocationY;
 	private int address;
 	private int lowestByte;
-	
-	public CPU(Stack<Integer> stack, MMU mmu, Input<Integer, KeyCode> keyboard, List<Register<Integer>> dataRegisters, Register<Integer> indexRegister, Timer<Integer> delayTimer, Timer<Integer> soundTimer, ALU alu, GMU gmu) {
-		this.stack = stack;
-		this.mmu = mmu;
-		this.keyboard = keyboard;
-		this.dataRegisters = dataRegisters;
-		this.indexRegister = indexRegister;
-		this.delayTimer = delayTimer;
-		this.soundTimer = soundTimer;
-		this.alu = alu;
-		this.gmu = gmu;
-	}
 
 	public void initialize(int address, int index, int delayTime, int soundTime, int[] data) {
 		alu.setProgramCounter(address);
@@ -79,7 +67,7 @@ public final class CPU {
 		int instruction = fetchNextInstruction();
 		extractInstructionInformation(instruction);
 		
-		switch(Instructions.getInstruction(String.format("%04X", instruction & FIT_16BIT_REGISTER).toUpperCase())) {
+		switch(Instructions.getInstruction(String.format("%04X", instruction & Chip8Util.FIT_16BIT_REGISTER).toUpperCase())) {
 			case CLEAR_THE_DISPLAY:
 				gmu.clearBuffers();
 				alu.setProgramCounter(alu.programCounter() + 2);
@@ -122,7 +110,7 @@ public final class CPU {
 				alu.bitwiseXOR(dataRegisters.get(registerLocationX), dataRegisters.get(registerLocationY).read());
 				break;
 			case ADD_REGISTER_VALUE_TO_REGISTER:
-				alu.addWithCarry(dataRegisters.get(registerLocationX), dataRegisters.get(registerLocationY).read(), FIT_8BIT_REGISTER);
+				alu.addWithCarry(dataRegisters.get(registerLocationX), dataRegisters.get(registerLocationY).read(), Chip8Util.FIT_8BIT_REGISTER);
 				break;
 			case SUBTRACT_REGISTER_VALUE_FROM_REGISTER:
 				alu.subtractWithBorrow(dataRegisters.get(registerLocationX), dataRegisters.get(registerLocationY).read());
@@ -180,7 +168,7 @@ public final class CPU {
 				alu.addWithCarry(indexRegister, dataRegisters.get(registerLocationX).read(), 0xFFF);
 				break;
 			case LOAD_SPRITE_LOCATION_TO_REGISTER:
-				alu.load(indexRegister, (dataRegisters.get(registerLocationX).read() * 5) & FIT_16BIT_REGISTER);
+				alu.load(indexRegister, (dataRegisters.get(registerLocationX).read() * 5) & Chip8Util.FIT_16BIT_REGISTER);
 				break;
 			case STORE_BCD_REPRESENTATION_IN_MEMORY:
 				writeBcdRepresentationToMemory(registerLocationX);
@@ -195,7 +183,7 @@ public final class CPU {
 				alu.setProgramCounter(alu.programCounter() + 2);
 				break;
 			default:
-				log.warn("Unknown instruction " + Integer.toHexString(instruction & FIT_16BIT_REGISTER) + " at location " + alu.programCounter());
+				log.warn("Unknown instruction " + Integer.toHexString(instruction & Chip8Util.FIT_16BIT_REGISTER) + " at location " + alu.programCounter());
 				break;
 		}
 	}
@@ -208,7 +196,7 @@ public final class CPU {
 		registerLocationX = (instruction & 0x0F00) >> 8;
 		registerLocationY = (instruction & 0x00F0) >> 4;
 		address = instruction & 0x0FFF;
-		lowestByte = instruction & 0x00FF;
+		lowestByte = instruction & Chip8Util.FIT_8BIT_REGISTER;
 	}
 	
 	private void writeBcdRepresentationToMemory(int registerLocation) {
