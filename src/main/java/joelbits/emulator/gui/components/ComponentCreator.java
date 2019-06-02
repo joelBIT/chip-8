@@ -25,15 +25,6 @@ public class ComponentCreator {
         return fileChooser;
     }
 
-    public TextInputDialogComponent inputDialog(String title, String header, String content, String value) {
-        TextInputDialogComponent dialog = new TextInputDialogComponent(new TextInputDialog(value));
-        dialog.setTitle(title);
-        dialog.setHeaderText(header);
-        dialog.setContentText(content);
-
-        return dialog;
-    }
-
     public CheckMenuItem checkMenuItem(String displayName, KeyCodeCombination keyCombination) {
         CheckMenuItem menuItem = new CheckMenuItem(displayName);
         menuItem.setAccelerator(keyCombination);

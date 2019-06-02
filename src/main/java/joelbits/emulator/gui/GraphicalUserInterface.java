@@ -55,9 +55,13 @@ public class GraphicalUserInterface extends Application {
 		this.stage = stage;
 		stage.setTitle("Chip-8 interpreter");
 
-		velocityDialog = componentCreator
-                .inputDialog("Change game velocity", "Game velocity", "Set game velocity (default 10):", String
-                        .valueOf(settings.getVelocity()));
+		velocityDialog = TextInputDialogComponent.builder()
+				.title("Change game velocity")
+				.header("Game velocity")
+				.content("Set game velocity (default 10):")
+				.value(String.valueOf(settings.getVelocity()))
+				.build();
+
 		fileChooser = componentCreator.fileChooser();
 		
 		BorderPane root = new BorderPane();
