@@ -2,11 +2,14 @@ package joelbits.emulator.gui;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 import com.google.inject.*;
 import javafx.application.Application;
+import javafx.event.ActionEvent;
 import javafx.event.Event;
+import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -112,21 +115,24 @@ public class GraphicalUserInterface extends Application {
 	}
 
 	private Menu createInterpreterMenu() {
-		MenuItem open = MenuItemComponent.builder()
-				.displayName("Open")
-				.event(event -> openLoadFileDialog())
-				.keyCombination(new KeyCodeCombination(KeyCode.O, KeyCombination.CONTROL_DOWN))
-				.build();
+		MenuItem open = createMenuItem("Open", event -> openLoadFileDialog(), new KeyCodeCombination(KeyCode.O, KeyCombination.CONTROL_DOWN));
+		MenuItem exit = createMenuItem("Exit", event -> chip8Util.terminateApplication(), new KeyCodeCombination(KeyCode.Q, KeyCombination.CONTROL_DOWN));
 
-		MenuItem exit = MenuItemComponent.builder()
-				.displayName("Exit")
-				.event(event -> chip8Util.terminateApplication())
-				.keyCombination(new KeyCodeCombination(KeyCode.Q, KeyCombination.CONTROL_DOWN))
-				.build();
+		return createMenu(Arrays.asList(open, exit), "Interpreter");
+	}
 
+	private MenuItem createMenuItem(String displayName, EventHandler<ActionEvent> event, KeyCodeCombination keyCode) {
+		return MenuItemComponent.builder()
+				.displayName(displayName)
+				.event(event)
+				.keyCombination(keyCode)
+				.build();
+	}
+
+	private Menu createMenu(List<MenuItem> menuItems, String title) {
 		return MenuComponent.builder()
-				.menuItems(Arrays.asList(open, exit))
-				.title("Interpreter")
+				.menuItems(menuItems)
+				.title(title)
 				.onHidden(event -> settings.setPaused(false))
 				.onShowing(event -> settings.setPaused(true))
 				.build();
@@ -143,45 +149,26 @@ public class GraphicalUserInterface extends Application {
 	}
 	
 	private Menu createGameMenu() {
-		CheckMenuItem pause = CheckMenuItemComponent.builder()
-				.displayName("Pause")
-				.keyCombination(new KeyCodeCombination(KeyCode.F2))
-				.build();
+		CheckMenuItem pause = createCheckMenuItem("Pause", new KeyCodeCombination(KeyCode.F2));
 		pause.setOnAction(event -> settings.setPaused(pause.isSelected()));
+		MenuItem reset = createMenuItem("Reset", event -> new ResetEvent().handle(new Event(Event.ANY)), new KeyCodeCombination(KeyCode.F3));
 
-		MenuItem reset = MenuItemComponent.builder()
-				.displayName("Reset")
-				.event(event -> new ResetEvent().handle(new Event(Event.ANY)))
-				.keyCombination(new KeyCodeCombination(KeyCode.F3))
-				.build();
+		return createMenu(Arrays.asList(pause, reset), "Game");
+	}
 
-		return MenuComponent.builder()
-				.menuItems(Arrays.asList(pause, reset))
-				.title("Game")
-				.onHidden(event -> settings.setPaused(false))
-				.onShowing(event -> settings.setPaused(true))
+	private CheckMenuItem createCheckMenuItem(String displayName, KeyCodeCombination keyCode) {
+		return CheckMenuItemComponent.builder()
+				.displayName(displayName)
+				.keyCombination(keyCode)
 				.build();
 	}
 	
 	private Menu createOptionsMenu() {
-		CheckMenuItem muteSound = CheckMenuItemComponent.builder()
-				.displayName("Mute Sound")
-				.keyCombination(new KeyCodeCombination(KeyCode.F4))
-				.build();
+		CheckMenuItem muteSound = createCheckMenuItem("Mute Sound", new KeyCodeCombination(KeyCode.F4));
 		muteSound.setOnAction(event -> toggleMute(muteSound));
+		MenuItem velocity = createMenuItem("Change velocity", event -> showVelocityDialog(), new KeyCodeCombination(KeyCode.F5));
 
-		MenuItem velocity = MenuItemComponent.builder()
-				.displayName("Change velocity")
-				.event(event -> showVelocityDialog())
-				.keyCombination(new KeyCodeCombination(KeyCode.F5))
-				.build();
-
-		return MenuComponent.builder()
-				.menuItems(Arrays.asList(muteSound, velocity))
-				.title("Options")
-				.onHidden(event -> settings.setPaused(false))
-				.onShowing(event -> settings.setPaused(true))
-				.build();
+		return createMenu(Arrays.asList(muteSound, velocity), "Options");
 	}
 
     private void toggleMute(CheckMenuItem muteSound) {
