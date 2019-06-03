@@ -29,8 +29,10 @@ public final class Sound implements Audio {
         	beepSound.open(createAudioInputStream());
         } catch (LineUnavailableException | IOException e) {
         	log.error(e.toString(), e);
-        	beepSound.close();
-        }
+			if(beepSound != null && beepSound.isOpen()) {
+				beepSound.close();
+			}
+		}
     }
     
 	private AudioInputStream createAudioInputStream() {
@@ -48,23 +50,15 @@ public final class Sound implements Audio {
 
     @Override
     public void start() {
-    	if (!isBeeping() && !isMuted()) {
+    	if (!beeping && !muted) {
     		beepSound.loop(-1);
         }
     	beeping = true;
     }
-    
-    private boolean isBeeping() {
-    	return beeping;
-    }
-    
-    private boolean isMuted() {
-    	return muted;
-    }
 
     @Override
     public void stop() {
-    	if (isBeeping() && !isMuted()) {
+    	if (beeping && !muted) {
     		beepSound.stop();
     	}
     	beeping = false;
@@ -72,7 +66,7 @@ public final class Sound implements Audio {
 
     @Override
     public void mute() {
-    	if (isBeeping()) {
+    	if (beeping) {
     		beepSound.stop();
     	}
     	muted = true;
@@ -80,7 +74,7 @@ public final class Sound implements Audio {
 
     @Override
     public void unmute() {
-    	if (isBeeping() && isMuted()) {
+    	if (beeping && muted) {
         	beepSound.loop(-1);
     	}
     	muted = false;
