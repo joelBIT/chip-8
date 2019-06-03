@@ -2,6 +2,7 @@ package joelbits.emulator.gui;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Objects;
 
 import com.google.inject.*;
 import javafx.application.Application;
@@ -134,7 +135,7 @@ public class GraphicalUserInterface extends Application {
 	private void openLoadFileDialog() {
 		settings.setPaused(true);
 		File file = fileChooser.showOpenDialog(stage);
-		if (file != null) {
+		if (Objects.nonNull(file)) {
 			settings.setGamePath(file.toURI());
 			new ResetEvent().handle(new Event(Event.ANY));
 		}

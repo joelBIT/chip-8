@@ -2,6 +2,7 @@ package joelbits.emulator.output;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.Objects;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -29,7 +30,7 @@ public final class Sound implements Audio {
         	beepSound.open(createAudioInputStream());
         } catch (LineUnavailableException | IOException e) {
         	log.error(e.toString(), e);
-			if(beepSound != null && beepSound.isOpen()) {
+			if(Objects.nonNull(beepSound) && beepSound.isOpen()) {
 				beepSound.close();
 			}
 		}

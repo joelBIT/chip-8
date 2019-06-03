@@ -6,6 +6,8 @@ import joelbits.emulator.Emulator;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Objects;
+
 @Getter
 @Setter
 public class EmulatorCache {
@@ -17,17 +19,17 @@ public class EmulatorCache {
     private EmulatorCache() { }
 
     public static EmulatorCache getInstance() {
-        if (cache == null) {
+        if (Objects.isNull(cache)) {
             cache = new EmulatorCache();
         }
         return cache;
     }
 
     public boolean hasGraphicsContext() {
-        return graphicsContext != null;
+        return Objects.nonNull(graphicsContext);
     }
 
     public boolean hasEmulator() {
-        return emulator != null;
+        return Objects.nonNull(emulator);
     }
 }
