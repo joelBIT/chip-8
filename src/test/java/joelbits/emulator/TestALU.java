@@ -35,121 +35,121 @@ public class TestALU {
 		register.write(0x45);
 		target.load(register, 0xA);
 
-		assertTrue(register.read().equals(0xA));
-		assertTrue(programCounter.read().equals(0x202));
+		assertEquals(0xA, (int) register.read());
+		assertEquals(0x202, (int) programCounter.read());
 	}
 	
 	@Test
 	public void addSmallValues() {
 		register.write(0x3);
 		target.add(register, 0x8);
-		
-		assertTrue(register.read().equals(0xB));
-		assertTrue(programCounter.read().equals(0x202));
+
+		assertEquals(0xB, (int) register.read());
+		assertEquals(0x202, (int) programCounter.read());
 	}
 	
 	@Test
 	public void addLargeValues() {
 		register.write(145);
 		target.add(register, 0x3455);
-		
-		assertTrue(register.read().equals(0xE6));
-		assertTrue(programCounter.read().equals(0x202));
+
+		assertEquals(0xE6, (int) register.read());
+		assertEquals(0x202, (int) programCounter.read());
 	}
 	
 	@Test
 	public void addWithRandom() {
 		target.addWithRandom(register, 0x2);
-		
-		assertTrue(register.read().equals(0x2 & randomNumberGenerator.getValue()));
-		assertTrue(programCounter.read().equals(0x202));
+
+		assertEquals((int) register.read(), 0x2 & randomNumberGenerator.getValue());
+		assertEquals(0x202, (int) programCounter.read());
 	}
 	
 	@Test
 	public void addAndDoNotSetCarry() {
 		register.write(0x21);
 		target.addWithCarry(register, 0x2, FIT_8BIT_REGISTER);
-		
-		assertTrue(register.read().equals(0x23));
-		assertTrue(dataRegisterVF.read().equals(0x0));
-		assertTrue(programCounter.read().equals(0x202));
+
+		assertEquals(0x23, (int) register.read());
+		assertEquals(0x0, (int) dataRegisterVF.read());
+		assertEquals(0x202, (int) programCounter.read());
 	}
 	
 	@Test
 	public void addAndSetCarry() {
 		register.write(0xB0);
 		target.addWithCarry(register, 0x3, FIT_8BIT_REGISTER);
-		
-		assertTrue(register.read().equals(0xB3));
-		assertTrue(dataRegisterVF.read().equals(0x0));
-		assertTrue(programCounter.read().equals(0x202));
+
+		assertEquals(0xB3, (int) register.read());
+		assertEquals(0x0, (int) dataRegisterVF.read());
+		assertEquals(0x202, (int) programCounter.read());
 	}
 	
 	@Test
 	public void subtractAndDoNotSetBorrow() {
 		register.write(0x3);
 		target.subtractWithNegatedBorrow(register, 0x2);
-		
-		assertTrue(register.read().equals(0xFF));
-		assertTrue(dataRegisterVF.read().equals(0x0));
-		assertTrue(programCounter.read().equals(0x202));
+
+		assertEquals(0xFF, (int) register.read());
+		assertEquals(0x0, (int) dataRegisterVF.read());
+		assertEquals(0x202, (int) programCounter.read());
 	}
 
 	@Test
 	public void subtractAndSetBorrow() {
 		register.write(0x2);
 		target.subtractWithNegatedBorrow(register, 0x3);
-		
-		assertTrue(register.read().equals(0x1));
-		assertTrue(dataRegisterVF.read().equals(0x1));
-		assertTrue(programCounter.read().equals(0x202));
+
+		assertEquals(0x1, (int) register.read());
+		assertEquals(0x1, (int) dataRegisterVF.read());
+		assertEquals(0x202, (int) programCounter.read());
 	}
 	
 	@Test
 	public void subtractAndSetNegatedBorrow() {
 		register.write(0x3);
 		target.subtractWithNegatedBorrow(register, 0x2);
-		
-		assertTrue(register.read().equals(0xFF));
-		assertTrue(dataRegisterVF.read().equals(0x0));
-		assertTrue(programCounter.read().equals(0x202));
+
+		assertEquals(0xFF, (int) register.read());
+		assertEquals(0x0, (int) dataRegisterVF.read());
+		assertEquals(0x202, (int) programCounter.read());
 	}
 	
 	@Test
 	public void subtractAndDoNotSetNegatedBorrow() {
 		register.write(0x2);
 		target.subtractWithNegatedBorrow(register, 0x5);
-		
-		assertTrue(register.read().equals(0x3));
-		assertTrue(dataRegisterVF.read().equals(0x1));
-		assertTrue(programCounter.read().equals(0x202));
+
+		assertEquals(0x3, (int) register.read());
+		assertEquals(0x1, (int) dataRegisterVF.read());
+		assertEquals(0x202, (int) programCounter.read());
 	}
 	
 	@Test
 	public void bitwiseOR() {
 		register.write(0x21);
 		target.bitwiseOR(register, 0x94);
-		
-		assertTrue(register.read().equals(0xB5));
-		assertTrue(programCounter.read().equals(0x202));
+
+		assertEquals(0xB5, (int) register.read());
+		assertEquals(0x202, (int) programCounter.read());
 	}
 
 	@Test
 	public void bitwiseAND() {
 		register.write(0xAC);
 		target.bitwiseAND(register, 0xF2);
-		
-		assertTrue(register.read().equals(0xA0));
-		assertTrue(programCounter.read().equals(0x202));
+
+		assertEquals(0xA0, (int) register.read());
+		assertEquals(0x202, (int) programCounter.read());
 	}
 	
 	@Test
 	public void bitwiseXOR() {
 		register.write(0xFC);
 		target.bitwiseXOR(register, 0x72);
-		
-		assertTrue(register.read().equals(0x8E));
-		assertTrue(programCounter.read().equals(0x202));
+
+		assertEquals(0x8E, (int) register.read());
+		assertEquals(0x202, (int) programCounter.read());
 	}
 
 	
@@ -157,71 +157,71 @@ public class TestALU {
 	public void leftShiftWithCarryNotSet() {
 		register.write(0x30);
 		target.leftShiftWithCarry(register);
-		
-		assertTrue(register.read().equals(0x60));
-		assertTrue(dataRegisterVF.read().equals(0x0));
-		assertTrue(programCounter.read().equals(0x202));
+
+		assertEquals(0x60, (int) register.read());
+		assertEquals(0x0, (int) dataRegisterVF.read());
+		assertEquals(0x202, (int) programCounter.read());
 	}
 
 	@Test
 	public void leftShiftWithCarrySet() {
 		register.write(0xCE);
 		target.leftShiftWithCarry(register);
-		
-		assertTrue(register.read().equals(0x9C));
-		assertTrue(dataRegisterVF.read().equals(0x1));
-		assertTrue(programCounter.read().equals(0x202));
+
+		assertEquals(0x9C, (int) register.read());
+		assertEquals(0x1, (int) dataRegisterVF.read());
+		assertEquals(0x202, (int) programCounter.read());
 	}
 	
 	@Test
 	public void rightShiftWithCarryNotSet() {
 		register.write(0x30);
 		target.rightShiftWithCarry(register);
-		
-		assertTrue(register.read().equals(0x18));
-		assertTrue(dataRegisterVF.read().equals(0x0));
-		assertTrue(programCounter.read().equals(0x202));
+
+		assertEquals(0x18, (int) register.read());
+		assertEquals(0x0, (int) dataRegisterVF.read());
+		assertEquals(0x202, (int) programCounter.read());
 	}
 	
 	@Test
 	public void rightShiftWithCarrySet() {
 		register.write(0x21);
 		target.rightShiftWithCarry(register);
-		
-		assertTrue(register.read().equals(0x10));
-		assertTrue(dataRegisterVF.read().equals(0x1));
-		assertTrue(programCounter.read().equals(0x202));
+
+		assertEquals(0x10, (int) register.read());
+		assertEquals(0x1, (int) dataRegisterVF.read());
+		assertEquals(0x202, (int) programCounter.read());
 	}
 	
 	@Test
 	public void doNotskipNextSinceNotEqual() {
 		register.write(0x55);
 		target.skipNextIfEqual(register, 0x50);
-		
-		assertTrue(programCounter.read().equals(0x202));
+
+		assertEquals(0x202, (int) programCounter.read());
 	}
 	
 	@Test
 	public void skipNextBecauseEqual() {
 		register.write(0x55);
 		target.skipNextIfEqual(register, 0x55);
-		
-		assertTrue(programCounter.read().equals(0x204));
+
+		assertEquals(0x204, (int) programCounter.read());
 	}
 	
 	@Test
 	public void skipNextBecauseNotEqual() {
 		register.write(0x55);
 		target.skipNextIfNotEqual(register, 0x50);
-		
-		assertTrue(programCounter.read().equals(0x204));
+
+		assertEquals(0x204, (int) programCounter.read());
 	}
 	
 	@Test
 	public void doNotSkipNextBecauseEqual() {
 		register.write(0x55);
 		target.skipNextIfNotEqual(register, 0x55);
-		
-		assertTrue(programCounter.read().equals(0x202));
+
+		assertEquals(0x202, (int) programCounter.read());
 	}
 }

@@ -15,6 +15,7 @@ import joelbits.emulator.input.Input;
 import joelbits.emulator.memory.RAM;
 import joelbits.emulator.units.GMU;
 import joelbits.emulator.units.MMU;
+import joelbits.emulator.utils.Chip8Util;
 import joelbits.emulator.utils.RandomNumberGenerator;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,9 +47,7 @@ public class TestCPU {
 	private Register<Integer> indexRegister;
 	private MMU mmu;
 	private ALU alu;
-	
-	private final int FIT_8BIT_REGISTER = 0xFF;
-	private final int FIT_16BIT_REGISTER = 0xFFFF;
+
 	private int[] dataRegisterValues = {43, 176, 40, 206, 33, 148, 33, 136, 77, 29, 48, 81, 30, 8, 1, 0};
 	private int[] fontset = new int[80];
 	private int address = 0x200;
@@ -90,8 +89,8 @@ public class TestCPU {
 	}
 	
 	private void executeOpCode(int opcode) {
-		writeToMemory(address, (opcode >> 8) & FIT_8BIT_REGISTER);
-		writeToMemory(address + 1, opcode & FIT_8BIT_REGISTER);
+		writeToMemory(address, (opcode >> 8) & Chip8Util.FIT_8BIT_REGISTER);
+		writeToMemory(address + 1, opcode & Chip8Util.FIT_8BIT_REGISTER);
 		
 		target.executeNextOperation();
 	}
@@ -109,7 +108,7 @@ public class TestCPU {
 	@Test
 	public void popTopOfStackAddressIntoProgramCounter() {
 		executeOpCode(0x2567);
-		assertTrue(stack.peek().equals(address));
+		assertEquals((int) stack.peek(), address);
 		
 		writeToMemory(0x567, 0x0);
 		writeToMemory(0x568, 0xEE);
@@ -141,7 +140,7 @@ public class TestCPU {
 	public void pushProgramCounterValueOntoStack() {
 		executeOpCode(0x2567);
 
-		assertTrue(stack.peek().equals(address));
+		assertEquals((int) stack.peek(), address);
 		assertEquals(alu.programCounter(), 0x567);
 	}
 	
@@ -265,7 +264,7 @@ public class TestCPU {
 	public void performAdditionWithCarry() {
 		executeOpCode(0x8424);
 		
-		verify(alu, times(1)).addWithCarry(eq(dataRegisters.get(0x4)), eq(dataRegisters.get(0x2).read()), eq(FIT_8BIT_REGISTER));
+		verify(alu, times(1)).addWithCarry(eq(dataRegisters.get(0x4)), eq(dataRegisters.get(0x2).read()), eq(Chip8Util.FIT_8BIT_REGISTER));
 	}
 	
 	/**
@@ -470,9 +469,9 @@ public class TestCPU {
 	@Test
 	public void setSoundTimerEqualToTwoSinceDataRegisterValueIsOne() {
 		executeOpCode(0xFE18);
-		
-		assertTrue(dataRegisters.get(0xE).read().equals(1));
-		assertTrue(soundTimer.getValue().equals(2));
+
+		assertEquals(1, (int) dataRegisters.get(0xE).read());
+		assertEquals(2, (int) soundTimer.getValue());
 	}
 	
 	/**
@@ -500,7 +499,7 @@ public class TestCPU {
 	public void storeSpriteLocationInIndexRegister() {
 		executeOpCode(0xFD29);
 		
-		verify(alu, times(1)).load(eq(indexRegister), eq(dataRegisters.get(0xD).read()*5 & FIT_16BIT_REGISTER));
+		verify(alu, times(1)).load(eq(indexRegister), eq(dataRegisters.get(0xD).read()*5 & Chip8Util.FIT_16BIT_REGISTER));
 	}
 	
 	/**
@@ -530,7 +529,7 @@ public class TestCPU {
 		executeOpCode(0xF755);
 
 		for (int i = 0; i < 8; i++) {
-			assertTrue(dataRegisters.get(i).read().equals(mmu.readPrimaryMemory(index+i)));
+			assertEquals((int) dataRegisters.get(i).read(), mmu.readPrimaryMemory(index + i));
 		}
 	}
 	

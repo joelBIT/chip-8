@@ -29,7 +29,6 @@ public class TestGPU {
 	private Memory displayBuffer;
 	private Memory dirtyBuffer;
 	private List<Register<Integer>> dataRegisters;
-	private Screen<Integer> screen;
 	private Flag drawFlag;
 	private Flag clearFlag;
 	private Register<Integer> indexRegister;
@@ -46,7 +45,7 @@ public class TestGPU {
 		drawFlag = new DrawFlag();
 		clearFlag = new ClearFlag();
 		indexRegister = IndexRegister.getInstance();
-		screen = new Chip8Screen(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SIZE);
+		Screen<Integer> screen = new Chip8Screen(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SIZE);
 		displayBuffer = BufferFactory.createDisplayBuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
 		dirtyBuffer = BufferFactory.createDirtyBuffer();
 		mmu = new MMU(new RAM());
@@ -85,7 +84,7 @@ public class TestGPU {
 		assertDirtyBuffer(dirtyBuffer, addresses);
 		assertDisplayBuffer(displayBuffer, addresses, -1);
 
-		assertTrue(dataRegisters.get(0xF).read().equals(0));
+		assertEquals(0, (int) dataRegisters.get(0xF).read());
 		assertTrue(drawFlag.isActive());
 	}
 	
@@ -126,7 +125,7 @@ public class TestGPU {
 		assertDirtyBuffer(dirtyBuffer, addresses);
 		assertDisplayBuffer(displayBuffer, addresses, COLLISION_ADDRESS);
 
-		assertTrue(dataRegisters.get(0xF).read().equals(1));
+		assertEquals(1, (int) dataRegisters.get(0xF).read());
 		assertTrue(drawFlag.isActive());
 	}
 }
