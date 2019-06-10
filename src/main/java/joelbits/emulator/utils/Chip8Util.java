@@ -25,9 +25,11 @@ public final class Chip8Util {
 					0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 			};
 
-	// Register values
+	// Values related to registers
 	public static final int FIT_8BIT_REGISTER = 0xFF;
 	public static final int FIT_16BIT_REGISTER = 0xFFFF;
+	public static final int NUMBER_OF_REGISTERS = 0xF;
+	public static final int REGISTER_VF = 0xF;
 
 	// Audio values
 	public static final int SAMPLE_RATE = 8000;
@@ -35,4 +37,7 @@ public final class Chip8Util {
 	public static final int SOUND_FREQUENCY = 880;
 	public static final int SOUND_VOLUME = 30;
 	public static final int CHANNELS = 1;
+
+	// Most Chip-8 programs start at location 0x200
+	public static final int PROGRAM_SPACE_START = 0x200;
 }

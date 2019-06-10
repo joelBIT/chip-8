@@ -3,6 +3,7 @@ package joelbits.emulator.cpu;
 import java.util.List;
 import java.util.Stack;
 
+import joelbits.emulator.Program;
 import joelbits.emulator.units.GMU;
 import joelbits.emulator.units.MMU;
 import joelbits.emulator.utils.Chip8Util;
@@ -52,9 +53,9 @@ public final class CPU {
 		mmu.writePrimaryMemory(data);
 	}
 	
-	public void loadROM(byte[] ROM, int startLocation) {
-		for (int i = 0, location = startLocation; i < ROM.length; i++, location++) {
-			mmu.writePrimaryMemory(location, Byte.toUnsignedInt(ROM[i]));
+	public void loadProgram(Program program, int startLocation) {
+		for (int i = 0, location = startLocation; i < program.length(); i++, location++) {
+			mmu.writePrimaryMemory(location, Byte.toUnsignedInt(program.data(i)));
 		}
 		resetDataRegisters();
 	}

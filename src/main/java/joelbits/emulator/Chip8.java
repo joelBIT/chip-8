@@ -1,7 +1,6 @@
 package joelbits.emulator;
 
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -36,7 +35,7 @@ import joelbits.emulator.utils.Chip8Util;
 import joelbits.emulator.utils.RandomNumberGenerator;
 
 /**
- * A ROM is written to memory starting at location 0x200 since the CHIP-8 interpreter occupies
+ * A program is written to memory starting at location 0x200 since the CHIP-8 interpreter occupies
  * most of the preceding memory locations.
  */
 public final class Chip8 implements Emulator {
@@ -69,7 +68,7 @@ public final class Chip8 implements Emulator {
 	
 	private CPU createCPU() {
 		List<Register<Integer>> dataRegisters = initializeDataRegisters();
-		ALU alu = new ALU(ProgramCounter.getInstance(), dataRegisters.get(0xF), new RandomNumberGenerator());
+		ALU alu = new ALU(ProgramCounter.getInstance(), dataRegisters.get(Chip8Util.REGISTER_VF), new RandomNumberGenerator());
 
 		Register<Integer> indexRegister = IndexRegister.getInstance();
 		return new CPU(new Stack<>(), mmu, keyboard, dataRegisters, indexRegister, delayTimer, soundTimer, alu, gmu);
@@ -77,7 +76,7 @@ public final class Chip8 implements Emulator {
 
 	private List<Register<Integer>> initializeDataRegisters() {
 		List<Register<Integer>> dataRegisters = new ArrayList<>();
-		for (int i = 0; i <= 0xF; i++) {
+		for (int i = 0; i <= Chip8Util.NUMBER_OF_REGISTERS; i++) {
 			dataRegisters.add(i, new DataRegister<>());
 			dataRegisters.get(i).write(0);
 		}
@@ -92,24 +91,21 @@ public final class Chip8 implements Emulator {
 
 	@Override
 	public void start() {
-		cpu.initialize(0x200,  0x0, 0x0, 0x0, Chip8Util.spriteGroups);
-		loadGame();
+		cpu.initialize(Chip8Util.PROGRAM_SPACE_START,  0x0, 0x0, 0x0, Chip8Util.spriteGroups);
+		loadProgram();
 		if (!settings.isRunning()) {
 			Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new InstructionCycle(), 0, 17, TimeUnit.MILLISECONDS);
 			settings.setRunning(true);
 		}
 	}
 	
-	private void loadGame() {
+	private void loadProgram() {
 		try {
-			cpu.loadROM(readROM(settings.getGamePath()), 0x200);
+			cpu.loadProgram(new Program(Files
+					.readAllBytes(Paths.get(settings.getGamePath()))), Chip8Util.PROGRAM_SPACE_START);
 		} catch (IOException e) {
 			log.error(e.toString(), e);
 		}
-	}
-
-	private byte[] readROM(URI gamePath) throws IOException {
-		return Files.readAllBytes(Paths.get(gamePath));
 	}
 	
 	class InstructionCycle implements Runnable {
