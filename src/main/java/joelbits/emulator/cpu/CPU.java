@@ -39,6 +39,8 @@ public final class CPU {
 	private int address;
 	private int lowestByte;
 
+	// Skapa alla instruktioner som egna objekt vid uppstart av applikationen med hjälp av builders för varje. Köra dessa sedan genom en generisk execute(Instruction instruciton) metod/klass?
+
 	public void initialize(int address, int index, int delayTime, int soundTime, int[] data) {
 		alu.setProgramCounter(address);
 		delayTimer.setValue(delayTime);

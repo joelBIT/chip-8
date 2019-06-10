@@ -7,6 +7,7 @@ import java.util.Objects;
 
 import com.google.inject.*;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.event.EventHandler;
@@ -39,8 +40,6 @@ public class GraphicalUserInterface extends Application {
 	private TextInputDialogComponent velocityDialog;
 
 	@Inject
-    private Chip8Util chip8Util;
-	@Inject
     private Audio sound;
 	@Inject
     private InterpreterConfig config;
@@ -66,7 +65,10 @@ public class GraphicalUserInterface extends Application {
 		Scene scene = new Scene(root);
 		stage.setScene(scene);
 		stage.setResizable(false);
-		stage.setOnCloseRequest(event -> chip8Util.terminateApplication());
+		stage.setOnCloseRequest(event -> {
+			Platform.exit();
+			System.exit(0);
+		});
 		
 		scene.setOnKeyPressed(event -> keyboard.press(event.getCode()));
 		scene.setOnKeyReleased(event -> keyboard.releasePressed());
@@ -116,7 +118,10 @@ public class GraphicalUserInterface extends Application {
 
 	private Menu createInterpreterMenu() {
 		MenuItem open = createMenuItem("Open", event -> openLoadFileDialog(), new KeyCodeCombination(KeyCode.O, KeyCombination.CONTROL_DOWN));
-		MenuItem exit = createMenuItem("Exit", event -> chip8Util.terminateApplication(), new KeyCodeCombination(KeyCode.Q, KeyCombination.CONTROL_DOWN));
+		MenuItem exit = createMenuItem("Exit", event -> {
+			Platform.exit();
+			System.exit(0);
+		}, new KeyCodeCombination(KeyCode.Q, KeyCombination.CONTROL_DOWN));
 
 		return createMenu(Arrays.asList(open, exit), "Interpreter");
 	}

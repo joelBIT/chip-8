@@ -92,7 +92,7 @@ public final class Chip8 implements Emulator {
 
 	@Override
 	public void start() {
-		cpu.initialize(0x200,  0x0, 0x0, 0x0, Chip8Util.fontset);
+		cpu.initialize(0x200,  0x0, 0x0, 0x0, Chip8Util.spriteGroups);
 		loadGame();
 		if (!settings.isRunning()) {
 			Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new InstructionCycle(), 0, 17, TimeUnit.MILLISECONDS);

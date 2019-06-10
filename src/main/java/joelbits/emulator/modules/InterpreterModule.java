@@ -22,7 +22,6 @@ import joelbits.emulator.timers.DelayTimer;
 import joelbits.emulator.timers.SoundTimer;
 import joelbits.emulator.timers.Timer;
 import joelbits.emulator.units.GMU;
-import joelbits.emulator.utils.Chip8Util;
 
 public final class InterpreterModule extends AbstractModule {
 	@Override
@@ -36,11 +35,6 @@ public final class InterpreterModule extends AbstractModule {
         bind(Flag.class).annotatedWith(Names.named("draw")).to(DrawFlag.class).asEagerSingleton();
 		bind(new TypeLiteral<Timer<Integer>>() {}).annotatedWith(Names.named("sound")).to(new TypeLiteral<SoundTimer<Integer>>() {});
 		bind(new TypeLiteral<Timer<Integer>>() {}).annotatedWith(Names.named("delay")).to(new TypeLiteral<DelayTimer<Integer>>() {});
-	}
-
-	@Provides
-	public Chip8Util getChip8Util() {
-		return new Chip8Util();
 	}
 
 	@Provides
