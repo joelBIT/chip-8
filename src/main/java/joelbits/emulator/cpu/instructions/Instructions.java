@@ -58,8 +58,8 @@ public enum Instructions {
 	
 	private static boolean isEqual(String instruction, String opcode) {
 		if (instruction.length() != opcode.length()) {
-			log.error(instruction + " and " + opcode + " differs in length");
-			throw new IllegalArgumentException(instruction + " and " + opcode + " differs in length");
+			log.error(instruction + " and " + opcode + " differs in size");
+			throw new IllegalArgumentException(instruction + " and " + opcode + " differs in size");
 		}
 		for (int i = 0; i < opcode.length(); i++) {
 			char instructionChar = instruction.charAt(i);

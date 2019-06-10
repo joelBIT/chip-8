@@ -54,7 +54,7 @@ public final class CPU {
 	}
 	
 	public void loadProgram(Program program, int startLocation) {
-		for (int i = 0, location = startLocation; i < program.length(); i++, location++) {
+		for (int i = 0, location = startLocation; i < program.size(); i++, location++) {
 			mmu.writePrimaryMemory(location, Byte.toUnsignedInt(program.data(i)));
 		}
 		resetDataRegisters();

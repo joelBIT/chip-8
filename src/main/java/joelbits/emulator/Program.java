@@ -1,18 +1,13 @@
 package joelbits.emulator;
 
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-
 public class Program {
     private final byte[] data;
 
-    public Program(byte[] data) throws IOException {
+    public Program(byte[] data) {
         this.data = data;
     }
 
-    public int length() {
+    public int size() {
         return data.length;
     }
 
