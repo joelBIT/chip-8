@@ -1,6 +1,5 @@
-package joelbits.emulator.units;
+package joelbits.emulator.memory;
 
-import joelbits.emulator.memory.Memory;
 import lombok.RequiredArgsConstructor;
 
 /**

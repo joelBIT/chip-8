@@ -1,9 +1,12 @@
 package joelbits.emulator;
 
+/**
+ * Represents a Chip8 program.
+ */
 public class Program {
     private final byte[] data;
 
-    public Program(byte[] data) {
+    Program(byte[] data) {
         this.data = data;
     }
 

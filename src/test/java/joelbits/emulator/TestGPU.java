@@ -8,11 +8,11 @@ import java.util.List;
 
 import joelbits.emulator.memory.RAM;
 import joelbits.emulator.output.Chip8Screen;
-import joelbits.emulator.units.MMU;
+import joelbits.emulator.memory.MMU;
 import org.junit.Before;
 import org.junit.Test;
 
-import joelbits.emulator.units.GPU;
+import joelbits.emulator.graphics.GPU;
 import joelbits.emulator.cpu.registers.DataRegister;
 import joelbits.emulator.cpu.registers.IndexRegister;
 import joelbits.emulator.cpu.registers.Register;

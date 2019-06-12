@@ -12,10 +12,11 @@ import java.util.concurrent.TimeUnit;
 import com.google.inject.*;
 import joelbits.emulator.cache.EmulatorCache;
 import joelbits.emulator.config.InterpreterConfig;
+import joelbits.emulator.cpu.instructions.InstructionUnit;
 import joelbits.emulator.output.Audio;
 import joelbits.emulator.settings.GameSettings;
-import joelbits.emulator.units.GMU;
-import joelbits.emulator.units.MMU;
+import joelbits.emulator.graphics.GMU;
+import joelbits.emulator.memory.MMU;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +32,7 @@ import joelbits.emulator.cpu.registers.Register;
 import joelbits.emulator.input.Input;
 import joelbits.emulator.memory.RAM;
 import joelbits.emulator.timers.Timer;
-import joelbits.emulator.utils.Chip8Util;
+import static joelbits.emulator.utils.Chip8Util.*;
 import joelbits.emulator.utils.RandomNumberGenerator;
 
 /**
@@ -68,15 +69,16 @@ public final class Chip8 implements Emulator {
 	
 	private CPU createCPU() {
 		List<Register<Integer>> dataRegisters = initializeDataRegisters();
-		ALU alu = new ALU(ProgramCounter.getInstance(), dataRegisters.get(Chip8Util.REGISTER_VF), new RandomNumberGenerator());
+		ALU alu = new ALU(ProgramCounter.getInstance(), dataRegisters.get(REGISTER_VF), new RandomNumberGenerator());
+		InstructionUnit instructionUnit = new InstructionUnit(mmu);
 
 		Register<Integer> indexRegister = IndexRegister.getInstance();
-		return new CPU(new Stack<>(), mmu, keyboard, dataRegisters, indexRegister, delayTimer, soundTimer, alu, gmu);
+		return new CPU(new Stack<>(), mmu, keyboard, dataRegisters, indexRegister, delayTimer, soundTimer, alu, gmu, instructionUnit);
 	}
 
 	private List<Register<Integer>> initializeDataRegisters() {
 		List<Register<Integer>> dataRegisters = new ArrayList<>();
-		for (int i = 0; i <= Chip8Util.NUMBER_OF_REGISTERS; i++) {
+		for (int i = 0; i <= NUMBER_OF_REGISTERS; i++) {
 			dataRegisters.add(i, new DataRegister<>());
 			dataRegisters.get(i).write(0);
 		}
@@ -91,7 +93,7 @@ public final class Chip8 implements Emulator {
 
 	@Override
 	public void start() {
-		cpu.initialize(Chip8Util.PROGRAM_SPACE_START,  0x0, 0x0, 0x0, Chip8Util.spriteGroups);
+		cpu.initialize(PROGRAM_SPACE_START,  0x0, 0x0, 0x0, spriteGroups);
 		loadProgram();
 		if (!settings.isRunning()) {
 			Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new InstructionCycle(), 0, 17, TimeUnit.MILLISECONDS);
@@ -102,7 +104,7 @@ public final class Chip8 implements Emulator {
 	private void loadProgram() {
 		try {
 			cpu.loadProgram(new Program(Files
-					.readAllBytes(Paths.get(settings.getGamePath()))), Chip8Util.PROGRAM_SPACE_START);
+					.readAllBytes(Paths.get(settings.getGamePath()))), PROGRAM_SPACE_START);
 		} catch (IOException e) {
 			log.error(e.toString(), e);
 		}

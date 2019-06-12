@@ -1,7 +1,7 @@
 package joelbits.emulator.cpu;
 
 import joelbits.emulator.cpu.registers.Register;
-import joelbits.emulator.utils.Chip8Util;
+import static joelbits.emulator.utils.Chip8Util.*;
 import joelbits.emulator.utils.RandomNumberGenerator;
 import lombok.RequiredArgsConstructor;
 
@@ -17,32 +17,32 @@ public class ALU {
 	}
 	
 	public void add(Register<Integer> register, int value) {
-		register.write((register.read() + value) & Chip8Util.FIT_8BIT_REGISTER);
+		register.write((register.read() + value) & FIT_8BIT_REGISTER);
 		incrementProgramCounter();
 	}
 	
 	public void addWithRandom(Register<Integer> register, int value) {
-		randomNumberGenerator.generate(Chip8Util.FIT_8BIT_REGISTER);
+		randomNumberGenerator.generate(FIT_8BIT_REGISTER);
 		register.write(randomNumberGenerator.getValue() & value);
 		incrementProgramCounter();
 	}
 	
 	public void addWithCarry(Register<Integer> register, int value, int limit) {
-		int sum = (register.read() + value) & Chip8Util.FIT_16BIT_REGISTER;
+		int sum = (register.read() + value) & FIT_16BIT_REGISTER;
 		dataRegisterVF.write((sum > limit) ? 1 : 0);
-		register.write(limit == Chip8Util.FIT_8BIT_REGISTER ? sum & Chip8Util.FIT_8BIT_REGISTER : sum);
+		register.write(limit == FIT_8BIT_REGISTER ? sum & FIT_8BIT_REGISTER : sum);
 		incrementProgramCounter();
 	}
 	
 	public void subtractWithBorrow(Register<Integer> register, int value) {
 		dataRegisterVF.write(register.read() > value ? 1 : 0);
-		register.write(convertToUnsignedInt(register.read() - value) & Chip8Util.FIT_8BIT_REGISTER);
+		register.write(convertToUnsignedInt(register.read() - value) & FIT_8BIT_REGISTER);
 		incrementProgramCounter();
 	}
 	
 	public void subtractWithNegatedBorrow(Register<Integer> register, int value) {
 		dataRegisterVF.write(register.read() > value ? 0 : 1);
-		register.write(convertToUnsignedInt(value - register.read()) & Chip8Util.FIT_8BIT_REGISTER);
+		register.write(convertToUnsignedInt(value - register.read()) & FIT_8BIT_REGISTER);
 		incrementProgramCounter();
 	}
 	
@@ -63,7 +63,7 @@ public class ALU {
 	
 	public void leftShiftWithCarry(Register<Integer> register) {
 		dataRegisterVF.write((register.read() >> 7) & 0x1);
-		register.write((register.read() << 1) & Chip8Util.FIT_8BIT_REGISTER);
+		register.write((register.read() << 1) & FIT_8BIT_REGISTER);
 		incrementProgramCounter();
 	}
 	
@@ -96,7 +96,7 @@ public class ALU {
 	}
 
 	private void incrementProgramCounter() {
-		programCounter.write((programCounter.read() + 2) & Chip8Util.FIT_16BIT_REGISTER);
+		programCounter.write((programCounter.read() + 2) & FIT_16BIT_REGISTER);
 	}
 
 	private int convertToUnsignedInt(int value) {

@@ -1,4 +1,4 @@
-package joelbits.emulator.units;
+package joelbits.emulator.graphics;
 
 import java.util.List;
 

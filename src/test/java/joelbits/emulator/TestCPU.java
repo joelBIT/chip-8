@@ -11,10 +11,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
+import joelbits.emulator.cpu.instructions.InstructionUnit;
 import joelbits.emulator.input.Input;
 import joelbits.emulator.memory.RAM;
-import joelbits.emulator.units.GMU;
-import joelbits.emulator.units.MMU;
+import joelbits.emulator.graphics.GMU;
+import joelbits.emulator.memory.MMU;
 import joelbits.emulator.utils.Chip8Util;
 import joelbits.emulator.utils.RandomNumberGenerator;
 import org.junit.Before;
@@ -47,6 +48,7 @@ public class TestCPU {
 	private Register<Integer> indexRegister;
 	private MMU mmu;
 	private ALU alu;
+	private InstructionUnit instructionUnit;
 
 	private int[] dataRegisterValues = {43, 176, 40, 206, 33, 148, 33, 136, 77, 29, 48, 81, 30, 8, 1, 0};
 	private int[] fontset = new int[80];
@@ -67,11 +69,12 @@ public class TestCPU {
 		indexRegister = IndexRegister.getInstance();
 		stack = new Stack<>();
 		mmu = new MMU(new RAM());
+		instructionUnit = new InstructionUnit(mmu);
 		alu = Mockito.spy(new ALU(ProgramCounter.getInstance(), dataRegisters.get(0xF), new RandomNumberGenerator()));
 		
 		initMocks(this);
 		
-		target = new CPU(stack, mmu, keyboard, dataRegisters, indexRegister, delayTimer, soundTimer, alu, gmu);
+		target = new CPU(stack, mmu, keyboard, dataRegisters, indexRegister, delayTimer, soundTimer, alu, gmu, instructionUnit);
 		target.initialize(address, index, delayTime, soundTime, fontset);
 	}
 	

@@ -21,7 +21,7 @@ import joelbits.emulator.settings.GameSettings;
 import joelbits.emulator.timers.DelayTimer;
 import joelbits.emulator.timers.SoundTimer;
 import joelbits.emulator.timers.Timer;
-import joelbits.emulator.units.GMU;
+import joelbits.emulator.graphics.GMU;
 
 public final class InterpreterModule extends AbstractModule {
 	@Override

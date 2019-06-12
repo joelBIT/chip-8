@@ -11,7 +11,7 @@ import javax.sound.sampled.Clip;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.LineUnavailableException;
 
-import joelbits.emulator.utils.Chip8Util;
+import static joelbits.emulator.utils.Chip8Util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +23,7 @@ public final class Sound implements Audio {
     private boolean muted;
 
     public Sound() {
-    	audioFormat = new AudioFormat(Chip8Util.SAMPLE_RATE, Chip8Util.SAMPLE_SIZE_IN_BITS, Chip8Util.CHANNELS, true, false);
+    	audioFormat = new AudioFormat(SAMPLE_RATE, SAMPLE_SIZE_IN_BITS, CHANNELS, true, false);
     	
     	try {
     		beepSound = (Clip) AudioSystem.getLine(new DataLine.Info(Clip.class, audioFormat));
@@ -37,13 +37,13 @@ public final class Sound implements Audio {
     }
     
 	private AudioInputStream createAudioInputStream() {
-		return new AudioInputStream(new ByteArrayInputStream(soundBytes()), audioFormat, Chip8Util.SAMPLE_RATE / Chip8Util.SAMPLE_SIZE_IN_BITS);
+		return new AudioInputStream(new ByteArrayInputStream(soundBytes()), audioFormat, SAMPLE_RATE / SAMPLE_SIZE_IN_BITS);
 	}
 	
     private byte[] soundBytes() {
-    	byte[] soundBytes = new byte[Chip8Util.SAMPLE_RATE / Chip8Util.SAMPLE_SIZE_IN_BITS];
-    	for (int i = 0; i < Chip8Util.SAMPLE_RATE / Chip8Util.SAMPLE_SIZE_IN_BITS; i++) {
-    		soundBytes[i] = (byte) ((double)Chip8Util.SOUND_VOLUME * Math.sin(6.28 * (double)Chip8Util.SOUND_FREQUENCY * (i / (double)Chip8Util.SAMPLE_RATE)));
+    	byte[] soundBytes = new byte[SAMPLE_RATE / SAMPLE_SIZE_IN_BITS];
+    	for (int i = 0; i < SAMPLE_RATE / SAMPLE_SIZE_IN_BITS; i++) {
+    		soundBytes[i] = (byte) ((double)SOUND_VOLUME * Math.sin(6.28 * (double)SOUND_FREQUENCY * (i / (double)SAMPLE_RATE)));
     	}
     	
     	return soundBytes;

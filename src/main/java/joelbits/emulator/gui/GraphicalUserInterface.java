@@ -19,7 +19,7 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
-import javafx.scene.input.KeyCombination;
+import static javafx.scene.input.KeyCombination.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
@@ -32,7 +32,6 @@ import joelbits.emulator.input.Input;
 import joelbits.emulator.modules.InterpreterModule;
 import joelbits.emulator.output.Audio;
 import joelbits.emulator.settings.GameSettings;
-import joelbits.emulator.utils.Chip8Util;
 
 public class GraphicalUserInterface extends Application {
 	private Stage stage;
@@ -117,11 +116,11 @@ public class GraphicalUserInterface extends Application {
 	}
 
 	private Menu createInterpreterMenu() {
-		MenuItem open = createMenuItem("Open", event -> openLoadFileDialog(), new KeyCodeCombination(KeyCode.O, KeyCombination.CONTROL_DOWN));
+		MenuItem open = createMenuItem("Open", event -> openLoadFileDialog(), new KeyCodeCombination(KeyCode.O, CONTROL_DOWN));
 		MenuItem exit = createMenuItem("Exit", event -> {
 			Platform.exit();
 			System.exit(0);
-		}, new KeyCodeCombination(KeyCode.Q, KeyCombination.CONTROL_DOWN));
+		}, new KeyCodeCombination(KeyCode.Q, CONTROL_DOWN));
 
 		return createMenu(Arrays.asList(open, exit), "Interpreter");
 	}
